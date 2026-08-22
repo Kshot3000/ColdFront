@@ -9,6 +9,13 @@ CF = CF || {};
 
 CF.API = {
   base: () => CF.CONFIG.endpoints.espnBase,
+  webBase: () => CF.CONFIG.endpoints.espnWebBase,
+  cdnBase: () => CF.CONFIG.endpoints.espnCdnBase,
+
+  /* Alternate-host fetchers: same ESPN JSON from a different piece of
+     infrastructure. These ride the Stage-1 race alongside the primary
+     host, so a blocked network still gets the data from a working one. */
+  web: (path) => () => CF.fetchJSON(CF.webBase() + path, { timeout: 9000 }),
 
   /* ESPN hands scores to us as either a plain string ("34") or an object
      ({value:34, displayValue:"34"}). Every panel needs a plain value. */
@@ -18,14 +25,21 @@ CF.API = {
     return x;
   },
 
-  /* ---------- raw ESPN getters ---------- */
+  /* ---------- raw ESPN getters ----------
+     Every getter now passes alternate hosts (site.web.api.espn.com, and
+     cdn.espn.com where a core-API path exists) as altFetchers; CF.getSource
+     races them in parallel and uses the first one that answers. */
   getTeam: async () => {
-    const r = await CF.getSource("team", () => CF.fetchJSON(CF.base() + "/teams/chicago", { timeout: 9000 }), "team");
+    const r = await CF.getSource("team",
+      () => CF.fetchJSON(CF.base() + "/teams/chicago", { timeout: 9000 }), "team", null,
+      [CF.API.web("/teams/chicago")]);
     return r;
   },
 
   getNews: async () => {
-    const r = await CF.getSource("news", () => CF.fetchJSON(CF.base() + "/teams/chicago/news", { timeout: 9000 }), "news");
+    const r = await CF.getSource("news",
+      () => CF.fetchJSON(CF.base() + "/teams/chicago/news", { timeout: 9000 }), "news", null,
+      [CF.API.web("/teams/chicago/news")]);
     return r.data.news || [];
   },
 
@@ -36,29 +50,47 @@ CF.API = {
     // just today (urlFor("scoreboard") is pinned to the single current day).
     const r = await CF.getSource("scoreboard",
       () => CF.fetchJSON(url, { timeout: 9000 }),
-      "scoreboard." + dp, url);
+      "scoreboard." + dp, url,
+      [() => CF.fetchJSON(CF.webBase() + "/scoreboard?dates=" + dp, { timeout: 9000 })]);
     return r;
   },
 
   getSchedule: async () => {
-    const r = await CF.getSource("schedule", () => CF.fetchJSON(CF.base() + "/teams/chicago/schedule", { timeout: 9000 }), "schedule");
+    const url = CF.base() + "/teams/chicago/schedule";
+    const r = await CF.getSource("schedule",
+      () => CF.fetchJSON(url, { timeout: 9000 }), "schedule", url,
+      [
+        CF.API.web("/teams/chicago/schedule"),
+        () => CF.fetchJSON(CF.cdnBase() + "/teams/chicago/schedule", { timeout: 9000 }),
+        CF.API.tsdbKey() ? () => CF.API.tsdbSchedule() : null,
+      ].filter(Boolean));
     return r;
   },
 
   getStandings: async () => {
-    const r = await CF.getSource("standings", () => CF.fetchJSON(CF.base() + "/standings", { timeout: 9000 }), "standings");
+    const r = await CF.getSource("standings",
+      () => CF.fetchJSON(CF.base() + "/standings", { timeout: 9000 }), "standings", null,
+      [CF.API.web("/standings")]);
     return r;
   },
 
   getRoster: async () => {
-    const r = await CF.getSource("roster", () => CF.fetchJSON(CF.base() + "/teams/chicago/roster", { timeout: 9000 }), "roster");
+    const url = CF.base() + "/teams/chicago/roster";
+    const r = await CF.getSource("roster",
+      () => CF.fetchJSON(url, { timeout: 9000 }), "roster", url,
+      [
+        CF.API.web("/teams/chicago/roster"),
+        CF.API.tsdbKey() ? () => CF.API.tsdbRoster() : null,
+      ].filter(Boolean));
     return r;
   },
 
   /* League-wide injury report. Heavy payload (~9 MB) but it carries the
      full Bears list: status per player + editorial notes on the wire. */
   getLeagueInjuries: async () => {
-    const r = await CF.getSource("injuries", () => CF.fetchJSON(CF.base() + "/injuries", { timeout: 15000 }), "injuries");
+    const r = await CF.getSource("injuries",
+      () => CF.fetchJSON(CF.base() + "/injuries", { timeout: 15000 }), "injuries", null,
+      [() => CF.fetchJSON(CF.webBase() + "/injuries", { timeout: 15000 })]);
     return r;
   },
 
@@ -78,7 +110,9 @@ CF.API = {
   },
 
   getOdds: async () => {
-    const r = await CF.getSource("odds", () => CF.fetchJSON(CF.base() + "/odds", { timeout: 9000 }), "odds");
+    const r = await CF.getSource("odds",
+      () => CF.fetchJSON(CF.base() + "/odds", { timeout: 9000 }), "odds", null,
+      [CF.API.web("/odds")]);
     return r;
   },
 
@@ -478,6 +512,92 @@ CF.API = {
       });
     });
     return rows.sort((a, b) => (b.value || 0) - (a.value || 0));
+  },
+
+  /* ---------- TheSportsDB (optional, BYO free key) ----------
+     A fully independent second wire: different company, different CDN,
+     different JSON. When a key is set (About page), roster / schedule /
+     standings gain this fallback so they survive a network that blocks
+     every ESPN host and every public proxy. Without a key the functions
+     throw immediately and the ESPN chain carries on alone. The key lives
+     only in this browser's localStorage. */
+  tsdbKey: () => { try { return (localStorage.getItem("cf.tsdbkey") || "").trim(); } catch (e) { return ""; } },
+  setTSDBKey: (k) => { try { localStorage.setItem("cf.tsdbkey", (k || "").trim()); } catch (e) { /* private mode */ } },
+
+  getTSDB: async (path) => {
+    const key = CF.API.tsdbKey();
+    if (!key) throw new Error("TheSportsDB: no key set");
+    const d = await CF.fetchJSON("https://www.thesportsdb.com/api/v1/json/" + encodeURIComponent(key) + path, { timeout: 10000 });
+    if (!d) throw new Error("TheSportsDB: empty response");
+    return d;
+  },
+
+  // Resolves (and remembers) the Bears' team id via name search.
+  tsdbTeamId: async () => {
+    try { const c = localStorage.getItem("cf.tsdbteam"); if (c) return c; } catch (e) { /* look it up */ }
+    const d = await CF.API.getTSDB("/search_all_teams.php?n=Chicago");
+    const list = (d && d.teams) || [];
+    const bear = list.find((t) => /chicago bears/i.test(t.strTeam || "")) || list.find((t) => /bears/i.test(t.strTeam || ""));
+    if (!bear) throw new Error("TheSportsDB: no Chicago Bears in search results");
+    try { localStorage.setItem("cf.tsdbteam", bear.idTeam); } catch (e) { /* private mode */ }
+    return bear.idTeam;
+  },
+
+  /* Roster adapter — returns the same shape CF.API.rosterPlayers consumes,
+     so the team page renders it with no changes. */
+  tsdbRoster: async () => {
+    const id = await CF.API.tsdbTeamId();
+    const d = await CF.API.getTSDB("/lookupteam.php?i=" + id);
+    const t = ((d && d.teams) || [])[0];
+    if (!t) throw new Error("TheSportsDB: no team payload");
+    let names = [];
+    try { names = JSON.parse(t.strTeamLocked || "[]"); } catch (e) { names = []; }
+    if (!names.length) throw new Error("TheSportsDB: empty roster");
+    return [{ group: "Roster", players: names.map((n) => ({ displayName: n })) }];
+  },
+
+  /* Schedule adapter — maps TheSportsDB events onto the ESPN schedule shape
+     (scheduleList / nextBearsGameFromSchedule consume it unchanged). */
+  tsdbSchedule: async () => {
+    const id = await CF.API.tsdbTeamId();
+    const d = await CF.API.getTSDB("/lookup_all_events.php?id=" + id + "&s=" + CF.API.nflSeasonYear());
+    const evs = (d && d.events) || [];
+    if (!evs.length) throw new Error("TheSportsDB: no events for the season");
+    const isMe = (s) => /chicago bears/i.test(s || "");
+    const events = evs.map((e) => {
+      const dateStr = e.dateEvent ? (e.dateEvent + "T" + (e.strTime || "17:30:00")) : null;
+      const d0 = dateStr ? new Date(dateStr) : null;
+      const preseason = d0 ? (d0.getMonth() < 8) : true; // before September = camp
+      const done = /final/i.test(e.strStatus || "") || e.intHomeScore != null;
+      const team = (name) => ({ abbreviation: isMe(name) ? "CHI" : "?", displayName: name || "—" });
+      return {
+        id: e.idEvent,
+        date: dateStr,
+        seasonType: preseason ? "pre" : "reg",
+        status: { type: { state: done ? "post" : "pre" } },
+        competitions: [{
+          competitors: [
+            { homeAway: "home", team: team(e.strHomeTeam), score: e.intHomeScore != null ? String(e.intHomeScore) : null },
+            { homeAway: "away", team: team(e.strAwayTeam), score: e.intAwayScore != null ? String(e.intAwayScore) : null },
+          ],
+        }],
+      };
+    });
+    return { events };
+  },
+
+  /* Standings adapter — reuses the same aggregator that derives the
+     preseason table from ESPN's scoreboard, fed with TheSportsDB events. */
+  tsdbStandings: async () => {
+    const sched = await CF.API.tsdbSchedule();
+    const events = ((sched && sched.events) || []).map((e) => ({
+      status: { type: { completed: e.status && e.status.type && e.status.type.state === "post", state: e.status ? e.status.type.state : "pre" } },
+      competitions: e.competitions,
+    }));
+    const d = CF.API.aggregateStandings({ events });
+    if (!d || !d.rows || !d.rows.length) throw new Error("TheSportsDB: no standings data");
+    d.name = (d.name || "Division") + " (TheSportsDB wire)";
+    return d;
   },
 
   /* ---------- API-Sports (optional, BYO free key) ----------

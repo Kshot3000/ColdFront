@@ -73,6 +73,7 @@ public static class CFProxy
         "site.api.espn.com",
         "site.web.api.espn.com",
         "sports.core.api.espn.com",
+        "cdn.espn.com",
         "www.espn.com",
         "www.thesportsdb.com",
         "gamma-api.polymarket.com",

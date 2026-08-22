@@ -94,6 +94,11 @@ CF.CONFIG = {
 
   endpoints: {
     espnBase: "https://site.api.espn.com/apis/site/v2/sports/football/nfl",
+    // Alternate ESPN API hosts — same JSON, different infrastructure.
+    // If a visitor's network blocks one host, the others usually still
+    // answer; the site races them in parallel and takes the first winner.
+    espnWebBase: "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl",
+    espnCdnBase: "https://cdn.espn.com/core/api/v2/sports/football/nfl",
     weather: "https://api.open-meteo.com/v1/forecast",
     // Second weather source: NOAA/NWS (api.weather.gov) — official US
     // forecast service, CORS-open, no key. Used automatically when Open-Meteo
@@ -214,6 +219,24 @@ CF.copyText = (text, msg) => {
 };
 
 /* ---------------- fetch with timeout + localStorage cache ---------------- */
+/* Promise.any wrapper: race several fetch attempts at once; the first one
+   to answer wins, the losers abort on their own timeouts. If every attempt
+   fails, rethrow the first error. This is what keeps the whole page fast:
+   a feed no longer waits 45 s of sequential retries — it waits for the
+   fastest working path (~2 s on a normal network). */
+CF.raceJSON = async (attempts) => {
+  const ps = [];
+  for (const a of attempts) {
+    let p;
+    try { p = Promise.resolve().then(a); }
+    catch (e) { p = Promise.reject(e); }
+    ps.push(p);
+  }
+  if (!ps.length) throw new Error("no fetch attempts");
+  try { return await Promise.any(ps); }
+  catch (agg) { throw (agg && agg.errors && agg.errors[0]) || new Error("all fetch attempts failed"); }
+};
+
 CF.fetchJSON = async (url, opts) => {
   opts = opts || {};
   const timeout = opts.timeout || 9000;
@@ -254,19 +277,22 @@ CF.fetchVia = async (url, opts) => {
   opts = opts || {};
   const t = opts.timeout || 9000;
   const local = CF.CONFIG.endpoints.localProxy;
-  if (local) {
-    try { return await CF.fetchJSON(local + "/fetch?url=" + encodeURIComponent(url), { timeout: Math.min(6000, t) }); }
-    catch (eLocal) { /* not running, or upstream failed — try direct */ }
+  // Stage 1 — local loopback proxy (when running) + direct, raced.
+  const stage1 = [];
+  if (local) stage1.push(() => CF.fetchJSON(local + "/fetch?url=" + encodeURIComponent(url), { timeout: Math.min(5000, t) }));
+  stage1.push(() => CF.fetchJSON(url, { timeout: t, headers: opts.headers }));
+  let firstErr = null;
+  try { return await CF.raceJSON(stage1); }
+  catch (e) { firstErr = e; }
+  // Stage 2 — optional remote proxy + public CORS proxies, raced.
+  const stage2 = [];
+  const remote = CF.CONFIG.endpoints.remoteProxy;
+  if (remote) stage2.push(() => CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(url), { timeout: 6000 }));
+  for (const proxy of CF.PROXIES) stage2.push(() => CF.fetchJSON(proxy(url), { timeout: 10000, headers: opts.headers }));
+  if (stage2.length) {
+    try { return await CF.raceJSON(stage2); } catch (e) { /* fall through */ }
   }
-  try {
-    return await CF.fetchJSON(url, { timeout: t });
-  } catch (directErr) {
-    const remote = CF.CONFIG.endpoints.remoteProxy;
-    if (remote) {
-      return await CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(url), { timeout: 6000 });
-    }
-    throw directErr;
-  }
+  throw firstErr || new Error("all fetch paths failed: " + url);
 };
 
 /* Raw text fetch with timeout (for non-JSON feeds like RSS). */
@@ -287,91 +313,93 @@ CF.fetchText = async (url, opts) => {
   opts = opts || {};
   const t = opts.timeout || 9000;
   const local = CF.CONFIG.endpoints.localProxy;
-  if (local) {
-    try { return await CF.rawFetch(local + "/fetch?url=" + encodeURIComponent(url), Math.min(6000, t)); }
-    catch (eLocal) { /* not running — try direct */ }
+  // Stage 1 — local loopback proxy (when running) + direct, raced.
+  const stage1 = [];
+  if (local) stage1.push(() => CF.rawFetch(local + "/fetch?url=" + encodeURIComponent(url), Math.min(5000, t)));
+  stage1.push(() => CF.rawFetch(url, t));
+  let firstErr = null;
+  try { return await CF.raceJSON(stage1); }
+  catch (e) { firstErr = e; }
+  // Stage 2 — optional remote proxy + public CORS proxies, raced.
+  const stage2 = [];
+  const remote = CF.CONFIG.endpoints.remoteProxy;
+  if (remote) stage2.push(() => CF.rawFetch(remote + "/fetch?url=" + encodeURIComponent(url), 6000));
+  for (const proxy of CF.PROXIES) stage2.push(() => CF.rawFetch(proxy(url), 10000));
+  if (stage2.length) {
+    try { return await CF.raceJSON(stage2); } catch (e) { /* fall through */ }
   }
-  try {
-    return await CF.rawFetch(url, t);
-  } catch (directErr) {
-    const remote = CF.CONFIG.endpoints.remoteProxy;
-    if (remote) {
-      try { return await CF.rawFetch(remote + "/fetch?url=" + encodeURIComponent(url), 6000); }
-      catch (eRemote) { /* next */ }
-    }
-    for (const proxy of CF.PROXIES) {
-      try { return await CF.rawFetch(proxy(url), 8000); }
-      catch (e2) { /* next proxy */ }
-    }
-    throw directErr;
-  }
+  throw firstErr || new Error("all fetch paths failed: " + url);
 };
 
 /* ---------------- data source helper: the full live-feed chain ----------------
-   Every named feed resolves in this order:
-   1) local loopback proxy (Start-Local-Proxy.bat) — the fix for networks
-      where the CDN 403s browser traffic; instant no-op when not running;
-   2) direct fetch — CORS-open, so this is the normal path for most visitors;
-   3) optional remote proxy (e.g. the included Cloudflare Worker) when a URL
-      is set in CF.CONFIG.endpoints.remoteProxy;
-   4) public CORS proxies — last resort for other visitors' odd networks;
-   5) the localStorage snapshot from a previous successful visit.
-   Data that arrives via any proxy is still LIVE data, so it is reported as
-   source "live"; only step 5 (stale snapshot) reports differently. */
-CF.getSource = async (name, fetcher, cacheKey, directUrl) => {
+   Every named feed resolves in stages, and each stage RACES its paths in
+   parallel (CF.raceJSON) — the fastest working path wins, losers abort:
+   1) direct hosts (the primary + alternates passed as altFetchers, e.g.
+      site.web.api.espn.com / cdn.espn.com) + the local loopback proxy
+      (Start-Local-Proxy.bat) when it is running;
+   2) optional remote proxy (e.g. the included Cloudflare Worker) + the
+      public CORS proxies — the rescue path for networks that block the
+      direct hosts;
+   3) the localStorage snapshot from a previous successful visit.
+   Data that arrives via any path in stages 1–2 is LIVE data, so it is
+   reported as source "live"; only stage 3 (stale snapshot) reports
+   "cache". */
+CF.getSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
   const ttl = (CF.CONFIG.ttl[name] != null) ? CF.CONFIG.ttl[name] : 3600e3;
   const direct = directUrl || urlFor(name);
+  const local = CF.CONFIG.endpoints.localProxy;
+  const remote = CF.CONFIG.endpoints.remoteProxy;
 
-  const viaProxy = async (base, timeout) => {
-    const data = await CF.fetchJSON(base + "/fetch?url=" + encodeURIComponent(direct), { timeout: timeout });
-    CF.cacheSet(cacheKey, data, ttl);
-    return { data, source: "live", name };
-  };
-
-  // 1) local loopback proxy
-  if (direct && CF.CONFIG.endpoints.localProxy) {
-    try { return await viaProxy(CF.CONFIG.endpoints.localProxy, 6000); }
-    catch (eLocal) { /* continue the chain */ }
-  }
-  // 2) direct
+  // Stage 1 — direct hosts + local proxy, raced in parallel.
+  const stage1 = [];
+  if (direct && local) stage1.push(() => CF.fetchJSON(local + "/fetch?url=" + encodeURIComponent(direct), { timeout: 5000 }));
+  stage1.push(fetcher);
+  if (altFetchers) for (const a of altFetchers) if (typeof a === "function") stage1.push(a);
+  let firstErr = null;
   try {
-    const data = await fetcher();
+    const data = await CF.raceJSON(stage1);
     CF.cacheSet(cacheKey, data, ttl);
     return { data, source: "live", name };
-  } catch (e1) {
-    // 3) optional remote proxy
-    if (direct && CF.CONFIG.endpoints.remoteProxy) {
-      try { return await viaProxy(CF.CONFIG.endpoints.remoteProxy, 6000); }
-      catch (eRemote) { /* continue the chain */ }
+  } catch (e) { firstErr = e; }
+
+  // Stage 2 — remote proxy + public CORS proxies, raced in parallel.
+  if (direct) {
+    const stage2 = [];
+    if (remote) stage2.push(() => CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(direct), { timeout: 6000 }));
+    for (const proxy of CF.PROXIES) stage2.push(() => CF.fetchJSON(proxy(direct), { timeout: 10000 }));
+    if (stage2.length) {
+      try {
+        const data = await CF.raceJSON(stage2);
+        CF.cacheSet(cacheKey, data, ttl);
+        return { data, source: "live", name };
+      } catch (e2) { /* stage 3 */ }
     }
-    // 4) public CORS proxies (helps visitors on unusual networks)
-    if (direct) {
-      for (const proxy of CF.PROXIES) {
-        try {
-          const data = await CF.fetchJSON(proxy(direct), { timeout: 8000 });
-          CF.cacheSet(cacheKey, data, ttl);
-          return { data, source: "proxy", name };
-        } catch (e2) { /* next */ }
-      }
-    }
-    // 5) local snapshot
-    const cached = CF.cacheGet(cacheKey);
-    if (cached) return { data: cached, source: "cache", name };
-    throw new Error("offline:" + name);
   }
-  function urlFor(n) {
-    if (n === "scoreboard") return CF.CONFIG.endpoints.espnBase + "/scoreboard?dates=" + CF.todayParam();
-    if (n === "news") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/news";
-    if (n === "schedule") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/schedule";
-    if (n === "standings") return CF.CONFIG.endpoints.espnBase + "/standings";
-    if (n === "roster") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/roster";
-    if (n === "team") return CF.CONFIG.endpoints.espnBase + "/teams/chicago";
-    if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/odds";
-    if (n === "injuries") return CF.CONFIG.endpoints.espnBase + "/injuries";
-    return null;
-  }
+
+  // Stage 3 — the snapshot from the last successful visit.
+  const cached = CF.cacheGet(cacheKey);
+  if (cached) return { data: cached, source: "cache", name };
+  throw firstErr || new Error("offline:" + name);
 };
+
+function urlFor(n) {
+  if (n === "scoreboard") return CF.CONFIG.endpoints.espnBase + "/scoreboard?dates=" + CF.todayParam();
+  if (n === "news") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/news";
+  if (n === "schedule") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/schedule";
+  if (n === "standings") return CF.CONFIG.endpoints.espnBase + "/standings";
+  if (n === "roster") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/roster";
+  if (n === "team") return CF.CONFIG.endpoints.espnBase + "/teams/chicago";
+  if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/odds";
+  if (n === "injuries") return CF.CONFIG.endpoints.espnBase + "/injuries";
+  return null;
+}
+/* Public CORS proxies — the last-resort stage for visitors whose networks
+   block every direct host. cors.eu.org leads because it is the one that
+   has actually answered for ESPN; the others stay on the bench as a
+   rotating reserve (free public proxies come and go). Each is only used
+   after the direct attempts failed, and only one winner is needed. */
 CF.PROXIES = [
+  (u) => "https://cors.eu.org/" + u,
   (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
   (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
   (u) => "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u),

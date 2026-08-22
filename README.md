@@ -25,12 +25,18 @@ Navy, orange, steel and frost. A 70-flake snow canvas. A "Cold Front Index" comp
 
 ## Data sources (all keyless, all in-browser)
 
-| Data | Source | Notes |
+Every feed is fetched through a **raced multi-source chain**: the primary host and its alternates are tried **in parallel** (fastest winner, losers abort), then public CORS proxies are raced as a rescue stage, and finally the last good snapshot from your device is shown, clearly badged. That's what keeps every panel filling even on a hostile network.
+
+| Data | Sources tried (in order) | Notes |
 |---|---|---|
-| News, scoreboard, schedule, standings, roster, box scores, odds line | `site.api.espn.com` | CORS-open in browsers. If a network blocks it, the site tries three public CORS proxies, then the snapshot it saved on your device |
+| Scoreboard, schedule, standings, roster, wire, box scores, odds line | `site.api.espn.com` → `site.web.api.espn.com` → `cdn.espn.com` (core API, schedule) | Same JSON, different infrastructure — a network that blocks one rarely blocks all three |
+| …if a visitor's network blocks all direct hosts | `cors.eu.org` → `allorigins.win` → `corsproxy.io` → `codetabs.com` (public CORS proxies) → optional Cloudflare Worker (`remoteProxy`) | Free public proxies rotate in and out; the site keeps a bench of them and uses whichever answers |
+| News wide wire | Google News RSS → Bing News RSS (same chain) | 100+ outlets, no key |
+| Roster / schedule / standings (optional, BYO free key) | **TheSportsDB** — a fully independent provider (different company, CDN, JSON) | Set your free key on the About page; the key stays in `localStorage` and is sent only to TheSportsDB |
 | Prediction markets | `gamma-api.polymarket.com` | Live prices; cents ≈ implied probability |
-| Chicago weather + Cold Front Index | `api.open-meteo.com` | No key, no account |
+| Chicago weather + Cold Front Index | `api.open-meteo.com` → `api.weather.gov` (NOAA/NWS) | No key, no account |
 | Full odds board (optional) | `api.the-odds-api.com` | **Your** key, stored only in `localStorage`, 500 free requests/mo |
+| Season stats / injury ETAs (optional) | API-Sports (free key) | Set on the About page |
 | Injury report + practice tracker | `data/*.json` in this repo | You edit, you push |
 
 **Offline behavior:** every feed that answers once is cached in `localStorage` with a TTL, so a later whiteout shows your last good snapshot — clearly badged `snapshot`, never pretending to be live. Sample/placeholder rows are labeled as such. The site never invents stats.
@@ -132,20 +138,22 @@ curl http://127.0.0.1:8799/healthz        # -> {"ok":true}
 
 **Remote / mobile (optional):** deploy `proxy/cf-proxy-worker.js` (e.g. `npm i -g wrangler`, then `wrangler deploy` from `proxy/`) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. Both implementations enforce the same host allow-list; the proxy only ever fetches from the sources below.
 
-**Data sources (every feed has a second source):**
+**Data sources (every feed has a second source — and most have a third):**
 
-| Panel | Primary | Second source |
-|---|---|---|
-| Scoreboard, schedule, roster, wire, box scores, leaders | ESPN site API | derived from the scoreboard (per-game box + camp leaders) |
-| Division standings | ESPN standings | **derived preseason table** (W–L from completed games) while the season hasn't started |
-| News | ESPN wire | **Google News RSS** ("Chicago Bears", 100+ outlets) |
-| Injury report | ESPN **league injury report** (per-player status + notes) | roster injury flags → community JSON; **API-Sports** (free key) for structured rows + ETAs |
-| Season player stats / leaders | per-game leaders from the league wire | **API-Sports** (free key) for full-season player stats |
-| Weather strip + cold-front gauge | Open-Meteo | **NOAA/NWS** (`api.weather.gov`, official US forecast) |
-| Prediction markets | Polymarket | — |
+| Panel | Primary | Second source | Third source |
+|---|---|---|---|
+| Scoreboard, schedule, roster, wire, box scores, leaders | ESPN site API (`site.api.espn.com`) | **alternate ESPN hosts** (`site.web.api.espn.com`, `cdn.espn.com`) raced in parallel → **public CORS proxies** (cors.eu.org, allorigins, …) | derived from the scoreboard (per-game box + camp leaders) |
+| Division standings | ESPN standings | **derived preseason table** (W–L from completed games) | **TheSportsDB** (free key) |
+| Roster | ESPN roster | alternate ESPN hosts + public proxies | **TheSportsDB** (free key) |
+| Schedule / season log | ESPN schedule | alternate ESPN hosts + public proxies | **TheSportsDB** (free key) |
+| News | ESPN wire | **Google News RSS** ("Chicago Bears", 100+ outlets) | **Bing News RSS** |
+| Injury report | ESPN **league injury report** (per-player status + notes) | roster injury flags → community JSON | **API-Sports** (free key) for structured rows + ETAs |
+| Season player stats / leaders | per-game leaders from the league wire | **API-Sports** (free key) | — |
+| Weather strip + cold-front gauge | Open-Meteo | **NOAA/NWS** (`api.weather.gov`, official US forecast) | — |
+| Prediction markets | Polymarket | **The Odds API** (free key) | — |
 | Vegas lines | The Odds API (your key) | ESPN league wire |
 
-Two **free BYO-key** upgrades are optional and the site works fully without them: [API-Sports](https://www.api-sports.io/) (season stats + injury ETAs, 100 req/day) and [The Odds API](https://the-odds-api.com/) (full Vegas board, 500 req/mo). Each is set on its own page; the key lives only in your browser. Enterprise feeds (Sportradar, Opta/Stats Perform, LSports, SportsDataIO) are real-time, low-latency options priced for production — the site is built to run without them. TheSportsDB is documented only: it returned no reliable Bears data for the NFL during development, so it isn't wired in.
+Three **free BYO-key** upgrades are optional and the site works fully without them: [API-Sports](https://www.api-sports.io/) (season stats + injury ETAs, 100 req/day), [The Odds API](https://the-odds-api.com/) (full Vegas board, 500 req/mo) and [TheSportsDB](https://www.thesportsdb.com/) (independent roster/schedule/standings wire). Each is set on the About page or right where it's used; every key lives only in your browser. Enterprise feeds (Sportradar, Opta/Stats Perform, LSports, SportsDataIO) are real-time, low-latency options priced for production — the site is built to run without them.
 
 The weather strip shows `NOAA/NWS` when it had to use the fallback, so you can see which source you're reading.
 

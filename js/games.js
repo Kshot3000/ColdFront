@@ -4,6 +4,7 @@
 (function () {
   let dayOffset = 0;
   let lastEvents = [];
+  let lastPastGame = null; // most recent completed Bears game (season log)
 
   const isoDate = (offset) => {
     const d = new Date();
@@ -96,6 +97,7 @@
       const now = Date.now();
       const upcoming = rows.filter((g) => new Date(g.date).getTime() >= now - 6 * 3600e3).sort((a, b) => new Date(a.date) - new Date(b.date));
       const past = rows.filter((g) => new Date(g.date).getTime() < now - 6 * 3600e3).sort((a, b) => new Date(b.date) - new Date(a.date));
+      if (past.length) lastPastGame = past[0];
       body.innerHTML = [
         ...upcoming.map(logRow),
         ...(upcoming.length && past.length ? '<tr><td colspan="7" style="border:none;height:6px;background:rgba(200,56,3,.12)"></td></tr>' : ""),
@@ -205,7 +207,13 @@
       try {
         div = await CF.API.preseasonStandingsAuto();
         if (div && div.rows.length) label = "preseason · from games played";
-      } catch (e2) { /* fall through to offline */ }
+      } catch (e2) { /* try the independent wire */ }
+    }
+    if (!div && CF.API.tsdbKey()) {
+      try {
+        div = await CF.API.tsdbStandings();
+        if (div && div.rows.length) label = "preseason · TheSportsDB wire";
+      } catch (e3) { /* fall through to offline */ }
     }
     if (!div || !div.rows.length) {
       pill.className = "pill sample";
@@ -267,13 +275,21 @@
     CF.refresh.register(loadBoard, 30e3);                 // board: 30 s (scheduled → live → final)
     CF.refresh.register(loadLog, 3 * 60e3);               // season log: 3 min
     CF.refresh.register(loadDivision, 5 * 60e3);          // division table: 5 min
-    // If there's a Bears game today, preload its box score when it's over.
+    // Preload a box score so the panel is never empty: a live or finished
+    // Bears game on the board, else the most recent completed game from
+    // the season log (waits briefly for the log on slower networks).
     setTimeout(async () => {
-      if (!lastEvents.length) return;
       const isBears = (e) => ((e.competitions && e.competitions[0] && e.competitions[0].competitors) || [])
         .some((c) => (c.team || {}).abbreviation === "CHI");
-      const g = lastEvents.find((e) => isBears(e) && e.status && e.status.type && e.status.type.state === "post");
-      if (g) loadBoxscore(g.id);
-    }, 2500);
+      const state = (e) => ((e.status && e.status.type) || {}).state || "";
+      const pick = lastEvents.find((e) => isBears(e) && (state(e) === "post" || state(e) === "in"));
+      if (pick) { loadBoxscore(pick.id); return; }
+      // No in-play/finished Bears game (e.g. only a scheduled one) → last game.
+      const deadline = Date.now() + 8000;
+      while (!lastPastGame && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 400));
+      }
+      if (lastPastGame && lastPastGame.id) loadBoxscore(lastPastGame.id);
+    }, 2000);
   });
 })();

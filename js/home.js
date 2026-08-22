@@ -137,7 +137,13 @@
       try {
         div = await CF.API.preseasonStandingsAuto();
         if (div && div.rows.length) label = "preseason · from games played";
-      } catch (e2) { /* fall through to offline */ }
+      } catch (e2) { /* try the independent wire */ }
+    }
+    if (!div && CF.API.tsdbKey()) {
+      try {
+        div = await CF.API.tsdbStandings();
+        if (div && div.rows.length) label = "preseason · TheSportsDB wire";
+      } catch (e3) { /* fall through to offline */ }
     }
     if (!div || !div.rows.length) {
       pill.className = "pill sample";

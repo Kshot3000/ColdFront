@@ -99,10 +99,42 @@
     });
   }
 
+  function tsdbKeys() {
+    const input = CF.$("#tsdb-key");
+    const state = CF.$("#tsdb-state");
+    if (!input || !state) return;
+    const showState = () => {
+      const key = CF.API.tsdbKey();
+      if (key) {
+        state.textContent = "Key on this device: " + key.slice(0, 3) + "\u2026" + key.slice(-2) +
+          "  \u2014 standings, roster, and schedule can now read the TheSportsDB wire as a second source. The site itself never stores or shares it.";
+      } else {
+        state.textContent = "No key set on this device yet. Standings, roster, and schedule ride the league wire until one is added.";
+      }
+    };
+    showState();
+    CF.$("#tsdb-save").addEventListener("click", () => {
+      CF.API.setTSDBKey(input.value);
+      input.value = "";
+      CF.toast("TheSportsDB key saved to this device \u2713");
+      showState();
+    });
+    CF.$("#tsdb-clear").addEventListener("click", () => {
+      CF.API.setTSDBKey("");
+      input.value = "";
+      CF.toast("TheSportsDB key cleared from this device");
+      showState();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") CF.$("#tsdb-save").click();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     donations();
     projects();
     socials();
     dataSources();
+    tsdbKeys();
   });
 })();
