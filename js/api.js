@@ -45,7 +45,18 @@ CF.API = {
   },
 
   getEvent: async (id) => {
-    return CF.fetchJSON(CF.base() + "/events/" + id, { timeout: 9000 });
+    // Full fallback chain (local proxy -> direct -> optional remote proxy),
+    // plus a localStorage snapshot so a live game page survives a blip.
+    const cacheKey = "event." + id;
+    const cached = CF.cacheGet(cacheKey);
+    try {
+      const data = await CF.fetchVia(CF.base() + "/events/" + id, { timeout: 9000 });
+      CF.cacheSet(cacheKey, data, 3600e3);
+      return data;
+    } catch (e) {
+      if (cached) return cached;
+      throw e;
+    }
   },
 
   getOdds: async () => {
@@ -56,7 +67,7 @@ CF.API = {
   /* ---------- Polymarket (prediction markets) ---------- */
   getPolymarket: async (limit) => {
     const qs = "limit=" + (limit || 60) + "&active=true&closed=false&tag_slug=nfl";
-    const d = await CF.fetchJSON(CF.CONFIG.endpoints.polymarket + "?" + qs, { timeout: 10000 });
+    const d = await CF.fetchVia(CF.CONFIG.endpoints.polymarket + "?" + qs, { timeout: 10000 });
     const events = Array.isArray(d) ? d : (d.events || []);
     return events;
   },
@@ -64,7 +75,7 @@ CF.API = {
   /* ---------- The Odds API (optional, user's own key) ---------- */
   getOddsApi: async (key) => {
     const qs = "api_key=" + encodeURIComponent(key) + "&region=us&marketType=qlf&dateFormat=iso";
-    const d = await CF.fetchJSON("https://api.the-odds-api.com/v4/sports/american_football_nfl/odds?" + qs, { timeout: 10000 });
+    const d = await CF.fetchVia("https://api.the-odds-api.com/v4/sports/american_football_nfl/odds?" + qs, { timeout: 10000 });
     return d || [];
   },
 

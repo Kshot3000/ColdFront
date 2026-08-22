@@ -102,6 +102,19 @@ CF.CONFIG = {
       forecast_days: 3, timezone: "America/Chicago",
     },
     polymarket: "https://gamma-api.polymarket.com/events",
+
+    // Local loopback feed proxy (proxy/cf-proxy.ps1, started via
+    // Start-Local-Proxy.bat). Tried FIRST by every feed: on networks where
+    // ESPN's CDN 403s browser traffic (residential lines, VPNs), the proxy
+    // fetches with a tool-style client and the feed goes live anyway. If the
+    // proxy isn't running, this attempt fails in a few milliseconds and the
+    // chain moves on. Loopback-only — unreachable from the internet.
+    localProxy: "http://127.0.0.1:8799",
+    // Optional always-on remote proxy for phones / other machines: deploy
+    // proxy/cf-proxy-worker.js to any host (the file targets Cloudflare
+    // Workers) and put its URL here, e.g. "https://cf-proxy.example.workers.dev".
+    // Leave as "" to skip this step entirely.
+    remoteProxy: "",
   },
 
   // Cache TTLs (ms) for localStorage snapshots — the offline fallback only.
@@ -215,29 +228,78 @@ CF.cacheSet = (key, data, ttl) => {
   catch (e) { /* storage full or blocked — ignore */ }
 };
 
-/* ---------------- data source helper: live → proxy → cache ----------------
-   Direct ESPN is the primary source (CORS-open in browsers). If the visitor's
-   network blocks it, we try two public CORS proxies, then the localStorage
-   snapshot the site saved on a previous successful visit. */
+/* ---------------- generic fetch with the full fallback chain ----------------
+   For endpoints outside CF.getSource (game detail, Polymarket, The Odds API,
+   weather). Order: local loopback proxy -> direct -> optional remote proxy.
+   The local attempt fails in milliseconds when the proxy isn't running, so
+   there is no cost for the normal case. */
+CF.fetchVia = async (url, opts) => {
+  opts = opts || {};
+  const t = opts.timeout || 9000;
+  const local = CF.CONFIG.endpoints.localProxy;
+  if (local) {
+    try { return await CF.fetchJSON(local + "/fetch?url=" + encodeURIComponent(url), { timeout: Math.min(6000, t) }); }
+    catch (eLocal) { /* not running, or upstream failed — try direct */ }
+  }
+  try {
+    return await CF.fetchJSON(url, { timeout: t });
+  } catch (directErr) {
+    const remote = CF.CONFIG.endpoints.remoteProxy;
+    if (remote) {
+      return await CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(url), { timeout: 6000 });
+    }
+    throw directErr;
+  }
+};
+
+/* ---------------- data source helper: the full live-feed chain ----------------
+   Every named feed resolves in this order:
+   1) local loopback proxy (Start-Local-Proxy.bat) — the fix for networks
+      where the CDN 403s browser traffic; instant no-op when not running;
+   2) direct fetch — CORS-open, so this is the normal path for most visitors;
+   3) optional remote proxy (e.g. the included Cloudflare Worker) when a URL
+      is set in CF.CONFIG.endpoints.remoteProxy;
+   4) public CORS proxies — last resort for other visitors' odd networks;
+   5) the localStorage snapshot from a previous successful visit.
+   Data that arrives via any proxy is still LIVE data, so it is reported as
+   source "live"; only step 5 (stale snapshot) reports differently. */
 CF.getSource = async (name, fetcher, cacheKey) => {
   const ttl = (CF.CONFIG.ttl[name] != null) ? CF.CONFIG.ttl[name] : 3600e3;
-  // 1) direct
+  const direct = urlFor(name);
+
+  const viaProxy = async (base, timeout) => {
+    const data = await CF.fetchJSON(base + "/fetch?url=" + encodeURIComponent(direct), { timeout: timeout });
+    CF.cacheSet(cacheKey, data, ttl);
+    return { data, source: "live", name };
+  };
+
+  // 1) local loopback proxy
+  if (direct && CF.CONFIG.endpoints.localProxy) {
+    try { return await viaProxy(CF.CONFIG.endpoints.localProxy, 6000); }
+    catch (eLocal) { /* continue the chain */ }
+  }
+  // 2) direct
   try {
     const data = await fetcher();
     CF.cacheSet(cacheKey, data, ttl);
     return { data, source: "live", name };
   } catch (e1) {
-    // 2) proxies (only for known named feeds)
-    const direct = urlFor(name);
-    if (!direct) throw new Error("offline:" + name);
-    for (const proxy of CF.PROXIES) {
-      try {
-        const data = await CF.fetchJSON(proxy(direct), { timeout: 8000 });
-        CF.cacheSet(cacheKey, data, ttl);
-        return { data, source: "proxy", name };
-      } catch (e2) { /* next */ }
+    // 3) optional remote proxy
+    if (direct && CF.CONFIG.endpoints.remoteProxy) {
+      try { return await viaProxy(CF.CONFIG.endpoints.remoteProxy, 6000); }
+      catch (eRemote) { /* continue the chain */ }
     }
-    // 3) local cache
+    // 4) public CORS proxies (helps visitors on unusual networks)
+    if (direct) {
+      for (const proxy of CF.PROXIES) {
+        try {
+          const data = await CF.fetchJSON(proxy(direct), { timeout: 8000 });
+          CF.cacheSet(cacheKey, data, ttl);
+          return { data, source: "proxy", name };
+        } catch (e2) { /* next */ }
+      }
+    }
+    // 5) local snapshot
     const cached = CF.cacheGet(cacheKey);
     if (cached) return { data: cached, source: "cache", name };
     throw new Error("offline:" + name);
@@ -250,7 +312,6 @@ CF.getSource = async (name, fetcher, cacheKey) => {
     if (n === "roster") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/roster";
     if (n === "team") return CF.CONFIG.endpoints.espnBase + "/teams/chicago";
     if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/odds";
-    if (n === "event") return null;
     return null;
   }
 };
@@ -374,7 +435,7 @@ CF.loadWeather = async () => {
   const p = CF.CONFIG.endpoints.weatherParams;
   const qs = Object.keys(p).map((k) => encodeURIComponent(k) + "=" + encodeURIComponent(p[k])).join("&");
   try {
-    const d = await CF.fetchJSON(base + "?" + qs, { timeout: 8000 });
+    const d = await CF.fetchVia(base + "?" + qs, { timeout: 8000 });
     const cur = d.current || {};
     let snowProb = null;
     if (d.daily && d.daily.precipitation_probability_max && d.daily.precipitation_probability_max.length) {

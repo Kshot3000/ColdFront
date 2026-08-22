@@ -89,6 +89,39 @@ GitHub Pages rebuilds automatically — the new version is live in about a minut
 
 (If you ever re-host it elsewhere: push to any repo, then Settings → Pages → Source *Deploy from a branch* → branch `main`, folder `/ (root)`.)
 
+## Keeping the feeds live
+
+Most visitors' browsers hit the ESPN / Polymarket / Open-Meteo APIs directly — the site tries that path first and it "just works". Some networks (residential lines, VPNs) get their browser-fingerprinted traffic 403'd by the CDN edge, and the panels show *snapshot/offline*. For those machines this repo includes a tiny **local feed proxy**:
+
+| File | What it is |
+|---|---|
+| `Start-Local-Proxy.bat` | double-click launcher (starts the proxy minimized, prints a health check) |
+| `proxy/cf-proxy.ps1` | the proxy itself — pure PowerShell + .NET, zero dependencies, loopback-only on port 8799 |
+| `proxy/cf-proxy.log` | runtime log (created on first start; git-ignored) |
+| `proxy/cf-proxy-worker.js` + `proxy/wrangler.toml` | optional Cloudflare Worker with the same API, for phones / other machines |
+
+Every feed resolves in this order: **local proxy → direct → optional remote proxy → public CORS proxies → last snapshot**. So:
+
+- on a machine where the proxy runs, feeds stay live even if that network 403s the browser;
+- everybody else takes the direct path, unchanged;
+- if the proxy isn't running, the local attempt fails in a few milliseconds and the chain moves on — no downside anywhere.
+
+```powershell
+# start (idempotent — safe to re-run; a second instance detects the port and exits)
+.\Start-Local-Proxy.bat
+
+# health check
+curl http://127.0.0.1:8799/healthz        # -> {"ok":true}
+
+# stop: end the powershell.exe whose command line contains "cf-proxy.ps1"
+```
+
+**Auto-start at login:** a shortcut to `Start-Local-Proxy.bat` lives in the Windows *Startup* folder (`shell:startup`) — delete that shortcut to turn auto-start off. This is what keeps the site's data updating constantly while your machine is on.
+
+**Remote / mobile (optional):** deploy `proxy/cf-proxy-worker.js` (e.g. `npm i -g wrangler`, then `wrangler deploy` from `proxy/`) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. Both implementations enforce the same host allow-list; the proxy only ever fetches from ESPN, Polymarket, Open-Meteo, TheSportsDB and The Odds API.
+
+**Troubleshooting:** `proxy/cf-proxy.log` records every upstream fetch with status and byte count. The listener binds `127.0.0.1:8799` only — nothing outside the machine can reach it. If a panel still says *snapshot*, the whole chain was exhausted: check the log, then the pill text on the panel.
+
 ## Editing your data
 
 One config block, one JSON per editable dataset:
