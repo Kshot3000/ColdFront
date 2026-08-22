@@ -116,7 +116,7 @@ Every feed resolves in this order: **local proxy → direct → optional remote 
 - **On the machine that runs the proxy:** open **`http://127.0.0.1:8080/`** — the same site served from loopback. A loopback origin reading a loopback proxy is exactly what browsers allow, so this path is guaranteed live in every browser (it sidesteps the Local Network Access rule above). Bookmark it.
 - **Everywhere else (phone, other computers):** the public site — `https://kshot3000.github.io/ColdFront/` — keeps working through the direct feed path.
 
-One honest caveat: the **standings** panel can say *offline* between seasons — ESPN returns no standings rows in the offseason and the site won't fake any. It comes back on its own when the season data exists.
+One honest caveat: in the preseason the **standings** endpoint is an empty stub, so the site derives a division table from the completed games in the season window and labels it clearly as *preseason · from games played* rather than faking official standings. Official standings take over the moment the league publishes them.
 
 ```powershell
 # start (idempotent — safe to re-run; a second instance detects the port and exits)
@@ -136,11 +136,16 @@ curl http://127.0.0.1:8799/healthz        # -> {"ok":true}
 
 | Panel | Primary | Second source |
 |---|---|---|
-| Scoreboard, schedule, standings, roster, wire, team odds | ESPN site API | — (community JSON for injuries/practice) |
+| Scoreboard, schedule, roster, wire, box scores, leaders | ESPN site API | derived from the scoreboard (per-game box + camp leaders) |
+| Division standings | ESPN standings | **derived preseason table** (W–L from completed games) while the season hasn't started |
 | News | ESPN wire | **Google News RSS** ("Chicago Bears", 100+ outlets) |
+| Injury report | ESPN **league injury report** (per-player status + notes) | roster injury flags → community JSON; **API-Sports** (free key) for structured rows + ETAs |
+| Season player stats / leaders | per-game leaders from the league wire | **API-Sports** (free key) for full-season player stats |
 | Weather strip + cold-front gauge | Open-Meteo | **NOAA/NWS** (`api.weather.gov`, official US forecast) |
 | Prediction markets | Polymarket | — |
 | Vegas lines | The Odds API (your key) | ESPN league wire |
+
+Two **free BYO-key** upgrades are optional and the site works fully without them: [API-Sports](https://www.api-sports.io/) (season stats + injury ETAs, 100 req/day) and [The Odds API](https://the-odds-api.com/) (full Vegas board, 500 req/mo). Each is set on its own page; the key lives only in your browser. Enterprise feeds (Sportradar, Opta/Stats Perform, LSports, SportsDataIO) are real-time, low-latency options priced for production — the site is built to run without them. TheSportsDB is documented only: it returned no reliable Bears data for the NFL during development, so it isn't wired in.
 
 The weather strip shows `NOAA/NWS` when it had to use the fallback, so you can see which source you're reading.
 
@@ -196,6 +201,6 @@ Zero build step, zero npm, zero dependencies. The only external calls are Google
 - `data/*.json` (injuries, practice) only change when you edit + push; expect a short CDN lag after pushing.
 - ESPN's API is blocked on some networks (it was during development); the proxy + snapshot fallback exists for exactly that, but first-visit offline will show honest "offline" panels instead of fake data.
 - Recent Chrome also refuses public pages reading loopback services ("Local Network Access") — the 8080 site mirror exists for exactly that; see *Keeping the feeds live*.
-- Season-level **player** leader tables appear only when the feed exposes `seasonStats`; until then the page points you at the box score + PFR rather than guessing.
-- Injury report rows are community-maintained — the official NFL pregame report always wins.
+- Season-level **player** leader tables use per-game league-wire leaders ("camp leaders") by default; set a free API-Sports key on the About page and they switch to full-season stats automatically.
+- Injury report rows come from the ESPN league injury report (per-player status + notes) with roster flags and a community JSON as fallback — the official NFL pregame report always wins.
 - Polymarket odds are market prices, not bookmaker lines; they can disagree, and both are right.

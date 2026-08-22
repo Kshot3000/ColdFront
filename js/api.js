@@ -10,6 +10,14 @@ CF = CF || {};
 CF.API = {
   base: () => CF.CONFIG.endpoints.espnBase,
 
+  /* ESPN hands scores to us as either a plain string ("34") or an object
+     ({value:34, displayValue:"34"}). Every panel needs a plain value. */
+  score: (x) => {
+    if (x == null) return null;
+    if (typeof x === "object") return (x.displayValue != null) ? x.displayValue : x.value;
+    return x;
+  },
+
   /* ---------- raw ESPN getters ---------- */
   getTeam: async () => {
     const r = await CF.getSource("team", () => CF.fetchJSON(CF.base() + "/teams/chicago", { timeout: 9000 }), "team");
@@ -23,9 +31,12 @@ CF.API = {
 
   getScoreboard: async (dateParam) => {
     const dp = dateParam || CF.todayParam();
+    const url = CF.base() + "/scoreboard?dates=" + dp;
+    // Pass the dated URL through so the proxy path fetches THIS date, not
+    // just today (urlFor("scoreboard") is pinned to the single current day).
     const r = await CF.getSource("scoreboard",
-      () => CF.fetchJSON(CF.base() + "/scoreboard?dates=" + dp, { timeout: 9000 }),
-      "scoreboard." + dp);
+      () => CF.fetchJSON(url, { timeout: 9000 }),
+      "scoreboard." + dp, url);
     return r;
   },
 
@@ -41,6 +52,13 @@ CF.API = {
 
   getRoster: async () => {
     const r = await CF.getSource("roster", () => CF.fetchJSON(CF.base() + "/teams/chicago/roster", { timeout: 9000 }), "roster");
+    return r;
+  },
+
+  /* League-wide injury report. Heavy payload (~9 MB) but it carries the
+     full Bears list: status per player + editorial notes on the wire. */
+  getLeagueInjuries: async () => {
+    const r = await CF.getSource("injuries", () => CF.fetchJSON(CF.base() + "/injuries", { timeout: 15000 }), "injuries");
     return r;
   },
 
@@ -120,8 +138,8 @@ CF.API = {
       state: e.status && e.status.type ? e.status.type.state : "pre",
       display: e.status && e.status.type ? (e.status.type.detail || e.status.type.displayType || "") : "",
       clock: e.status ? (e.status.displayClock || "") : "",
-      home: { abbr: home.team ? home.team.abbreviation : "?", name: home.team ? home.team.displayName : "?", score: home.score || "–" },
-      away: { abbr: away.team ? away.team.abbreviation : "?", name: away.team ? away.team.displayName : "?", score: away.score || "–" },
+      home: { abbr: home.team ? home.team.abbreviation : "?", name: home.team ? home.team.displayName : "?", score: CF.API.score(home.score) || "–" },
+      away: { abbr: away.team ? away.team.abbreviation : "?", name: away.team ? away.team.displayName : "?", score: CF.API.score(away.score) || "–" },
       venue: c.venue ? c.venue.displayName : "",
       city: c.geolocation ? c.geolocation.city + ", " + c.geolocation.state : "",
       tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ") || (c.broadcasts[0].shortNames || []).join(" / ")) : "",
@@ -170,8 +188,8 @@ CF.API = {
         opp: opp.team ? opp.team.displayName : "—",
         oppAbbr: opp.team ? opp.team.abbreviation : "—",
         home: iAmHome,
-        scoreMe: iAmHome ? (home.score || null) : (away.score || null),
-        scoreOpp: iAmHome ? (away.score || null) : (home.score || null),
+        scoreMe: iAmHome ? CF.API.score(home.score) : CF.API.score(away.score),
+        scoreOpp: iAmHome ? CF.API.score(away.score) : CF.API.score(home.score),
         result: it.status && it.status.type ? (it.status.type.detail || it.status.type.shortDetail || "") : "",
         tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "",
         venue: c.venue ? c.venue.displayName : "",
@@ -219,26 +237,289 @@ CF.API = {
     };
   },
 
-  // Roster flattened to players.
+  // Roster flattened to players. Handles both ESPN shapes:
+  //   old: { roster: [{ group, players: [] }] }
+  //   new: { athletes: [{ position: "offense"|"defense"|..., items: [] }] }
+  // Items also carry live status ("Active", "Day-To-Day"…), an injuries[]
+  // list and birthPlace/college, so the team page doubles as the injury
+  // list fallback.
   rosterPlayers: (r) => {
+    let groups = [];
+    if (r && Array.isArray(r.roster)) groups = r.roster.map((g) => ({ group: g.group || g.name || "roster", players: g.players || [] }));
+    else if (r && Array.isArray(r.athletes)) groups = r.athletes.map((g) => ({ group: g.position || g.group || "roster", players: g.items || [] }));
+    else if (Array.isArray(r)) groups = [{ group: "roster", players: r }];
     const out = [];
-    const groups = (r && r.roster) || (Array.isArray(r) ? r : []);
-    groups.forEach((g) => {
-      (g.players || []).forEach((p) => out.push(p));
+    groups.forEach((g) => (g.players || []).forEach((p) => out.push({ p, group: g.group })));
+    return out.map(({ p, group }) => {
+      const inj = (p.injuries && p.injuries[0]) || null;
+      const st = p.status || {};
+      const birth = p.birthPlace || {};
+      const college = p.college && p.college.name ? p.college.name : "";
+      const from = (birth.city ? birth.city + (birth.state ? ", " + birth.state : "") : birth.country) || college || "";
+      const link = (p.links && (p.links[0] && p.links[0].href)) || (p.links && p.links.web ? p.links.web.href : null);
+      return {
+        id: p.id,
+        name: p.displayName || p.name || "—",
+        pos: p.position ? (p.position.abbreviation || p.position) : (p.position || "—"),
+        jersey: p.jersey || "",
+        height: p.displayHeight || p.height || "",
+        weight: p.displayWeight || (p.weight != null ? p.weight + " lb" : ""),
+        age: p.age != null ? p.age : "",
+        exp: (p.experience && p.experience.years != null) ? p.experience.years + " yrs" : (p.experience != null ? String(p.experience) : ""),
+        nation: from,
+        from,
+        college,
+        group,
+        groupIsIR: /injured|out$/i.test(group || ""),
+        statusName: st.name || st.abbreviation || "",
+        statusType: st.type || "",
+        injury: inj ? (inj.status || "") : "",
+        injuryDate: inj ? inj.date : null,
+        stats: p.seasonStats || p.stats || null,
+        url: link,
+      };
     });
-    return out.map((p) => ({
-      id: p.id,
-      name: p.displayName || p.name || "—",
-      pos: p.position ? (p.position.abbreviation || p.position) : (p.position || "—"),
-      jersey: p.jersey || "",
-      height: p.height || "",
-      weight: p.weight != null ? p.weight + " lb" : "",
-      age: p.age != null ? p.age : "",
-      exp: p.experience != null ? p.experience : "",
-      nation: p.nationality ? (p.nationality.displayName || "") : "",
-      stats: p.seasonStats || p.stats || null,
-      url: p.links && p.links.web ? p.links.web.href : null,
+  },
+
+  // Players on the roster who are hurt (IR group, flagged, or non-active).
+  rosterInjuryRows: (r) => {
+    return CF.API.rosterPlayers(r)
+      .filter((p) => p.groupIsIR || p.injury || (p.statusType && p.statusType !== "active"))
+      .map((p) => ({
+        name: p.name,
+        pos: p.pos,
+        status: p.injury || p.statusName || "Listed",
+        date: p.injuryDate || "",
+        comment: p.groupIsIR ? "Listed in the injured group." : (p.statusName || ""),
+        url: p.url,
+      }));
+  },
+
+  // Bears rows + editorial notes from the league-wide injuries payload.
+  bearsInjuryRows: (payload) => {
+    const teams = (payload && payload.injuries) || [];
+    const bears = teams.find((t) => t.displayName === "Chicago Bears" || (t.team || {}).abbreviation === "CHI");
+    const rows = [];
+    const notes = [];
+    (((bears && bears.injuries) || [])).forEach((r) => {
+      const a = r.athlete;
+      const comment = (r.longComment && r.longComment !== r.shortComment) ? r.longComment : (r.shortComment || "");
+      if (!a) { if (comment) notes.push(comment); return; }
+      rows.push({
+        name: a.displayName || "—",
+        pos: a.position ? (a.position.abbreviation || "") : "",
+        status: r.status || "",
+        date: r.date || "",
+        comment: comment,
+        url: a.links && a.links[0] ? a.links[0].href : null,
+      });
+    });
+    return { rows, notes };
+  },
+
+  /* ---------- derived standings (preseason / early season) ----------
+     The league standings endpoint is an empty stub until the regular
+     season starts, so the site reconstructs a division table from the
+     scoreboard over a date range. Every completed game updates W-L-PF-PA
+     for both teams; then the NFC North (or the most active teams) is
+     rendered, clearly labeled as a derived preseason record. */
+  preseasonStandings: async (startParam, endParam) => {
+    const key = startParam + "-" + endParam;
+    const rangeUrl = CF.base() + "/scoreboard?dates=" + key;
+    // Pass the range URL explicitly: urlFor("scoreboard") is hardcoded to the
+    // single day (today), so without this the proxy path would fetch today's
+    // board instead of the season window the derived table needs.
+    const r = await CF.getSource("scoreboard",
+      () => CF.fetchJSON(rangeUrl, { timeout: 15000 }),
+      "scoreboard." + key, rangeUrl);
+    return CF.API.aggregateStandings(r.data);
+  },
+
+  aggregateStandings: (sb) => {
+    const stats = {};
+    const add = (abbr, name, d) => {
+      if (!abbr) return;
+      const s = (stats[abbr] = stats[abbr] || { name: "", gp: 0, w: 0, l: 0, pf: 0, pa: 0 });
+      if (name && !s.name) s.name = name;
+      s.gp += d.gp || 0; s.w += d.w || 0; s.l += d.l || 0; s.pf += d.pf || 0; s.pa += d.pa || 0;
+    };
+    ((sb && sb.events) || []).forEach((e) => {
+      const st = (e.status && e.status.type) || {};
+      if (st.completed !== true && st.state !== "post") return;
+      const c = ((e.competitions) || [])[0] || {};
+      const home = (c.competitors || []).find((x) => x.homeAway === "home");
+      const away = (c.competitors || []).find((x) => x.homeAway === "away");
+      if (!home || !away) return;
+      const hs = CF.API.score(home.score), as_ = CF.API.score(away.score);
+      if (hs == null || as_ == null) return;
+      const ha = (home.team || {}).abbreviation, aa = (away.team || {}).abbreviation;
+      add(ha, (home.team || {}).displayName, { gp: 1, pf: Number(hs) || 0, pa: Number(as_) || 0 });
+      add(aa, (away.team || {}).displayName, { gp: 1, pf: Number(as_) || 0, pa: Number(hs) || 0 });
+      if (Number(hs) > Number(as_)) { add(ha, null, { w: 1 }); add(aa, null, { l: 1 }); }
+      else if (Number(as_) > Number(hs)) { add(aa, null, { w: 1 }); add(ha, null, { l: 1 }); }
+    });
+    const pick = (abbr) => {
+      const s = stats[abbr];
+      return { name: s.name, abbr, gp: s.gp, w: s.w, l: s.l, pct: s.gp ? s.w / s.gp : 0, div: null, streak: "", isMe: abbr === "CHI" };
+    };
+    const north = ["CHI", "DET", "GB", "MIN"].filter((a) => stats[a]);
+    if (north.length >= 3) {
+      const rows = north.map(pick).sort((a, b) => (b.w - a.w) || (a.l - b.l));
+      return { name: north.length === 4 ? "NFC North" : "NFC North (partial)", rows };
+    }
+    const all = Object.keys(stats).sort((a, b) => (stats[b].gp - stats[a].gp) || (stats[b].pf - stats[a].pf));
+    if (!all.length) return null;
+    return { name: "Most-played teams", rows: all.slice(0, 4).map(pick) };
+  },
+
+  // Sensible window for derived standings. It must open early enough to
+  // catch EVERY team's first preseason game — the Bears' first game isn't
+  // necessarily the earliest one (some rivals open a week before us), so we
+  // open at the earlier of the Bears' first scheduled game and a ~3-week
+  // lookback. Only used while the real standings endpoint is an empty stub
+  // (i.e. the preseason), where a wide window is harmless.
+  preseasonStandingsAuto: async () => {
+    const today = new Date();
+    let startD = new Date(today.getTime() - 21 * 86400e3);
+    try {
+      const s = await CF.API.getSchedule();
+      const items = (s.data && (s.data.schedule || s.data.events)) || [];
+      const dates = items.map((it) => new Date(it.date).getTime()).filter((t) => !isNaN(t));
+      if (dates.length) {
+        const firstBears = new Date(Math.min.apply(null, dates));
+        if (firstBears < startD) startD = firstBears;
+      }
+    } catch (e) { /* default window */ }
+    return CF.API.preseasonStandings(CF.todayParam(startD), CF.todayParam(today));
+  },
+
+  /* ---------- one game by ID ----------
+     /events/{id} is a 404 on both ESPN hosts, but the scoreboard for the
+     game's date carries the full event — scores, venue, broadcasts, and
+     the per-game leaders that stand in for box scores in the preseason.
+     Date is resolved from the schedule first, then nearby days. */
+  bearsGameEvent: async (id) => {
+    const dates = [];
+    try {
+      const s = await CF.API.getSchedule();
+      const items = (s.data && (s.data.schedule || s.data.events)) || [];
+      const it = items.find((x) => String(x.id) === String(id));
+      if (it && it.date) {
+        const d = new Date(it.date);
+        if (!isNaN(d.getTime())) dates.push(CF.todayParam(d));
+      }
+    } catch (e) { /* scan nearby days */ }
+    if (!dates.length) dates = [0, -1, -2, -3, -4, -5].map((o) => CF.dayParam(o));
+    for (const dp of dates) {
+      try {
+        const sb = await CF.API.getScoreboard(dp);
+        const e = ((sb.data && sb.data.events) || []).find((x) => String(x.id) === String(id));
+        if (e) return e;
+      } catch (e2) { /* next day */ }
+    }
+    throw new Error("game not found: " + id);
+  },
+
+  // Per-game leader rows from a scoreboard event (the league wire's
+  // standing in for a full box score in the preseason).
+  eventLeaders: (event) => {
+    const c = ((event && event.competitions) || [])[0] || {};
+    const idToAbbr = {};
+    (c.competitors || []).forEach((comp) => {
+      const t = comp.team || {};
+      if (t.id != null && t.abbreviation) idToAbbr[String(t.id)] = t.abbreviation;
+    });
+    const rows = [];
+    (c.leaders || []).forEach((cat) => {
+      (cat.leaders || []).forEach((l) => {
+        const a = l.athlete || {};
+        rows.push({
+          category: cat.name || "",
+          label: cat.displayName || cat.shortDisplayName || cat.name || "Leader",
+          player: a.displayName || "—",
+          pos: a.position ? (a.position.abbreviation || "") : "",
+          jersey: a.jersey || "",
+          value: l.value != null ? Number(l.value) : null,
+          display: l.displayValue || (l.value != null ? String(l.value) : "—"),
+          teamAbbr: idToAbbr[String((l.team || {}).id)] || "",
+          url: a.links && a.links[0] ? a.links[0].href : null,
+        });
+      });
+    });
+    return rows.sort((a, b) => (b.value || 0) - (a.value || 0));
+  },
+
+  /* ---------- API-Sports (optional, BYO free key) ----------
+     Free tier: 100 requests/day. The key never leaves this browser
+     (localStorage, set on the About page). When present, the stats and
+     injuries panels prefer this feed; when absent or unreachable they
+     fall back to the ESPN-derived numbers. NFL = league 39. */
+  apisportsKey: () => { try { return localStorage.getItem("cf.apisportskey") || ""; } catch (e) { return ""; } },
+  setAPISportsKey: (k) => { try { localStorage.setItem("cf.apisportskey", (k || "").trim()); } catch (e) { /* private mode */ } },
+
+  // NFL season year for API-Sports (Aug–Dec → that year, Jan–Jul → prior).
+  nflSeasonYear: () => {
+    const d = new Date();
+    return (d.getMonth() >= 7) ? d.getFullYear() : d.getFullYear() - 1;
+  },
+
+  getAPISports: async (path) => {
+    const key = CF.API.apisportsKey();
+    if (!key) return null;
+    const url = CF.CONFIG.endpoints.apisports + path;
+    const r = await CF.fetchJSON(url, { timeout: 10000, headers: { "x-apisports-key": key, Accept: "application/json" } });
+    return (r && r.response) || [];
+  },
+
+  apisportsStandings: async () => {
+    const d = await CF.API.getAPISports("/standings?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
+    if (!d) return null;
+    const rows = (d || []).map((r) => ({
+      name: (r.team || {}).name, abbr: (r.team || {}).abbreviation,
+      gp: r.played != null ? r.played : null, w: r.win != null ? r.win : null, l: r.lose != null ? r.lose : null,
+      pct: (r.played && r.played > 0) ? (r.win || 0) / r.played : 0,
+      div: r.rank || null, streak: "",
+      isMe: (r.team || {}).abbreviation === "CHI",
     }));
+    if (!rows.length) return null;
+    return { name: (d[0] && d[0].group ? String(d[0].group) : "Division") + " (API-Sports)", rows: rows.sort((a, b) => (b.w - a.w) || (a.l - b.l)) };
+  },
+
+  apisportsPlayerStats: async () => {
+    const d = await CF.API.getAPISports("/players/statistics?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
+    if (!d) return null;
+    const byPlayer = {};
+    (d || []).forEach((row) => {
+      const p = row.player || {};
+      const key = p.id != null ? "id" + p.id : (p.name || Math.random());
+      const rec = (byPlayer[key] = byPlayer[key] || { name: p.name || "—", pos: p.position || "", stats: {} });
+      (row.statistics || []).forEach((s) => {
+        const v = Number(s.value);
+        if (!isNaN(v) && v > 0 && (!rec.stats[s.name] || v > rec.stats[s.name])) rec.stats[s.name] = v;
+      });
+    });
+    const players = Object.values(byPlayer);
+    const colScore = {};
+    players.forEach((p) => Object.keys(p.stats).forEach((k) => { colScore[k] = (colScore[k] || 0) + 1; }));
+    const cols = Object.keys(colScore).sort((a, b) => colScore[b] - colScore[a]).slice(0, 5);
+    if (!cols.length) return null;
+    const top = [...players].sort((a, b) => ((b.stats[cols[0]] || 0) - (a.stats[cols[0]] || 0))).slice(0, 15);
+    return { cols, top };
+  },
+
+  apisportsInjuries: async () => {
+    const d = await CF.API.getAPISports("/injuries?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
+    if (!d) return null;
+    return (d || [])
+      .filter((r) => (r.team || {}).abbreviation === "CHI")
+      .map((r) => ({
+        name: (r.player || {}).name,
+        pos: (r.player || {}).position || "",
+        status: r.status || (r.injured ? "Injured" : "Out"),
+        date: r.injured || "",
+        comment: r.description || "",
+        url: null,
+      }));
   },
 
   // Odds for a single game from the ESPN /odds payload.
@@ -290,3 +571,9 @@ CF.API = {
     }));
   },
 };
+
+/* Every ESPN fetcher calls CF.base(); keep it available at the CF level too
+   (CF.API.base is the source of truth). Without this alias the "direct" leg
+   of the feed chain threw "not a function" and the site only ever worked via
+   a proxy — now the direct fetch is a real, working path for every visitor. */
+CF.base = CF.API.base;

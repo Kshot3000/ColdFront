@@ -26,6 +26,7 @@ const ALLOWED_HOSTS = new Set([
   "api.weather.gov",
   "news.google.com",
   "api.the-odds-api.com",
+  "v3.football.api-sports.io",
 ]);
 
 function cors() {

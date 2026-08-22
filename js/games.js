@@ -78,7 +78,8 @@
   function side(comp, isHome) {
     const abbr = (comp.team || {}).abbreviation || "?";
     const name = (comp.team || {}).displayName || "";
-    return '<div class="side"><div class="abbr">' + CF.esc(abbr) + '</div><div class="score">' + CF.esc(comp.score && comp.score !== "–" ? comp.score : "") + '</div><div class="dim" style="font-size:12px">' + CF.esc(name) + (isHome ? " (home)" : "") + "</div></div>";
+    const sc = CF.API.score(comp.score);
+    return '<div class="side"><div class="abbr">' + CF.esc(abbr) + '</div><div class="score">' + CF.esc(sc != null ? sc : "") + '</div><div class="dim" style="font-size:12px">' + CF.esc(name) + (isHome ? " (home)" : "") + "</div></div>";
   }
 
   /* ---------- season log ---------- */
@@ -146,39 +147,33 @@
     const box = CF.$("#boxscore");
     box.innerHTML = '<div class="empty"><div class="big">📋</div>Pulling the box score…</div>';
     try {
-      const ev = await CF.API.getEvent(gameId);
+      const ev = await CF.API.bearsGameEvent(gameId);
       const c = (ev.competitions || [])[0] || {};
-      const stats = (c.statistics || []).filter((s) => (s.players || []).length);
-      if (!stats.length) throw new Error("no stats");
-      // Build per-player rows.
-      const rows = {};
-      const colNames = [];
-      stats.forEach((s) => {
-        if (!colNames.includes(s.name)) colNames.push(s.name);
-        const vals = Array.isArray(s.displayValue) ? s.displayValue
-          : Array.isArray(s.value) ? s.value
-          : (s.displayValue != null || s.value != null) ? [s.displayValue != null ? s.displayValue : s.value] : null;
-        (s.players || []).forEach((p, i) => {
-          const key = p.id != null ? "id" + p.id : p.displayName;
-          rows[key] = rows[key] || { name: p.displayName || "—", cells: {} };
-          if (vals && vals[i] != null) rows[key].cells[s.name] = String(vals[i]);
-        });
-      });
-      const players = Object.values(rows).sort((a, b) => a.name.localeCompare(b.name));
+      const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
+      const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
+      const hs = CF.API.score(home.score), as_ = CF.API.score(away.score);
+      const leaders = CF.API.eventLeaders(ev);
+      const espn = "https://www.espn.com/nfl/game/_/gameId/" + ev.id;
+      const st = (ev.status && ev.status.type) || {};
+      const scoreBit = (hs != null || as_ != null)
+        ? '<span style="font-size:15px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
+          " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
+          ' <span class="dim">(' + CF.esc((c.venue && c.venue.displayName) || "field") + ")</span></span>"
+        : "";
       let html =
         '<div class="card pad-lg"><div class="badge-row" style="justify-content:space-between">' +
         "<h3 style=\"margin:0\">" + CF.esc(ev.name || "Box score") + "</h3>" +
-        "<span class=\"pill\">" + CF.fmtDate(ev.date) + "</span></div>" +
-        '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl"><thead><tr><th>Player</th>' +
-        colNames.map((n) => '<th class="num">' + CF.esc(statLabel(n)) + "</th>").join("") +
-        "</tr></thead><tbody>" +
-        players.map((p) =>
-          '<tr><td class="strong">' + CF.esc(p.name) + "</td>" +
-          colNames.map((n) => '<td class="num">' + CF.esc(p.cells[n] != null ? p.cells[n] : "·") + "</td>").join("") +
-          "</tr>"
-        ).join("") +
+        '<span class="pill ' + (st.state === "post" ? "final" : "") + '">' + CF.esc(st.shortDetail || st.detail || CF.fmtDate(ev.date)) + "</span></div>" +
+        '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + scoreBit + '</div>' +
+        '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
+        leaders.map((l) => {
+          const nm = l.url ? '<a href="' + CF.esc(l.url) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
+          return '<tr><td class="strong">' + CF.esc(l.label) + "</td>" +
+            "<td>" + nm + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span></td>" +
+            '<td class="num">' + CF.esc(l.display) + "</td></tr>";
+        }).join("") +
         "</tbody></table></div>" +
-        '<p class="src-note">Individual stats from the league wire for this game. <a href="stats.html">Season stats →</a></p></div>';
+        '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="stats.html">Season stats →</a></p></div>';
       box.innerHTML = html;
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">📋</div>Box score unavailable right now — the feed for that game didn\'t answer.</div>';
@@ -191,32 +186,46 @@
     if (row && row.dataset.boxgame) loadBoxscore(row.dataset.boxgame);
   });
 
-  /* ---------- division ---------- */
+  /* ---------- division ----------
+     ESPN standings → (preseason: the endpoint is an empty stub) a table
+     derived from completed games in the season window, clearly labeled. */
   async function loadDivision() {
     const pill = CF.$("#div2-pill");
     const body = CF.$("#div-table-2 tbody");
+    let div = null, label = "";
     try {
       const r = await CF.API.getStandings();
-      const div = CF.API.divisionTable(r.data);
-      if (!div) throw new Error("no division");
-      pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = r.source === "live" ? "live" : "snapshot";
-      body.innerHTML = div.rows.map((row) =>
-        '<tr class="' + (row.isMe ? "me" : "") + '">' +
-        '<td class="strong">' + CF.esc(row.name) + "</td>" +
-        '<td class="num">' + CF.esc(row.gp != null ? row.gp : "—") + "</td>" +
-        '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
-        '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
-        '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
-        '<td class="num">' + CF.esc(row.div != null ? row.div : "—") + "</td>" +
-        '<td>' + CF.esc(row.streak || "") + "</td>" +
-        "</tr>"
-      ).join("");
-    } catch (e) {
+      const d = CF.API.divisionTable(r.data);
+      if (d && d.rows.length) {
+        div = d;
+        label = r.source === "live" ? "live" : "snapshot";
+      }
+    } catch (e) { /* standings stub or feed down — try the derived table */ }
+    if (!div) {
+      try {
+        div = await CF.API.preseasonStandingsAuto();
+        if (div && div.rows.length) label = "preseason · from games played";
+      } catch (e2) { /* fall through to offline */ }
+    }
+    if (!div || !div.rows.length) {
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="7" class="dim">Standings unavailable right now.</td></tr>';
+      return;
     }
+    pill.className = "pill ok";
+    pill.textContent = label;
+    body.innerHTML = div.rows.map((row) =>
+      '<tr class="' + (row.isMe ? "me" : "") + '">' +
+      '<td class="strong">' + CF.esc(row.name) + "</td>" +
+      '<td class="num">' + CF.esc(row.gp != null ? row.gp : "—") + "</td>" +
+      '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
+      '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
+      '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
+      '<td class="num">' + CF.esc(row.div != null ? row.div : "—") + "</td>" +
+      '<td>' + CF.esc(row.streak || "") + "</td>" +
+      "</tr>"
+    ).join("");
   }
 
   /* ---------- date nav ---------- */

@@ -40,65 +40,101 @@
     function tile(v, l) { return '<div class="stat-tile"><b>' + CF.esc(v) + "</b><span>" + CF.esc(l) + "</span></div>"; }
   }
 
-  /* ---------- player leaders (if season stats exposed) ---------- */
+  /* ---------- player leaders ----------
+     1) API-Sports season stats when a key is set on the About page;
+     2) otherwise the league wire's per-game leaders across every
+        completed Bears game — "camp leaders" while the season is young. */
+  function leaderCell(l) {
+    const name = l.url ? '<a href="' + CF.esc(l.url) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
+    return name + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span>";
+  }
+
   async function loadLeaders() {
     const pill = CF.$("#leaders-pill");
     const box = CF.$("#leaders");
+
+    // 1) API-Sports (BYO key) — real season player stats.
+    if (CF.API.apisportsKey()) {
+      try {
+        const d = await CF.API.apisportsPlayerStats();
+        if (d && d.top.length) {
+          pill.className = "pill ok";
+          pill.textContent = "live · API-Sports · top 15 by " + d.cols[0];
+          box.innerHTML =
+            '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>Pos</th>' +
+            d.cols.map((c) => '<th class="num">' + CF.esc(c) + "</th>").join("") +
+            "</tr></thead><tbody>" +
+            d.top.map((p) =>
+              "<tr><td class=\"strong\">" + CF.esc(p.name) + "</td><td>" + CF.esc(p.pos || "—") + "</td>" +
+              d.cols.map((c) => '<td class="num">' + CF.esc(p.stats[c] != null ? p.stats[c] : "·") + "</td>").join("") +
+              "</tr>"
+            ).join("") +
+            "</tbody></table></div>" +
+            '<p class="src-note">Season player stats via <a href="https://www.api-sports.io/" target="_blank" rel="noopener">API-Sports</a> (key set on this device — <a href="about.html#data-sources">manage on About</a>).</p>';
+          return;
+        }
+      } catch (e) { /* key dead or feed down — fall back to the wire */ }
+    }
+
+    // 2) Camp leaders: best per-game leader line from each completed game.
     try {
-      const r = await CF.API.getRoster();
-      const players = CF.API.rosterPlayers(r.data).filter((p) => p.stats);
-      if (!players.length) {
-        pill.className = "pill";
-        pill.textContent = "season stats not on the feed";
-        box.innerHTML =
-          '<div class="empty"><div class="big">🧮</div>' +
-          "The league feed isn\'t exposing season-level player numbers right now (this changes as the season progresses). " +
-          "Meanwhile: the <a href=\"games.html\">box score on the Games page</a> has every completed game, and the <a href=\"https://www.pro-football-reference.com/teams/chi/\" target=\"_blank\" rel=\"noopener\">PFR Bears page ↗</a> has the deep cut.<br></div>";
-        return;
+      const r = await CF.API.getSchedule();
+      const rows = CF.API.scheduleList(r.data);
+      const played = rows
+        .filter((g) => g.scoreMe != null && g.scoreOpp != null)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 4);
+      if (!played.length) throw new Error("no games yet");
+      const best = {};
+      let gamesUsed = 0;
+      for (const g of played) {
+        try {
+          const ev = await CF.API.bearsGameEvent(g.id);
+          gamesUsed++;
+          CF.API.eventLeaders(ev).forEach((l) => {
+            if (!best[l.category] || (l.value || 0) > (best[l.category].value || 0)) {
+              best[l.category] = Object.assign({}, l, { when: CF.fmtDate(g.date) });
+            }
+          });
+        } catch (e2) { /* that game's leaders didn't answer */ }
       }
-      // Pick up to 5 numeric stat columns present on most players.
-      const statNames = [];
-      players.forEach((p) => Object.keys(p.stats || {}).forEach((k) => {
-        const v = p.stats[k];
-        if ((typeof v === "number" || !isNaN(v)) && v > 0 && !statNames.includes(k)) statNames.push(k);
-      }));
-      const cols = statNames.slice(0, 5);
-      if (!cols.length) throw new Error("no columns");
-      const num = (v) => { const n = parseFloat(v); return isNaN(n) ? -1 : n; };
-      const top = [...players].sort((a, b) => num(b.stats[cols[0]]) - num(a.stats[cols[0]])).slice(0, 15);
+      const rowsOut = Object.values(best);
+      if (!rowsOut.length) throw new Error("no leaders");
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · top 15 by " + statLabel(cols[0]);
+      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · camp leaders · " + gamesUsed + " game" + (gamesUsed === 1 ? "" : "s");
       box.innerHTML =
-        '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>Pos</th>' +
-        cols.map((c) => '<th class="num">' + CF.esc(statLabel(c)) + "</th>").join("") +
-        "</tr></thead><tbody>" +
-        top.map((p) =>
-          "<tr><td class=\"strong\">" + CF.esc(p.name) + "</td><td>" + CF.esc(p.pos) + "</td>" +
-          cols.map((c) => '<td class="num">' + CF.esc(p.stats[c] != null ? p.stats[c] : "·") + "</td>").join("") +
-          "</tr>"
+        '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th><th>When</th></tr></thead><tbody>' +
+        rowsOut.map((l) =>
+          "<tr><td class=\"strong\">" + CF.esc(l.label) + "</td>" +
+          "<td>" + leaderCell(l) + "</td>" +
+          '<td class="num">' + CF.esc(l.display) + "</td>" +
+          '<td class="dim">' + CF.esc(l.when || "") + "</td></tr>"
         ).join("") +
-        "</tbody></table></div>";
+        "</tbody></table></div>" +
+        '<p class="src-note">Per-game leaders from the league wire across the completed games so far. Full season stats land here the moment the feed exposes them — or set an <a href="about.html#data-sources">API-Sports key</a> on the About page.</p>';
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      box.innerHTML = '<div class="empty"><div class="big">📊</div>Leaders unavailable — no snapshot on this device yet.</div>';
+      box.innerHTML = '<div class="empty"><div class="big">📊</div>Leaders unavailable — no completed games on the wire yet, and no snapshot on this device.</div>';
     }
   }
 
-  /* ---------- last game box score ---------- */
+  /* ---------- last game box ----------
+     /events/{id} is a 404 on both ESPN hosts, so the box is rebuilt from
+     the scoreboard event: final score + the league wire's per-game leaders
+     + a deep link to the ESPN game page for the full stat sheet. */
   async function loadLastBox() {
     const pill = CF.$("#lastbox-pill");
     const box = CF.$("#lastbox");
-    let gameId = null;
+    let last = null;
     try {
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
       const now = Date.now();
-      const last = rows
-        .filter((g) => new Date(g.date).getTime() < now - 6 * 3600e3 && g.scoreMe != null)
+      last = rows
+        .filter((g) => new Date(g.date).getTime() < now - 6 * 3600e3 && g.scoreMe != null && g.scoreOpp != null)
         .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-      if (last) gameId = last.id;
-      else throw new Error("no completed games in the log");
+      if (!last) throw new Error("no completed games in the log");
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
@@ -106,37 +142,36 @@
       return;
     }
     try {
-      const ev = await CF.API.getEvent(gameId);
+      const ev = await CF.API.bearsGameEvent(last.id);
       const c = (ev.competitions || [])[0] || {};
-      const stats = (c.statistics || []).filter((s) => (s.players || []).length);
-      if (!stats.length) throw new Error("no stats");
-      const rows = {};
-      const colNames = [];
-      stats.forEach((s) => {
-        if (!colNames.includes(s.name)) colNames.push(s.name);
-        const vals = Array.isArray(s.displayValue) ? s.displayValue
-          : Array.isArray(s.value) ? s.value
-          : (s.displayValue != null || s.value != null) ? [s.displayValue != null ? s.displayValue : s.value] : null;
-        (s.players || []).forEach((p, i) => {
-          const key = p.id != null ? "id" + p.id : p.displayName;
-          rows[key] = rows[key] || { name: p.displayName || "—", cells: {} };
-          if (vals && vals[i] != null) rows[key].cells[s.name] = String(vals[i]);
-        });
-      });
-      const players = Object.values(rows).sort((a, b) => a.name.localeCompare(b.name));
+      const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
+      const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
+      const hs = CF.API.score(home.score), as_ = CF.API.score(away.score);
+      const iAmHome = (home.team || {}).abbreviation === "CHI";
+      const me = iAmHome ? hs : as_, opp = iAmHome ? as_ : hs;
+      const leaders = CF.API.eventLeaders(ev);
+      const espn = "https://www.espn.com/nfl/game/_/gameId/" + ev.id;
+      const st = (ev.status && ev.status.type) || {};
       pill.className = "pill ok";
-      pill.textContent = CF.esc(ev.name || "last game");
+      pill.textContent = ev.name || "last game";
       box.innerHTML =
-        '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th>' +
-        colNames.map((n) => '<th class="num">' + CF.esc(statLabel(n)) + "</th>").join("") +
-        "</tr></thead><tbody>" +
-        players.map((p) =>
-          '<tr><td class="strong">' + CF.esc(p.name) + "</td>" +
-          colNames.map((n) => '<td class="num">' + CF.esc(p.cells[n] != null ? p.cells[n] : "·") + "</td>").join("") +
-          "</tr>"
-        ).join("") +
-        "</tbody></table></div>" +
-        '<p class="src-note">From the league wire for ' + CF.esc(ev.name || "the last game") + '. <a href="games.html">More games →</a></p>';
+        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
+        '<span class="pill final">' + CF.esc(st.shortDetail || st.detail || "final") + "</span>" +
+        '<span style="font-size:14.5px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
+        " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
+        ' <span class="dim">(' + CF.esc((c.venue && c.venue.displayName) || "Soldier Field") + ", " + CF.fmtDate(ev.date) + ")</span></span>" +
+        (me != null && opp != null ? '<span class="st ' + (Number(me) > Number(opp) ? "active" : "out") + '">' + (Number(me) > Number(opp) ? "W" : "L") + " " + CF.esc(me) + "–" + CF.esc(opp) + " (CHI)</span>" : "") +
+        "</div>" +
+        (leaders.length
+          ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
+            leaders.map((l) =>
+              "<tr><td class=\"strong\">" + CF.esc(l.label) + "</td>" +
+              "<td>" + leaderCell(l) + "</td>" +
+              '<td class="num">' + CF.esc(l.display) + "</td></tr>"
+            ).join("") +
+            "</tbody></table></div>"
+          : "") +
+        '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="games.html">More games →</a></p>';
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "feed quiet";

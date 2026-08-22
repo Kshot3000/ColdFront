@@ -111,6 +111,11 @@ CF.CONFIG = {
     },
     polymarket: "https://gamma-api.polymarket.com/events",
 
+    // Optional BYO-key source (About page, free tier 100 req/day). NFL =
+    // league 39. The key lives only in the browser's localStorage.
+    apisports: "https://v3.football.api-sports.io",
+    apisportsLeague: 39,
+
     // Local loopback feed proxy (proxy/cf-proxy.ps1, started via
     // Start-Local-Proxy.bat). Tried FIRST by every feed: on networks where
     // ESPN's CDN 403s browser traffic (residential lines, VPNs), the proxy
@@ -129,7 +134,7 @@ CF.CONFIG = {
   // Every visit still tries the live feed first; these bound how old the
   // snapshot can be when the network is down. Kept short so even the
   // fallback is fresh.
-  ttl: { scoreboard: 10 * 60e3, news: 30 * 60e3, schedule: 3600e3, standings: 3600e3, roster: 3600e3, weather: 10 * 60e3 },
+  ttl: { scoreboard: 10 * 60e3, news: 30 * 60e3, schedule: 3600e3, standings: 3600e3, roster: 3600e3, weather: 10 * 60e3, injuries: 5 * 60e3 },
 };
 
 /* ---------------- tiny utilities ---------------- */
@@ -211,8 +216,9 @@ CF.fetchJSON = async (url, opts) => {
   const timeout = opts.timeout || 9000;
   const ctrl = new AbortController();
   const h = setTimeout(() => ctrl.abort(), timeout);
+  const headers = Object.assign({ Accept: "application/json, text/xml;q=0.9, */*;q=0.8" }, opts.headers || {});
   try {
-    const r = await fetch(url, Object.assign({ signal: ctrl.signal, headers: { Accept: "application/json, text/xml;q=0.9, */*;q=0.8" } }, opts.init || {}));
+    const r = await fetch(url, Object.assign({ signal: ctrl.signal, headers: headers }, opts.init || {}));
     if (!r.ok) throw new Error("HTTP " + r.status);
     const text = await r.text();
     try { return JSON.parse(text); }
@@ -300,9 +306,9 @@ CF.fetchText = async (url, opts) => {
    5) the localStorage snapshot from a previous successful visit.
    Data that arrives via any proxy is still LIVE data, so it is reported as
    source "live"; only step 5 (stale snapshot) reports differently. */
-CF.getSource = async (name, fetcher, cacheKey) => {
+CF.getSource = async (name, fetcher, cacheKey, directUrl) => {
   const ttl = (CF.CONFIG.ttl[name] != null) ? CF.CONFIG.ttl[name] : 3600e3;
-  const direct = urlFor(name);
+  const direct = directUrl || urlFor(name);
 
   const viaProxy = async (base, timeout) => {
     const data = await CF.fetchJSON(base + "/fetch?url=" + encodeURIComponent(direct), { timeout: timeout });
@@ -349,6 +355,7 @@ CF.getSource = async (name, fetcher, cacheKey) => {
     if (n === "roster") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/roster";
     if (n === "team") return CF.CONFIG.endpoints.espnBase + "/teams/chicago";
     if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/odds";
+    if (n === "injuries") return CF.CONFIG.endpoints.espnBase + "/injuries";
     return null;
   }
 };
@@ -455,11 +462,13 @@ CF.coldFrontGauge = (w) => {
   if (!w) return null;
   const tC = (w.feelsC != null) ? w.feelsC : w.apparent_temperature;
   const wind = w.gusts || w.wind || w.wind_gusts_10m || w.wind_speed_10m || 0;
-  const snow = w.snowProb || 0;
+  // Real snowfall (cm) today — NOT the chance of precipitation, which in
+  // August is just the odds of a summer storm.
+  const snow = (w.snowCm != null) ? Number(w.snowCm) : 0;
   let score = 0;
   if (tC < 0) score += 55; else if (tC < 5) score += 42; else if (tC < 10) score += 28; else if (tC < 16) score += 12;
   if (wind >= 60) score += 35; else if (wind >= 40) score += 26; else if (wind >= 25) score += 15;
-  if (snow >= 60) score += 25; else if (snow >= 25) score += 12;
+  if (snow >= 5) score += 25; else if (snow >= 1) score += 12;
   score = Math.min(100, score);
   let label = "Mild for the Midwest", cls = "mild";
   if (score >= 70) { label = "Blizzard watch — bring the beanie"; cls = "blizzard"; }
@@ -474,9 +483,14 @@ CF.loadWeather = async () => {
   try {
     const d = await CF.fetchVia(base + "?" + qs, { timeout: 8000 });
     const cur = d.current || {};
-    let snowProb = null;
+    // precipProb = chance of ANY precipitation today (rain in summer).
+    // snowCm     = actual snowfall today in cm (the only real "snow" signal).
+    let precipProb = null, snowCm = null;
     if (d.daily && d.daily.precipitation_probability_max && d.daily.precipitation_probability_max.length) {
-      snowProb = d.daily.precipitation_probability_max[0];
+      precipProb = d.daily.precipitation_probability_max[0];
+    }
+    if (d.daily && d.daily.snowfall_sum && d.daily.snowfall_sum.length) {
+      snowCm = d.daily.snowfall_sum[0];
     }
     const wx = {
       tempC: cur.temperature_2m,
@@ -486,7 +500,8 @@ CF.loadWeather = async () => {
       humidity: cur.relative_humidity_2m,
       code: cur.weather_code,
       time: cur.time,
-      snowProb,
+      snowProb: precipProb,
+      snowCm,
       daily: d.daily || null,
       source: "open-meteo",
     };
@@ -528,6 +543,9 @@ CF.loadWeatherNWS = async () => {
     phrase: (obs && obs.textDescription) || (p0 && p0.shortForecast) || "NOAA/NWS",
     time: obs ? obs.timestamp : (p0 ? p0.endTime : null),
     snowProb: p0 && p0.probabilityOfPrecipitation && p0.probabilityOfPrecipitation.value != null ? p0.probabilityOfPrecipitation.value : null,
+    snowCm: null,
+    // NWS gives no snowfall total here; the forecast wording is the signal.
+    snowWord: /\b(snow|snowshowers?)\b/i.test(((obs && obs.textDescription) || (p0 && p0.shortForecast) || "")),
     daily: null,
     source: "nws",
   };
@@ -545,6 +563,7 @@ CF.renderWeatherStrip = (root) => {
     '<span class="wx-item"><span class="wx-dot"></span><b>41.88°N 87.63°W</b></span>' +
     '<span class="wx-gauge" id="wx-gauge">reading the front…</span>';
   const update = () => CF.loadWeather().then((wx) => {
+    CF.setSnow(CF.snowShouldFall(wx)); // let the flake machine follow the real weather
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
     if (!wx) {
@@ -559,7 +578,9 @@ CF.renderWeatherStrip = (root) => {
       " · feels <b>" + f(wx.feelsC) + "°F</b>" +
       " · wind <b>" + Math.round(wx.wind) + " km/h</b>" +
       (wx.gusts ? " (gusts " + Math.round(wx.gusts) + ")" : "") +
-      (wx.snowProb != null ? " · snow " + Math.round(wx.snowProb) + "%" : "") +
+      (wx.snowCm != null && Number(wx.snowCm) > 0 ? " · snow " + (Math.round(Number(wx.snowCm) * 10) / 10) + " cm" : "") +
+      (wx.snowWord ? " · snow in the forecast" : "") +
+      (wx.snowProb != null && !wx.snowWord ? " · rain " + Math.round(wx.snowProb) + "%" : "") +
       (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NOAA/NWS</span>' : "") +
       (wx.offline ? ' · <span class="wx-offline">cached</span>' : "");
     if (wx.gauge) {
@@ -571,19 +592,39 @@ CF.renderWeatherStrip = (root) => {
   CF.refresh.register(update, CF.CONFIG.ttl.weather || 60e4); // re-read the front every 10 min while the page is open
 };
 
-/* ---------------- snow canvas ---------------- */
-CF.startSnow = () => {
-  const canvas = CF.$("#snow");
-  if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const ctx = canvas.getContext("2d");
-  let W, H, flakes = [];
+/* ---------------- snow canvas (weather- and season-aware) ----------------
+   The theme is winter football, but it's still summer in August, so the
+   flake machine only spins on REAL snow signals: a WMO snow weather code,
+   actual snowfall today (Open-Meteo snowfall_sum >= 0.2 cm), the NWS
+   forecast wording saying snow, or sub-freezing temps. "Chance of
+   precipitation" is NOT a snow signal — in August that's just the odds of a
+   summer storm. With no weather data at all, it falls back to Chicago's
+   real snow window (Nov-Mar). Respects prefers-reduced-motion. */
+CF.snowShouldFall = (wx) => {
+  if (wx && typeof wx === "object") {
+    const code = Number(wx.code) || 0;
+    const SNOW_CODES = [56, 57, 66, 67, 71, 73, 75, 77, 85, 86];
+    if (SNOW_CODES.indexOf(code) >= 0) return true;
+    if (wx.snowCm != null && Number(wx.snowCm) >= 0.2) return true; // actual snowfall today
+    if (wx.snowWord) return true; // NWS forecast wording: snow
+    const t = (wx.feelsC != null) ? wx.feelsC : wx.tempC;
+    if (t != null && Number(t) <= 2) return true;
+    return false;
+  }
+  const m = new Date().getMonth(); // 0 = Jan
+  return m >= 10 || m <= 2;
+};
+
+CF.setSnow = (on) => {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) on = false;
+  if (CF._snowOn === on) return;
+  CF._snowOn = on;
+  if (on) CF._snow.start(); else CF._snow.stop();
+};
+
+CF._snow = (function () {
   const N = 70;
-  const resize = () => {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  };
-  resize();
-  window.addEventListener("resize", resize);
+  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false;
   const mk = (init) => ({
     x: Math.random() * W,
     y: init ? Math.random() * H : -6,
@@ -593,12 +634,11 @@ CF.startSnow = () => {
     a: 0.25 + Math.random() * 0.55,
     sway: Math.random() * Math.PI * 2,
   });
-  for (let i = 0; i < N; i++) flakes.push(mk(true));
-  let running = true;
-  document.addEventListener("visibilitychange", () => {
-    running = !document.hidden;
-    if (running) loop();
-  });
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  function onVis() {
+    if (document.hidden) { running = false; cancelAnimationFrame(raf); }
+    else if (CF._snowOn) { running = true; loop(); }
+  }
   function loop() {
     if (!running) return;
     ctx.clearRect(0, 0, W, H);
@@ -616,9 +656,40 @@ CF.startSnow = () => {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
-    requestAnimationFrame(loop);
+    raf = requestAnimationFrame(loop);
   }
-  loop();
+  function start() {
+    if (running) return;
+    canvas = CF.$("#snow");
+    if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    ctx = canvas.getContext("2d");
+    resize();
+    window.addEventListener("resize", resize);
+    document.addEventListener("visibilitychange", onVis);
+    flakes = [];
+    for (let i = 0; i < N; i++) flakes.push(mk(true));
+    running = true;
+    loop();
+  }
+  function stop() {
+    running = false;
+    cancelAnimationFrame(raf);
+    window.removeEventListener("resize", resize);
+    document.removeEventListener("visibilitychange", onVis);
+    if (ctx) ctx.clearRect(0, 0, W, H);
+  }
+  return { start, stop };
+})();
+
+/* Shared status pill class for injury rows (Out / Questionable / IR / …). */
+CF.injStatusCls = (s) => {
+  const x = (s || "").toLowerCase();
+  if (x.includes("injured reserve") || x === "ir") return "out";
+  if (x.includes("out")) return "out";
+  if (x.includes("questionable") || x.includes("doubtful")) return "questionable";
+  if (x.includes("day")) return "day-to-day";
+  if (x.includes("suspens")) return "out";
+  return "active";
 };
 
 /* ---------------- nav + chrome ---------------- */
@@ -653,7 +724,10 @@ CF.initChrome = () => {
   }
 
   CF.renderWeatherStrip();
-  CF.startSnow();
+  // Snow decision: use the last cached reading if we have one, otherwise
+  // the calendar (Nov-Mar in Chicago). renderWeatherStrip re-decides as
+  // soon as the live weather answers — no August blizzards.
+  CF.setSnow(CF.snowShouldFall(CF.cacheGet("weather")));
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();

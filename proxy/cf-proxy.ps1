@@ -80,7 +80,8 @@ public static class CFProxy
         "api.open-meteo.com",
         "api.weather.gov",
         "news.google.com",
-        "api.the-odds-api.com"
+        "api.the-odds-api.com",
+        "v3.football.api-sports.io"
     };
 
     public static void Start(int port, string logFile)

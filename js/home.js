@@ -118,29 +118,43 @@
     }
   }
 
-  /* ---------- division standings ---------- */
+  /* ---------- division standings ----------
+     ESPN standings → (preseason: the endpoint is an empty stub) a table
+     derived from completed games in the season window, clearly labeled. */
   async function loadStandings() {
     const pill = CF.$("#div-pill");
     const body = CF.$("#div-table tbody");
+    let div = null, label = "";
     try {
       const r = await CF.API.getStandings();
-      const div = CF.API.divisionTable(r.data);
-      pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = r.source === "live" ? "live" : "snapshot";
-      if (!div) throw new Error("no division");
-      body.innerHTML = div.rows.map((row) =>
-        '<tr class="' + (row.isMe ? "me" : "") + '">' +
-        '<td class="strong">' + CF.esc(row.abbr) + " · " + CF.esc(row.name.replace(row.abbr + " ", "")) + "</td>" +
-        '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
-        '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
-        '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
-        "</tr>"
-      ).join("");
-    } catch (e) {
+      const d = CF.API.divisionTable(r.data);
+      if (d && d.rows.length) {
+        div = d;
+        label = r.source === "live" ? "live" : "snapshot";
+      }
+    } catch (e) { /* standings stub or feed down — try the derived table */ }
+    if (!div) {
+      try {
+        div = await CF.API.preseasonStandingsAuto();
+        if (div && div.rows.length) label = "preseason · from games played";
+      } catch (e2) { /* fall through to offline */ }
+    }
+    if (!div || !div.rows.length) {
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="4" class="dim">Standings unavailable right now — check back when the feed is reachable.</td></tr>';
+      return;
     }
+    pill.className = "pill ok";
+    pill.textContent = label;
+    body.innerHTML = div.rows.map((row) =>
+      '<tr class="' + (row.isMe ? "me" : "") + '">' +
+      '<td class="strong">' + CF.esc(row.abbr) + " · " + CF.esc(row.name.replace(row.abbr + " ", "")) + "</td>" +
+      '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
+      '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
+      '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
+      "</tr>"
+    ).join("");
   }
 
   /* ---------- news (top 4) ---------- */
@@ -156,35 +170,77 @@
       "</div>" + thumb + "</div>";
   }
 
+  function wideItemHTML(it) {
+    return '<div class="news-item"><div>' +
+      '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+      '<div class="meta"><span>' + CF.esc(it.source || "the wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
+      '</div><div class="thumb-fallback">❄</div></div>';
+  }
+
   async function loadNews() {
     const box = CF.$("#home-news");
     const pill = CF.$("#wire-pill");
+    // 1) ESPN league wire first (it's quiet in the offseason, though…).
     try {
       const news = await CF.API.getNews();
       const items = (news || []).slice(0, 4);
-      if (!items.length) throw new Error("empty");
-      box.innerHTML = items.map(newsItemHTML).join("");
-      pill.textContent = "live feed";
-    } catch (e) {
+      if (items.length) {
+        box.innerHTML = items.map(newsItemHTML).join("");
+        pill.textContent = "live feed";
+        return;
+      }
+    } catch (e) { /* wire silent or unreachable */ }
+    // 2) The wide wire: Google News RSS across 100+ outlets.
+    try {
+      const items = await CF.API.getGoogleNews("Chicago Bears", 4);
+      box.innerHTML = items.map(wideItemHTML).join("");
+      pill.textContent = "wide wire · Google News";
+    } catch (e2) {
       pill.textContent = "offline";
       box.innerHTML = '<div class="empty"><div class="big">📡</div>' +
-        "The wire is down on this network and no snapshot is saved yet.<br>" +
-        "Once the feed answers (or you visit while online), headlines cache locally." +
+        "Both wires are down on this network and no snapshot is saved yet.<br>" +
+        "Once either feed answers (or you visit while online), headlines cache locally." +
         '<br><a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a></div>';
     }
   }
 
-  /* ---------- injury snapshot (local JSON) ---------- */
+  /* ---------- injury snapshot ----------
+     Live league report (per-player status) → roster flags → community
+     JSON as the last resort. */
+  function injRowHTML(row) {
+    return '<tr><td class="strong">' + CF.esc(row.name) +
+      (row.url ? ' <a href="' + CF.esc(row.url) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
+      "</td><td>" + CF.esc(row.pos || "—") + "</td><td>" + CF.esc(row.comment || row.injury || "—") +
+      "</td><td><span class=\"st " + CF.esc(CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>";
+  }
+
   async function loadInjuries() {
     const body = CF.$("#home-injuries tbody");
+    let rows = [];
+    try {
+      const r = await CF.API.getLeagueInjuries();
+      const x = CF.API.bearsInjuryRows(r.data);
+      rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active");
+    } catch (e) { /* league feed silent */ }
+    if (!rows.length) {
+      try {
+        const r2 = await CF.API.getRoster();
+        rows = CF.API.rosterInjuryRows(r2.data);
+      } catch (e2) { /* roster silent too */ }
+    }
+    if (rows.length) {
+      body.innerHTML = rows.slice(0, 3).map(injRowHTML).join("");
+      return;
+    }
+    // Community-maintained JSON, last resort.
     try {
       const r = await fetch("data/injuries.json", { cache: "no-cache" });
       const data = await r.json();
-      const rows = (data.rows || []).slice(0, 3);
-      body.innerHTML = rows.length ? rows.map((row) =>
-        "<tr><td class=\"strong\">" + CF.esc(row.name) + "</td><td>" + CF.esc(row.pos) + "</td><td>" + CF.esc(row.injury) + "</td><td><span class=\"st " + CF.esc(row.statusCls) + "\">" + CF.esc(row.status) + "</span></td></tr>"
+      const local = (data.rows || []).slice(0, 3);
+      body.innerHTML = local.length ? local.map((row) =>
+        "<tr><td class=\"strong\">" + CF.esc(row.name) + "</td><td>" + CF.esc(row.pos) + "</td><td>" + CF.esc(row.injury) + "</td><td><span class=\"st " + CF.esc(row.statusCls || CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>"
       ).join("") : '<tr><td colspan="4" class="dim">Report is empty right now — all clear? Suspicious. Check back.</td></tr>';
-    } catch (e) {
+    } catch (e3) {
       body.innerHTML = '<tr><td colspan="4" class="dim">Report unavailable.</td></tr>';
     }
   }

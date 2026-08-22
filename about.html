@@ -115,6 +115,38 @@
     </div>
     <div class="social-grid" id="all-socials"></div>
 
+    <!-- Data sources (BYO-key upgrades) -->
+    <div class="section-head" id="data-sources">
+      <h2>Optional data sources</h2>
+      <span class="tag">BYO-key upgrades · stored only in this browser</span>
+      <span class="rule"></span>
+    </div>
+    <p class="dim" style="max-width:640px;font-size:14px;margin-bottom:16px">
+      Everything above is keyless and works out of the box. For deeper stats or structured injury ETAs, drop a free key into the box below. It lives in this browser's local storage only — it's never written to the site or shared, and it's sent only to that provider.
+    </p>
+    <div class="grid grid-2">
+      <div class="card pad-lg">
+        <div class="eyebrow">API-Sports · free tier</div>
+        <h3 style="font-size:20px">Season stats + injury ETAs</h3>
+        <p class="dim" style="font-size:13.5px;margin-top:8px">When a key is set, the <a href="stats.html">stats</a> and <a href="injuries.html">injury</a> panels switch to full-season player stats and structured injury rows with return ETAs. 100 requests/day free.</p>
+        <div class="key-box" style="margin-top:14px">
+          <input id="apisports-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API-Sports key…" aria-label="API-Sports key">
+          <button class="btn small" id="apisports-save" type="button">Save key</button>
+          <button class="btn small" id="apisports-clear" type="button">Clear</button>
+        </div>
+        <p class="dim" id="apisports-state" style="font-size:12.5px;margin-top:10px"></p>
+        <a class="btn small" href="https://www.api-sports.io/" target="_blank" rel="noopener" style="margin-top:12px">Get a free API-Sports key ↗</a>
+      </div>
+      <div class="card pad-lg">
+        <div class="eyebrow">Odds API · free tier</div>
+        <h3 style="font-size:20px">Full Vegas board</h3>
+        <p class="dim" style="font-size:13.5px;margin-top:8px">The <a href="odds.html">odds page</a> already asks for a key right where it's used (500 requests/month free). It stays in this browser, same as everything else — no need to set it here.</p>
+        <div class="dim" style="font-size:12.5px;margin-top:14px;line-height:1.5">
+          <b>Enterprise feeds</b> — Sportradar, Opta/Stats Perform, LSports, SportsDataIO — are real-time, low-latency feeds priced for production. They're documented as BYO-key options in the <a href="https://github.com/Kshot3000/ColdFront/blob/main/README.md" target="_blank" rel="noopener">README</a> rather than hard-wired into a static fan site.
+        </div>
+      </div>
+    </div>
+
     <div class="callout info" style="margin-top:30px">
       <b>Colophon:</b> hand-rolled HTML/CSS/JS, no build step, no tracker, no cookie. Fonts from Google (with system fallbacks), snow from a 70-flake canvas, weather from Open-Meteo, football from the league wire, and the market from Polymarket. Source is on GitHub — fork it, fix it, tell the Bears.
     </div>

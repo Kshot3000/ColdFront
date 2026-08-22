@@ -68,9 +68,41 @@
       ).join("");
   }
 
+  function dataSources() {
+    const input = CF.$("#apisports-key");
+    const state = CF.$("#apisports-state");
+    if (!input || !state) return;
+    const showState = () => {
+      const key = CF.API.apisportsKey();
+      if (key) {
+        state.textContent = "Key on this device: " + key.slice(0, 3) + "…" + key.slice(-2) +
+          "  — the stats and injury panels are reading API-Sports. The site itself never stores or shares it.";
+      } else {
+        state.textContent = "No key set on this device yet. Stats and injuries use the league wire + derived numbers until one is added.";
+      }
+    };
+    showState();
+    CF.$("#apisports-save").addEventListener("click", () => {
+      CF.API.setAPISportsKey(input.value);
+      input.value = "";
+      CF.toast("API-Sports key saved to this device ✓");
+      showState();
+    });
+    CF.$("#apisports-clear").addEventListener("click", () => {
+      CF.API.setAPISportsKey("");
+      input.value = "";
+      CF.toast("API-Sports key cleared from this device");
+      showState();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") CF.$("#apisports-save").click();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     donations();
     projects();
     socials();
+    dataSources();
   });
 })();
