@@ -47,14 +47,42 @@
     }
   }
 
+  /* ---------- second source: Google News RSS ("Chicago Bears") ---------- */
+  async function loadGoogle() {
+    const pill = CF.$("#gn-pill");
+    const list = CF.$("#gn-list");
+    if (!pill || !list) return;
+    try {
+      const items = await CF.API.getGoogleNews('Chicago Bears', 10);
+      list.innerHTML = items.map((it) =>
+        '<div class="news-item"><div>' +
+        '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+        '<div class="meta"><span>' + CF.esc(it.source || "the wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
+        "</div></div>"
+      ).join("");
+      pill.className = "pill ok";
+      pill.textContent = "live · " + items.length + " stories";
+    } catch (e) {
+      pill.className = "pill sample";
+      pill.textContent = "offline";
+      list.innerHTML =
+        '<div class="empty"><div class="big">📰</div>' +
+        "The wide wire is unreachable from this network right now.<br>" +
+        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Read it on Google News ↗</a></div>';
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     load();
+    loadGoogle();
     CF.$("#refresh").addEventListener("click", () => {
       CF.toast("Refreshing the wire…");
       load();
+      loadGoogle();
     });
     // Auto-refresh every 5 min while the tab is open (CF.refresh in common.js
     // already handles hidden-tab skip + catch-up on return).
     CF.refresh.register(load, 5 * 60e3, { name: "wire" });
+    CF.refresh.register(loadGoogle, 5 * 60e3, { name: "wide wire" });
   });
 })();

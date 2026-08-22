@@ -72,6 +72,27 @@ CF.API = {
     return events;
   },
 
+  /* ---------- Google News RSS (second news source, no key) ----------
+     Returns [{title, link, source, date, desc}]. Rides the same fallback
+     chain as everything else (local proxy first, then direct — which fails
+     on CORS, so effectively: local proxy or public proxies). */
+  getGoogleNews: async (query, max) => {
+    const q = query || 'Chicago Bears';
+    const url = CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en";
+    const xml = await CF.fetchText(url, { timeout: 10000 });
+    const doc = new DOMParser().parseFromString(xml, "text/xml");
+    const items = Array.from(doc.querySelectorAll("item"))
+      .map((el) => {
+        const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
+        return { title: t("title"), link: t("link"), source: t("source"), date: t("pubDate"), desc: t("description") };
+      })
+      .filter((it) => it.title && it.link)
+      .slice(0, max || 12);
+    if (!items.length) throw new Error("empty news feed");
+    CF.cacheSet("gnews." + q, items, 5 * 60e4);
+    return items;
+  },
+
   /* ---------- The Odds API (optional, user's own key) ---------- */
   getOddsApi: async (key) => {
     const qs = "api_key=" + encodeURIComponent(key) + "&region=us&marketType=qlf&dateFormat=iso";

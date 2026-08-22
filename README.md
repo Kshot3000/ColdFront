@@ -130,7 +130,19 @@ curl http://127.0.0.1:8799/healthz        # -> {"ok":true}
 
 **Auto-start at login:** a shortcut to `Start-Local-Proxy.bat` lives in the Windows *Startup* folder (`shell:startup`) — delete that shortcut to turn auto-start off. This is what keeps the site's data updating constantly while your machine is on.
 
-**Remote / mobile (optional):** deploy `proxy/cf-proxy-worker.js` (e.g. `npm i -g wrangler`, then `wrangler deploy` from `proxy/`) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. Both implementations enforce the same host allow-list; the proxy only ever fetches from ESPN, Polymarket, Open-Meteo, TheSportsDB and The Odds API.
+**Remote / mobile (optional):** deploy `proxy/cf-proxy-worker.js` (e.g. `npm i -g wrangler`, then `wrangler deploy` from `proxy/`) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. Both implementations enforce the same host allow-list; the proxy only ever fetches from the sources below.
+
+**Data sources (every feed has a second source):**
+
+| Panel | Primary | Second source |
+|---|---|---|
+| Scoreboard, schedule, standings, roster, wire, team odds | ESPN site API | — (community JSON for injuries/practice) |
+| News | ESPN wire | **Google News RSS** ("Chicago Bears", 100+ outlets) |
+| Weather strip + cold-front gauge | Open-Meteo | **NOAA/NWS** (`api.weather.gov`, official US forecast) |
+| Prediction markets | Polymarket | — |
+| Vegas lines | The Odds API (your key) | ESPN league wire |
+
+The weather strip shows `NOAA/NWS` when it had to use the fallback, so you can see which source you're reading.
 
 **Troubleshooting:** `proxy/cf-proxy.log` records every upstream fetch with status and byte count. The listener binds `127.0.0.1:8799` only — nothing outside the machine can reach it. If a panel still says *snapshot*, the whole chain was exhausted: check the log, then the pill text on the panel.
 

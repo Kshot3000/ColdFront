@@ -23,6 +23,8 @@ const ALLOWED_HOSTS = new Set([
   "gamma-api.polymarket.com",
   "clob.polymarket.com",
   "api.open-meteo.com",
+  "api.weather.gov",
+  "news.google.com",
   "api.the-odds-api.com",
 ]);
 

@@ -95,6 +95,14 @@ CF.CONFIG = {
   endpoints: {
     espnBase: "https://site.api.espn.com/apis/site/v2/sports/football/nfl",
     weather: "https://api.open-meteo.com/v1/forecast",
+    // Second weather source: NOAA/NWS (api.weather.gov) — official US
+    // forecast service, CORS-open, no key. Used automatically when Open-Meteo
+    // can't be reached.
+    nws: "https://api.weather.gov",
+    nwsPoint: "41.8781,-87.6298", // Soldier Field
+    // Second news source: Google News RSS ("Chicago Bears") — no CORS
+    // headers, so it always rides the proxy chain (local proxy first).
+    googleNews: "https://news.google.com/rss/search",
     weatherParams: {
       latitude: 41.8781, longitude: -87.6298,
       current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code",
@@ -248,6 +256,35 @@ CF.fetchVia = async (url, opts) => {
     if (remote) {
       return await CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(url), { timeout: 6000 });
     }
+    throw directErr;
+  }
+};
+
+/* Raw text fetch with timeout (for non-JSON feeds like RSS). */
+CF.rawFetch = async (url, timeout) => {
+  const ctrl = new AbortController();
+  const h = setTimeout(() => ctrl.abort(), timeout || 9000);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json, text/xml;q=0.9, */*;q=0.8" } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return await r.text();
+  } finally { clearTimeout(h); }
+};
+
+/* Same fallback chain as CF.fetchVia, but returns the raw body (text). */
+CF.fetchText = async (url, opts) => {
+  opts = opts || {};
+  const t = opts.timeout || 9000;
+  const local = CF.CONFIG.endpoints.localProxy;
+  if (local) {
+    try { return await CF.rawFetch(local + "/fetch?url=" + encodeURIComponent(url), Math.min(6000, t)); }
+    catch (eLocal) { /* not running — try direct */ }
+  }
+  try {
+    return await CF.rawFetch(url, t);
+  } catch (directErr) {
+    const remote = CF.CONFIG.endpoints.remoteProxy;
+    if (remote) return await CF.rawFetch(remote + "/fetch?url=" + encodeURIComponent(url), 6000);
     throw directErr;
   }
 };
@@ -414,10 +451,10 @@ CF.windChill = (tC, kmh) => {
 };
 
 CF.coldFrontGauge = (w) => {
-  // Themed "fan gauge" derived from real Open-Meteo numbers.
+  // Themed "fan gauge" derived from real field numbers (Open-Meteo or NWS).
   if (!w) return null;
-  const tC = w.apparent_temperature;
-  const wind = w.wind_gusts_10m || w.wind_speed_10m || 0;
+  const tC = (w.feelsC != null) ? w.feelsC : w.apparent_temperature;
+  const wind = w.gusts || w.wind || w.wind_gusts_10m || w.wind_speed_10m || 0;
   const snow = w.snowProb || 0;
   let score = 0;
   if (tC < 0) score += 55; else if (tC < 5) score += 42; else if (tC < 10) score += 28; else if (tC < 16) score += 12;
@@ -451,15 +488,52 @@ CF.loadWeather = async () => {
       time: cur.time,
       snowProb,
       daily: d.daily || null,
+      source: "open-meteo",
     };
     wx.gauge = CF.coldFrontGauge(wx);
     CF.cacheSet("weather", wx, CF.CONFIG.ttl.weather);
     return wx;
   } catch (e) {
-    const c = CF.cacheGet("weather");
-    if (c) { c.offline = true; return c; }
-    return null;
+    // Open-Meteo unreachable — fall back to the official US source (NWS).
+    try { return await CF.loadWeatherNWS(); }
+    catch (e2) {
+      const c = CF.cacheGet("weather");
+      if (c) { c.offline = true; return c; }
+      return null;
+    }
   }
+};
+
+/* NOAA/NWS fallback weather (api.weather.gov — CORS-open, no key).
+   Maps to the same wx shape so the weather strip renders it identically. */
+CF.loadWeatherNWS = async () => {
+  const base = CF.CONFIG.endpoints.nws;
+  const pt = CF.CONFIG.endpoints.nwsPoint;
+  const points = await CF.fetchVia(base + "/points/" + pt, { timeout: 8000 });
+  const grid = points.properties && points.properties.forecast;
+  if (!grid) throw new Error("no NWS gridpoint");
+  let obs = null, fc = null;
+  try { obs = (await CF.fetchVia(grid + "/observations/latest", { timeout: 8000 })).properties; } catch (e) { obs = null; }
+  try { fc = (await CF.fetchVia(grid, { timeout: 8000 })).properties; } catch (e) { fc = null; }
+  const p0 = fc && fc.periods && fc.periods[0] ? fc.periods[0] : null;
+  if (!obs && !p0) throw new Error("no NWS data");
+  const num = (s) => { const m = String(s == null ? "" : s).match(/-?\d+\.?\d*/); return m ? parseFloat(m[0]) : null; };
+  const wx = {
+    tempC: obs ? obs.tempC : (p0 ? p0.temperature * 5 / 9 - 160 / 9 : null),
+    feelsC: obs ? obs.tempC : (p0 ? p0.temperature * 5 / 9 - 160 / 9 : null),
+    wind: obs ? obs.windSpeedKmH : (p0 ? num(p0.windSpeed) * 1.609 : null),
+    gusts: obs ? num(obs.windGust) * 1.609 : null,
+    humidity: obs && obs.relativeHumidity != null ? parseFloat(obs.relativeHumidity) : null,
+    code: null,
+    phrase: (obs && obs.textDescription) || (p0 && p0.shortForecast) || "NOAA/NWS",
+    time: obs ? obs.timestamp : (p0 ? p0.endTime : null),
+    snowProb: p0 && p0.probabilityOfPrecipitation && p0.probabilityOfPrecipitation.value != null ? p0.probabilityOfPrecipitation.value : null,
+    daily: null,
+    source: "nws",
+  };
+  wx.gauge = CF.coldFrontGauge(wx);
+  CF.cacheSet("weather", wx, CF.CONFIG.ttl.weather);
+  return wx;
 };
 
 CF.renderWeatherStrip = (root) => {
@@ -479,12 +553,14 @@ CF.renderWeatherStrip = (root) => {
       return;
     }
     const f = (c) => Math.round(c * 9 / 5 + 32);
+    const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
     now.innerHTML =
-      "<b>" + f(wx.tempC) + "°F</b> " + CF.esc(CF.weatherCode(wx.code)) +
+      "<b>" + f(wx.tempC) + "°F</b> " + desc +
       " · feels <b>" + f(wx.feelsC) + "°F</b>" +
       " · wind <b>" + Math.round(wx.wind) + " km/h</b>" +
       (wx.gusts ? " (gusts " + Math.round(wx.gusts) + ")" : "") +
       (wx.snowProb != null ? " · snow " + Math.round(wx.snowProb) + "%" : "") +
+      (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NOAA/NWS</span>' : "") +
       (wx.offline ? ' · <span class="wx-offline">cached</span>' : "");
     if (wx.gauge) {
       gauge.textContent = wx.gauge.label + " · " + wx.gauge.score + "/100";
