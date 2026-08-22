@@ -31,6 +31,8 @@ function cors() {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "GET, OPTIONS",
     "access-control-allow-headers": "*",
+    // Chrome Private Network Access (public site -> loopback / private LAN).
+    "access-control-allow-private-network": "true",
   };
 }
 

@@ -91,12 +91,17 @@ GitHub Pages rebuilds automatically — the new version is live in about a minut
 
 ## Keeping the feeds live
 
-Most visitors' browsers hit the ESPN / Polymarket / Open-Meteo APIs directly — the site tries that path first and it "just works". Some networks (residential lines, VPNs) get their browser-fingerprinted traffic 403'd by the CDN edge, and the panels show *snapshot/offline*. For those machines this repo includes a tiny **local feed proxy**:
+Most visitors' browsers hit the ESPN / Polymarket / Open-Meteo APIs directly — the site tries that path first and it "just works". Two things can break that on a given machine:
+
+- **CDN 403s** — some networks (residential lines, VPNs) get their browser-fingerprinted traffic 403'd by the CDN edge, and the panels show *snapshot/offline*;
+- **Local Network Access** — recent Chrome (151+) blocks *public* pages (like a github.io site) from reading responses of `localhost` services, so a browser-fine feed proxy can still be refused by the browser itself.
+
+For those machines this repo includes a tiny **local feed proxy + site mirror**:
 
 | File | What it is |
 |---|---|
-| `Start-Local-Proxy.bat` | double-click launcher (starts the proxy minimized, prints a health check) |
-| `proxy/cf-proxy.ps1` | the proxy itself — pure PowerShell + .NET, zero dependencies, loopback-only on port 8799 |
+| `Start-Local-Proxy.bat` | double-click launcher (starts proxy + mirror minimized, prints a health check for each) |
+| `proxy/cf-proxy.ps1` | the proxy itself — pure PowerShell + .NET, zero dependencies; loopback-only: feed proxy on port 8799 + read-only site mirror on port 8080 |
 | `proxy/cf-proxy.log` | runtime log (created on first start; git-ignored) |
 | `proxy/cf-proxy-worker.js` + `proxy/wrangler.toml` | optional Cloudflare Worker with the same API, for phones / other machines |
 
@@ -105,6 +110,13 @@ Every feed resolves in this order: **local proxy → direct → optional remote 
 - on a machine where the proxy runs, feeds stay live even if that network 403s the browser;
 - everybody else takes the direct path, unchanged;
 - if the proxy isn't running, the local attempt fails in a few milliseconds and the chain moves on — no downside anywhere.
+
+**Which URL to open where:**
+
+- **On the machine that runs the proxy:** open **`http://127.0.0.1:8080/`** — the same site served from loopback. A loopback origin reading a loopback proxy is exactly what browsers allow, so this path is guaranteed live in every browser (it sidesteps the Local Network Access rule above). Bookmark it.
+- **Everywhere else (phone, other computers):** the public site — `https://kshot3000.github.io/ColdFront/` — keeps working through the direct feed path.
+
+One honest caveat: the **standings** panel can say *offline* between seasons — ESPN returns no standings rows in the offseason and the site won't fake any. It comes back on its own when the season data exists.
 
 ```powershell
 # start (idempotent — safe to re-run; a second instance detects the port and exits)
@@ -171,6 +183,7 @@ Zero build step, zero npm, zero dependencies. The only external calls are Google
 - Background tabs are throttled by the browser — that's the browser's policy, not the site's. Jobs catch up the instant the tab is visible again.
 - `data/*.json` (injuries, practice) only change when you edit + push; expect a short CDN lag after pushing.
 - ESPN's API is blocked on some networks (it was during development); the proxy + snapshot fallback exists for exactly that, but first-visit offline will show honest "offline" panels instead of fake data.
+- Recent Chrome also refuses public pages reading loopback services ("Local Network Access") — the 8080 site mirror exists for exactly that; see *Keeping the feeds live*.
 - Season-level **player** leader tables appear only when the feed exposes `seasonStats`; until then the page points you at the box score + PFR rather than guessing.
 - Injury report rows are community-maintained — the official NFL pregame report always wins.
 - Polymarket odds are market prices, not bookmaker lines; they can disagree, and both are right.

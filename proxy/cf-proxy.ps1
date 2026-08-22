@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 #  THE COLD FRONT  -  local feed proxy (zero dependencies)
 #
 #  Why this exists:
@@ -11,6 +11,13 @@
 #    milliseconds and the chain moves on. Loopback-only: nothing
 #    outside this machine can reach it.
 #
+#  Also:   serves the site itself at http://127.0.0.1:8080/ (local mirror,
+#          read-only). Browsers (e.g. recent Chrome) restrict PUBLIC sites
+#          from reaching localhost services ("Local Network Access"), so
+#          opening the mirror from a loopback origin is the guaranteed
+#          live-data path on this machine. The public github.io URL keeps
+#          working for everyone else via the direct feed path.
+#
 #  Run:    double-click Start-Local-Proxy.bat  (or: .\cf-proxy.ps1)
 #  Stop:   Task Manager -> end the powershell.exe whose command line
 #          contains "cf-proxy.ps1", or just close its window.
@@ -18,6 +25,7 @@
 # ============================================================
 $ErrorActionPreference = 'Stop'
 $Port = 8799
+$SitePort = 8080
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $here) { $here = (Get-Location).Path }
 $logFile = Join-Path $here 'cf-proxy.log'
@@ -35,12 +43,31 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 public static class CFProxy
 {
     private static HttpClient _client;
     private static string _logFile;
+    private static string _siteRoot;
+    private static readonly Dictionary<string, string> Mime = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { ".html", "text/html; charset=utf-8" },
+        { ".js",   "text/javascript; charset=utf-8" },
+        { ".css",  "text/css; charset=utf-8" },
+        { ".json", "application/json; charset=utf-8" },
+        { ".svg",  "image/svg+xml" },
+        { ".png",  "image/png" },
+        { ".jpg",  "image/jpeg" },
+        { ".jpeg", "image/jpeg" },
+        { ".gif",  "image/gif" },
+        { ".ico",  "image/x-icon" },
+        { ".txt",  "text/plain; charset=utf-8" },
+        { ".woff", "font/woff" },
+        { ".woff2","font/woff2" },
+        { ".webmanifest", "application/manifest+json; charset=utf-8" }
+    };
     private static readonly HashSet<string> AllowHosts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "site.api.espn.com",
@@ -113,12 +140,83 @@ public static class CFProxy
         }
     }
 
+    /* ---------------- local site mirror ----------------
+       Serves the site's own files from a loopback port. Opening the site
+       from http://127.0.0.1:8080 (a loopback origin) removes the browser's
+       Local Network Access restriction when it talks to the feed proxy on
+       127.0.0.1:8799, so the panels go live in every browser. Read-only,
+       whitelisted extensions, path traversal and .git are blocked. */
+    public static void StartSite(int port, string siteRoot)
+    {
+        _siteRoot = Path.GetFullPath(siteRoot.TrimEnd('\\', '/') + "\\");
+        HttpListener listener = new HttpListener();
+        listener.Prefixes.Add("http://127.0.0.1:" + port + "/");
+        listener.Start();
+        Log("site mirror started on port " + port + " (root " + _siteRoot + ")");
+        // C#-spawned background thread (PowerShell's New-Object can't bind the
+        // Thread(Type, String, Object[]) constructor, so we do it here).
+        Thread t = new Thread(() => SiteLoop(listener));
+        t.IsBackground = true;
+        t.Start();
+    }
+
+    private static void SiteLoop(HttpListener listener)
+    {
+        while (listener.IsListening)
+        {
+            HttpListenerContext ctx;
+            try { ctx = listener.GetContext(); }
+            catch { break; }
+            Task.Run(delegate { ServeStatic(ctx); });
+        }
+    }
+
+    private static void ServeStatic(HttpListenerContext ctx)
+    {
+        try
+        {
+            if (ctx.Request.HttpMethod == "OPTIONS") { Send(ctx, 204, null, "text/plain"); return; }
+            string path = Uri.UnescapeDataString(ctx.Request.Url.AbsolutePath);
+            if (path.IndexOf("..", StringComparison.Ordinal) >= 0 ||
+                path.IndexOf(".git", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                Send(ctx, 403, "{\"error\":\"forbidden\"}", "application/json");
+                return;
+            }
+            if (path == "/" || path.EndsWith("/")) path += "index.html";
+            string full = Path.GetFullPath(_siteRoot + path.TrimStart('/'));
+            if (!full.StartsWith(_siteRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                Send(ctx, 403, "{\"error\":\"forbidden\"}", "application/json");
+                return;
+            }
+            string ext = Path.GetExtension(full).ToLowerInvariant();
+            if (!Mime.ContainsKey(ext)) { Send(ctx, 404, "{\"error\":\"not found\"}", "application/json"); return; }
+            if (!File.Exists(full))    { Send(ctx, 404, "{\"error\":\"not found\"}", "application/json"); return; }
+            byte[] bytes = File.ReadAllBytes(full);
+            ctx.Response.StatusCode = 200;
+            ctx.Response.ContentType = Mime[ext];
+            ctx.Response.ContentLength64 = bytes.Length;
+            ctx.Response.AddHeader("Access-Control-Allow-Origin", "*");
+            ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
+            ctx.Response.Close();
+        }
+        catch (Exception e)
+        {
+            Log("static error: " + e.Message);
+            try { Send(ctx, 500, "{\"error\":\"internal\"}", "application/json"); } catch { }
+        }
+    }
+
     private static void Send(HttpListenerContext ctx, int status, string text, string ctype)
     {
         ctx.Response.StatusCode = status;
         ctx.Response.ContentType = ctype;
         ctx.Response.AddHeader("Access-Control-Allow-Origin", "*");
         ctx.Response.AddHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+        // Chrome's Private Network Access: public sites (https) fetching a
+        // loopback address need this on the response or the body is blocked.
+        ctx.Response.AddHeader("Access-Control-Allow-Private-Network", "true");
         if (text != null)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(text);
@@ -156,5 +254,18 @@ try {
   exit 1
 }
 
-Write-Host "THE COLD FRONT local feed proxy starting on http://127.0.0.1:$Port/ ..."
+# Site mirror first (non-blocking: it spawns its own thread), then the feed
+# proxy loop on the main thread. If there is no site to serve, the feed
+# proxy still runs.
+$siteRoot = Split-Path -Parent $here
+if ($siteRoot -and (Test-Path (Join-Path $siteRoot 'index.html'))) {
+  try {
+    [CFProxy]::StartSite($SitePort, $siteRoot)
+    Write-Host "THE COLD FRONT local site mirror: http://127.0.0.1:$SitePort/  <- open THIS in your browser on this machine"
+  } catch {
+    Write-Host "Site mirror not started (port $SitePort in use?): $($_.Exception.Message)"
+  }
+}
+
+Write-Host "THE COLD FRONT feed proxy listening on http://127.0.0.1:$Port/ (pid $PID)"
 [CFProxy]::Start($Port, $logFile)
