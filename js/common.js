@@ -100,9 +100,12 @@ CF.CONFIG = {
     // can't be reached.
     nws: "https://api.weather.gov",
     nwsPoint: "41.8781,-87.6298", // Soldier Field
-    // Second news source: Google News RSS ("Chicago Bears") — no CORS
+    // Second news source: wide-wire RSS ("Chicago Bears") — no CORS
     // headers, so it always rides the proxy chain (local proxy first).
+    // Google News first; Bing News is the second upstream — public CORS
+    // proxies can usually reach Bing even when Google News is blocked.
     googleNews: "https://news.google.com/rss/search",
+    bingNews: "https://www.bing.com/news/search",
     weatherParams: {
       latitude: 41.8781, longitude: -87.6298,
       current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code",
@@ -277,7 +280,9 @@ CF.rawFetch = async (url, timeout) => {
   } finally { clearTimeout(h); }
 };
 
-/* Same fallback chain as CF.fetchVia, but returns the raw body (text). */
+/* Same fallback chain as CF.fetchVia, but returns the raw body (text).
+   Includes the public CORS proxies — RSS feeds (Google/Bing News) have no
+   CORS headers, so on public networks this is the whole show. */
 CF.fetchText = async (url, opts) => {
   opts = opts || {};
   const t = opts.timeout || 9000;
@@ -290,7 +295,14 @@ CF.fetchText = async (url, opts) => {
     return await CF.rawFetch(url, t);
   } catch (directErr) {
     const remote = CF.CONFIG.endpoints.remoteProxy;
-    if (remote) return await CF.rawFetch(remote + "/fetch?url=" + encodeURIComponent(url), 6000);
+    if (remote) {
+      try { return await CF.rawFetch(remote + "/fetch?url=" + encodeURIComponent(url), 6000); }
+      catch (eRemote) { /* next */ }
+    }
+    for (const proxy of CF.PROXIES) {
+      try { return await CF.rawFetch(proxy(url), 8000); }
+      catch (e2) { /* next proxy */ }
+    }
     throw directErr;
   }
 };

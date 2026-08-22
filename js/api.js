@@ -90,22 +90,53 @@ CF.API = {
     return events;
   },
 
-  /* ---------- Google News RSS (second news source, no key) ----------
-     Returns [{title, link, source, date, desc}]. Rides the same fallback
-     chain as everything else (local proxy first, then direct — which fails
-     on CORS, so effectively: local proxy or public proxies). */
+  /* ---------- wide-wire RSS (multi-source, no key) ----------
+     Returns [{title, link, source, date, desc}]. Tries each upstream in
+     order, and each one rides the full fallback chain (local proxy first,
+     then direct, then public CORS proxies):
+       1) Google News RSS — broadest outlet coverage
+       2) Bing News RSS   — same stories; public CORS proxies can reach it
+          even when Google News is blocked from the browser
+     The first upstream that answers with items wins. */
+  parseRss: (xml) => {
+    const doc = new DOMParser().parseFromString(xml, "text/xml");
+    const items = Array.from(doc.querySelectorAll("item")).map((el) => {
+      const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
+      // Bing wraps the source in a namespace: <News:Source>.
+      const srcEl = el.getElementsByTagName("source")[0] || el.getElementsByTagNameNS("*", "Source")[0];
+      let link = t("link") || null;
+      // Bing wraps the real URL in a redirect (?url=<encoded>); unwrap it.
+      if (link && /apiclick\.aspx/i.test(link)) {
+        try {
+          const q = new URL(link).searchParams.get("url");
+          if (q) link = decodeURIComponent(q);
+        } catch (e) { /* keep the redirect link */ }
+      }
+      return {
+        title: t("title"),
+        link,
+        source: srcEl ? srcEl.textContent.trim() : null,
+        date: t("pubDate"),
+        desc: t("description"),
+      };
+    }).filter((it) => it.title && it.link);
+    return items;
+  },
+
   getGoogleNews: async (query, max) => {
     const q = query || 'Chicago Bears';
-    const url = CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en";
-    const xml = await CF.fetchText(url, { timeout: 10000 });
-    const doc = new DOMParser().parseFromString(xml, "text/xml");
-    const items = Array.from(doc.querySelectorAll("item"))
-      .map((el) => {
-        const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
-        return { title: t("title"), link: t("link"), source: t("source"), date: t("pubDate"), desc: t("description") };
-      })
-      .filter((it) => it.title && it.link)
-      .slice(0, max || 12);
+    const feeds = [
+      CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en",
+      CF.CONFIG.endpoints.bingNews + "?q=" + encodeURIComponent(q) + "&format=RSS",
+    ];
+    let items = [];
+    for (const url of feeds) {
+      try {
+        const xml = await CF.fetchText(url, { timeout: 10000 });
+        items = CF.API.parseRss(xml).slice(0, max || 12);
+        if (items.length) break;
+      } catch (e) { /* next upstream */ }
+    }
     if (!items.length) throw new Error("empty news feed");
     CF.cacheSet("gnews." + q, items, 5 * 60e4);
     return items;

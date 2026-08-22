@@ -80,6 +80,7 @@ public static class CFProxy
         "api.open-meteo.com",
         "api.weather.gov",
         "news.google.com",
+        "www.bing.com",
         "api.the-odds-api.com",
         "v3.football.api-sports.io"
     };

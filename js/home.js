@@ -190,11 +190,11 @@
         return;
       }
     } catch (e) { /* wire silent or unreachable */ }
-    // 2) The wide wire: Google News RSS across 100+ outlets.
+    // 2) The wide wire: RSS across 100+ outlets (Google News, then Bing News).
     try {
       const items = await CF.API.getGoogleNews("Chicago Bears", 4);
       box.innerHTML = items.map(wideItemHTML).join("");
-      pill.textContent = "wide wire · Google News";
+      pill.textContent = "wide wire";
     } catch (e2) {
       pill.textContent = "offline";
       box.innerHTML = '<div class="empty"><div class="big">📡</div>' +

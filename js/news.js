@@ -56,7 +56,7 @@
         if (items.length) {
           listHTML = items.map(wideHTML).join("");
           count = items.length;
-          src = "wide wire · Google News";
+          src = "wide wire · " + (items[0].source ? items[0].source + " et al." : "multi-outlet");
           injHTML = items.filter(wideInj).map(wideHTML).join("");
         }
       } catch (e) { /* both down */ }
