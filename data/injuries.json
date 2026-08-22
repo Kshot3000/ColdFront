@@ -1,0 +1,13 @@
+{
+  "updated": "2026-08-21",
+  "note": "Community-maintained report — update this file as the wire moves. Official pregame reports always win.",
+  "rows": [
+    {
+      "name": "—",
+      "pos": "—",
+      "injury": "Add the current report here (see README).",
+      "status": "—",
+      "statusCls": "day-to-day"
+    }
+  ]
+}

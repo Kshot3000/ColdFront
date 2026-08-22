@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE COLD FRONT — Chicago Bears × Midwest Winter Football</title>
+  <meta name="description" content="Independent Chicago Bears fan site: live news, injuries, practice intel, live & past game data, player stats, Vegas and prediction-market odds. Winter football, the way the Midwest intended.">
+  <meta property="og:title" content="THE COLD FRONT — Chicago Bears × Midwest Winter Football">
+  <meta property="og:description" content="Live news, injuries, game data, stats and odds — for fans who think football should be played in a blizzard.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+
+<div class="weather-strip" data-cf-weather aria-label="Chicago field conditions"></div>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="THE COLD FRONT — home">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="45" height="45" rx="10" fill="#101F33" stroke="#5C7A99" stroke-opacity="0.55"/>
+        <g fill="#C83803">
+          <ellipse cx="24" cy="29.5" rx="7.6" ry="6.1"/>
+          <ellipse cx="13.4" cy="21" rx="3.4" ry="4.5" transform="rotate(-18 13.4 21)"/>
+          <ellipse cx="20.4" cy="15.6" rx="3.6" ry="4.9" transform="rotate(-6 20.4 15.6)"/>
+          <ellipse cx="28.6" cy="15.6" rx="3.6" ry="4.9" transform="rotate(6 28.6 15.6)"/>
+          <ellipse cx="35.6" cy="21" rx="3.4" ry="4.5" transform="rotate(18 35.6 21)"/>
+        </g>
+        <line x1="8" y1="40.5" x2="40" y2="40.5" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M12 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+        <path d="M21 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+        <path d="M30 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+      </svg>
+      <span class="name">The Cold Front<small>Chicago Bears × Midwest Winter</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="games.html">Games</a>
+      <a href="stats.html">Stats</a>
+      <a href="odds.html">Odds</a>
+      <a href="injuries.html">Injuries</a>
+      <a href="practice.html">Practice</a>
+      <a href="team.html">Team</a>
+      <a href="about.html">About</a>
+      <a href="https://x.com/kshot9000" target="_blank" rel="noopener" aria-label="My X profile">𝕏</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="kicker-line">
+        <svg class="front-mark" viewBox="0 0 46 14" aria-hidden="true">
+          <line x1="0" y1="10" x2="46" y2="10" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M5 10 h7 l-3.5 -8 z" fill="#E8541E"/>
+          <path d="M16 10 h7 l-3.5 -8 z" fill="#E8541E"/>
+          <path d="M27 10 h7 l-3.5 -8 z" fill="#E8541E"/>
+          <path d="M38 10 h6 l-3 -7 z" fill="#E8541E"/>
+        </svg>
+        <span class="eyebrow" style="margin:0">Independent fan site · Winter league edition</span>
+      </div>
+      <h1>Where the <span class="hot">North&nbsp;Wind</span> Meets Orange &amp; Blue</h1>
+      <p class="sub">Live news, the injury wire, practice intel, every game this side of the frozen lake — plus Vegas and prediction-market odds on the board. Football the way the Midwest intended: in the teeth of the cold.</p>
+
+      <div class="hero-grid">
+        <div class="card game-card" id="next-game" aria-live="polite">
+          <div class="badge-row" style="justify-content:space-between">
+            <h3 style="margin:0" id="ng-title">Next on the board…</h3>
+            <span class="pill" id="ng-pill">loading</span>
+          </div>
+          <div class="vs">
+            <div class="side">
+              <div class="abbr" id="ng-away-abbr">—</div>
+              <div class="score" id="ng-away-score"></div>
+            </div>
+            <div class="mid" id="ng-mid">at<br>Soldier Field</div>
+            <div class="side">
+              <div class="abbr" id="ng-home-abbr">CHI</div>
+              <div class="score" id="ng-home-score"></div>
+            </div>
+          </div>
+          <div class="game-meta" id="ng-meta"></div>
+          <div class="countdown" id="ng-countdown"></div>
+        </div>
+
+        <div class="card" id="division">
+          <div class="badge-row" style="justify-content:space-between;margin-bottom:12px">
+            <h3 style="margin:0">NFC North watch</h3>
+            <span class="pill cache" id="div-pill">loading</span>
+          </div>
+          <div class="tbl-wrap" style="border:none">
+            <table class="tbl" style="min-width:0" id="div-table">
+              <thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead>
+              <tbody><tr><td colspan="4" class="dim">Reading the standings…</td></tr></tbody>
+            </table>
+          </div>
+          <p class="src-note">Live from ESPN when the feed answers; otherwise your last saved snapshot.</p>
+          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn small" href="games.html">Full game log →</a>
+            <a class="btn small" href="odds.html">Odds board →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>The Front Report</h2>
+        <span class="tag">everything, one page</span>
+        <span class="rule"></span>
+      </div>
+      <div class="grid grid-4 quick">
+        <a href="news.html"><span class="ico">📰</span>News Wire<span class="desc">Live headlines, refreshed on the clock</span></a>
+        <a href="games.html"><span class="ico">🏈</span>Games<span class="desc">Live scoreboard, box scores, full season log</span></a>
+        <a href="stats.html"><span class="ico">📊</span>Stats<span class="desc">Player and team numbers, last game + season</span></a>
+        <a href="odds.html"><span class="ico">🎲</span>Odds<span class="desc">Vegas lines + Polymarket prediction odds</span></a>
+        <a href="injuries.html"><span class="ico">🩹</span>Injuries<span class="desc">Report table + the injury wire</span></a>
+        <a href="practice.html"><span class="ico">❄️</span>Practice<span class="desc">The week at the facility, media availability</span></a>
+        <a href="team.html"><span class="ico">🐻</span>Team<span class="desc">Roster, positions, searchable</span></a>
+        <a href="about.html"><span class="ico">⛺</span>About<span class="desc">This site, the builder, donations, socials</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>On the wire</h2>
+        <span class="tag" id="wire-pill">live feed</span>
+        <span class="rule"></span>
+        <a class="btn small" href="news.html">Full feed →</a>
+      </div>
+      <div class="news-list" id="home-news">
+        <div class="empty"><div class="big">📡</div>Pulling the wire…</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Injury snapshot</h2>
+        <span class="tag">community-maintained</span>
+        <span class="rule"></span>
+        <a class="btn small" href="injuries.html">Full report →</a>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl" id="home-injuries">
+          <thead><tr><th>Player</th><th>Pos</th><th>Injury</th><th>Status</th></tr></thead>
+          <tbody><tr><td colspan="4" class="dim">Loading the report…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="src-note">Heads up: the report table is community-maintained (see <a href="injuries.html">Injuries</a>) — always cross-check with the official pregame report.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Follow the front</h2>
+        <span class="tag">official + builder</span>
+        <span class="rule"></span>
+      </div>
+      <div class="social-grid" id="home-socials"></div>
+      <p class="src-note" style="margin-top:14px">
+        Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener"><span data-cf-x-handle>@kshot9000</span></a> — more projects and donation addresses on the <a href="about.html">About</a> page.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="45" height="45" rx="10" fill="#101F33" stroke="#5C7A99" stroke-opacity="0.55"/>
+            <g fill="#C83803">
+              <ellipse cx="24" cy="29.5" rx="7.6" ry="6.1"/>
+              <ellipse cx="13.4" cy="21" rx="3.4" ry="4.5" transform="rotate(-18 13.4 21)"/>
+              <ellipse cx="20.4" cy="15.6" rx="3.6" ry="4.9" transform="rotate(-6 20.4 15.6)"/>
+              <ellipse cx="28.6" cy="15.6" rx="3.6" ry="4.9" transform="rotate(6 28.6 15.6)"/>
+              <ellipse cx="35.6" cy="21" rx="3.4" ry="4.5" transform="rotate(18 35.6 21)"/>
+            </g>
+            <line x1="8" y1="40.5" x2="40" y2="40.5" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M12 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+            <path d="M21 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+            <path d="M30 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+          </svg>
+          <span class="name">The Cold Front</span>
+        </div>
+        <p class="foot-note">Independent fan project. Not affiliated with or endorsed by the NFL, the Chicago Bears, or any broadcaster. Odds are informational — 18+/21+ where legal. Data: ESPN, Polymarket, Open-Meteo. When a feed is unreachable, the page falls back to the last good snapshot saved on your device.</p>
+      </div>
+      <div>
+        <h4>Site</h4>
+        <ul>
+          <li><a href="news.html">News wire</a></li>
+          <li><a href="games.html">Games &amp; scoreboard</a></li>
+          <li><a href="stats.html">Stats</a></li>
+          <li><a href="odds.html">Odds &amp; markets</a></li>
+          <li><a href="injuries.html">Injury report</a></li>
+          <li><a href="practice.html">Practice &amp; facility</a></li>
+          <li><a href="team.html">Roster</a></li>
+          <li><a href="about.html">About / donate</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Bears socials</h4>
+        <ul data-cf-socials></ul>
+      </div>
+    </div>
+    <p class="foot-credit">© <span data-cf-year>2026</span> THE COLD FRONT · fan-made in the Midwest with 🧊 · built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener" data-cf-x-handle>@kshot9000</a></p>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/api.js"></script>
+<script src="js/home.js"></script>
+</body>
+</html>

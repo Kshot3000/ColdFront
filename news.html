@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>News Wire — THE COLD FRONT</title>
+  <meta name="description" content="Live Chicago Bears news wire: headlines as they drop, with an injury wire rail. Independent fan site.">
+  <meta property="og:title" content="News Wire — THE COLD FRONT">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+
+<div class="weather-strip" data-cf-weather aria-label="Chicago field conditions"></div>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="THE COLD FRONT — home">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="45" height="45" rx="10" fill="#101F33" stroke="#5C7A99" stroke-opacity="0.55"/>
+        <g fill="#C83803">
+          <ellipse cx="24" cy="29.5" rx="7.6" ry="6.1"/>
+          <ellipse cx="13.4" cy="21" rx="3.4" ry="4.5" transform="rotate(-18 13.4 21)"/>
+          <ellipse cx="20.4" cy="15.6" rx="3.6" ry="4.9" transform="rotate(-6 20.4 15.6)"/>
+          <ellipse cx="28.6" cy="15.6" rx="3.6" ry="4.9" transform="rotate(6 28.6 15.6)"/>
+          <ellipse cx="35.6" cy="21" rx="3.4" ry="4.5" transform="rotate(18 35.6 21)"/>
+        </g>
+        <line x1="8" y1="40.5" x2="40" y2="40.5" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M12 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+        <path d="M21 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+        <path d="M30 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+      </svg>
+      <span class="name">The Cold Front<small>Chicago Bears × Midwest Winter</small></span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle menu">☰</button>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="games.html">Games</a>
+      <a href="stats.html">Stats</a>
+      <a href="odds.html">Odds</a>
+      <a href="injuries.html">Injuries</a>
+      <a href="practice.html">Practice</a>
+      <a href="team.html">Team</a>
+      <a href="about.html">About</a>
+      <a href="https://x.com/kshot9000" target="_blank" rel="noopener" aria-label="My X profile">𝕏</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="page-intro">
+      <div class="eyebrow">Live feed</div>
+      <h1>The News Wire</h1>
+      <p>Headlines as they drop from the league wire, with an <span class="orange">injury rail</span> on the side that flags every headline that smells like a report change. Refreshes on the clock — or hit refresh when you suspect a drop.</p>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 8px" class="badge-row">
+      <span class="pill cache" id="feed-pill">connecting…</span>
+      <span class="dim" id="feed-updated" style="font-size:12.5px"></span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn small" id="refresh" type="button">↻ Refresh now</button>
+        <a class="btn small" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Bears.com news ↗</a>
+      </span>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start" id="news-grid">
+      <div class="news-list" id="news-list">
+        <div class="empty"><div class="big">📡</div>Tuning in…</div>
+      </div>
+      <div class="rail" id="injury-rail">
+        <h3>🩹 Injury wire</h3>
+        <p class="dim" style="font-size:12.5px;margin:6px 0 12px">Headlines that mention a body part, a report, or a question mark.</p>
+        <div class="news-list" id="injury-news">
+          <div class="empty" style="padding:18px 14px;font-size:12.5px">Nothing flagged yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="45" height="45" rx="10" fill="#101F33" stroke="#5C7A99" stroke-opacity="0.55"/>
+            <g fill="#C83803">
+              <ellipse cx="24" cy="29.5" rx="7.6" ry="6.1"/>
+              <ellipse cx="13.4" cy="21" rx="3.4" ry="4.5" transform="rotate(-18 13.4 21)"/>
+              <ellipse cx="20.4" cy="15.6" rx="3.6" ry="4.9" transform="rotate(-6 20.4 15.6)"/>
+              <ellipse cx="28.6" cy="15.6" rx="3.6" ry="4.9" transform="rotate(6 28.6 15.6)"/>
+              <ellipse cx="35.6" cy="21" rx="3.4" ry="4.5" transform="rotate(18 35.6 21)"/>
+            </g>
+            <line x1="8" y1="40.5" x2="40" y2="40.5" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M12 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+            <path d="M21 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+            <path d="M30 40.5 h6 l-3 -6 z" fill="#E8541E"/>
+          </svg>
+          <span class="name">The Cold Front</span>
+        </div>
+        <p class="foot-note">Independent fan project. Not affiliated with or endorsed by the NFL, the Chicago Bears, or any broadcaster. Data: ESPN, Polymarket, Open-Meteo. When a feed is unreachable, the page falls back to the last good snapshot saved on your device.</p>
+      </div>
+      <div>
+        <h4>Site</h4>
+        <ul>
+          <li><a href="news.html">News wire</a></li>
+          <li><a href="games.html">Games &amp; scoreboard</a></li>
+          <li><a href="stats.html">Stats</a></li>
+          <li><a href="odds.html">Odds &amp; markets</a></li>
+          <li><a href="injuries.html">Injury report</a></li>
+          <li><a href="practice.html">Practice &amp; facility</a></li>
+          <li><a href="team.html">Roster</a></li>
+          <li><a href="about.html">About / donate</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Bears socials</h4>
+        <ul data-cf-socials></ul>
+      </div>
+    </div>
+    <p class="foot-credit">© <span data-cf-year>2026</span> THE COLD FRONT · fan-made in the Midwest with 🧊 · built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener" data-cf-x-handle>@kshot9000</a></p>
+  </div>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/api.js"></script>
+<script src="js/news.js"></script>
+</body>
+</html>

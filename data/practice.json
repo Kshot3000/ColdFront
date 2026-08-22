@@ -1,0 +1,11 @@
+{
+  "updated": "2026-08-21",
+  "note": "Practice tracker — add one row per session you want to track. Media availability follows the official Bears schedule.",
+  "rows": [
+    { "date": "Mon", "session": "Full-team practice", "focus": "Install / two-a-days early camp", "media": "Availability after practice (check official schedule)", "notes": "Template row — replace with real sessions" },
+    { "date": "Tue", "session": "Full-team practice", "focus": "Offense + special teams", "media": "Media availability (usually)", "notes": "" },
+    { "date": "Wed", "session": "Full-team / walkthrough", "focus": "Defense + situational", "media": "Media availability (usually)", "notes": "" },
+    { "date": "Thu", "session": "Light / mental", "focus": "Film + individual work", "media": "—", "notes": "" },
+    { "date": "Sun", "session": "Game day", "focus": "Soldier Field", "media": "Postgame presser", "notes": "" }
+  ]
+}
