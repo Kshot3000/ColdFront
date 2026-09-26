@@ -299,6 +299,160 @@
 
 
 
+
+  /* ---------- Sunday desk (next opp + rest + last meetings + wire/poly) ---------- */
+  function formatDeskLineBits(line) {
+    if (!line || !line.lines || !line.lines.length) return null;
+    const l = line.lines[0];
+    const bits = [];
+    if (l.spread) {
+      const h = (typeof l.spread === "object")
+        ? (l.spread.home != null ? l.spread.home : l.spread.away)
+        : l.spread;
+      if (h != null) bits.push({ k: "Spread", v: String(h) });
+    }
+    if (l.total != null) bits.push({ k: "O/U", v: String(l.total) });
+    if (l.ml) {
+      const m = (typeof l.ml === "object")
+        ? (l.ml.home != null ? l.ml.home : l.ml.away)
+        : l.ml;
+      if (m != null) bits.push({ k: "ML", v: String(m) });
+    }
+    return bits.length ? { book: l.book || "Wire", bits } : null;
+  }
+
+  async function loadSundayDesk() {
+    const root = CF.$("#sunday-desk");
+    const pill = CF.$("#sunday-desk-pill");
+    if (!root) return;
+    let g = null, sched = null, src = "live";
+    try {
+      const sc = await CF.API.getSchedule();
+      sched = sc.data;
+      src = sc.source || "live";
+      g = CF.API.nextBearsGameFromSchedule(sc.data);
+    } catch (e) { /* schedule quiet */ }
+    if (!g) {
+      if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
+      root.innerHTML =
+        '<div class="pulse-empty dim">No next kickoff on the board yet. ' +
+        '<a href="games.html">Games →</a></div>';
+      return;
+    }
+    const matchup = (g.home ? "vs " : "@ ") + (g.opp || "opponent");
+    const last = CF.API.lastMeetingVs(sched, g.oppAbbr);
+    const rest = CF.API.restDaysBefore(sched, g.date);
+    const hist = CF.API.meetingsVs ? CF.API.meetingsVs(sched, g.oppAbbr, 5) : [];
+
+    let restBit = "—";
+    let restSub = "Needs a prior completed game";
+    if (rest && rest.days != null) {
+      restBit = rest.days + (rest.days === 1 ? " day" : " days");
+      restSub = "Since " + CF.fmtDate(rest.last.date) +
+        (rest.last.oppAbbr ? (" vs " + rest.last.oppAbbr) : "");
+    }
+
+    let lastBit = "No prior";
+    let lastSub = "vs " + (g.oppAbbr || "OPP");
+    if (last) {
+      const site = last.home ? "vs" : "@";
+      const score = (last.scoreMe != null && last.scoreMe !== "" && last.scoreMe !== "–")
+        ? (String(last.scoreMe) + "–" + String(last.scoreOpp))
+        : "final";
+      lastBit = site + " " + (last.oppAbbr || g.oppAbbr || "OPP");
+      lastSub = CF.fmtDate(last.date) + " · " + score + (last.result ? " · " + last.result : "");
+    }
+
+    let histHTML = "";
+    if (hist && hist.length) {
+      histHTML =
+        '<div class="desk-hist">' +
+        hist.map((m) =>
+          '<span class="wl-chip wl-' + m.wl.toLowerCase() + '" title="' +
+          CF.esc(CF.fmtDate(m.date) + " · " + m.wl) + '">' + CF.esc(m.wl) + "</span>"
+        ).join("") +
+        "</div>";
+    }
+
+    let wireHTML = "";
+    let polyHTML = "";
+    let lineOk = false, polyOk = false;
+    try {
+      const r = await CF.API.getOdds();
+      const line = CF.API.oddsForGame(r.data, g.id);
+      const fmt = formatDeskLineBits(line);
+      if (fmt) {
+        lineOk = true;
+        wireHTML =
+          '<div class="desk-line">' +
+          fmt.bits.map((b) =>
+            '<span class="desk-chip"><span class="k">' + CF.esc(b.k) + "</span><b>" + CF.esc(b.v) + "</b></span>"
+          ).join("") +
+          '<span class="desk-book dim">' + CF.esc(fmt.book) + "</span></div>";
+      }
+    } catch (e) { /* quiet */ }
+    try {
+      const events = await CF.API.getPolymarket(60);
+      const bears = CF.API.polymarketBears(events);
+      let top = null;
+      for (const ev of bears) {
+        for (const m of (ev.markets || [])) {
+          if (m.yes != null) { top = m; break; }
+        }
+        if (top) break;
+      }
+      if (top) {
+        polyOk = true;
+        polyHTML =
+          '<div class="desk-poly-row">' +
+          '<span class="desk-chip yes"><span class="k">YES</span><b>' + Math.round(top.yes * 100) + "¢</b></span>" +
+          (top.no != null
+            ? '<span class="desk-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
+            : "") +
+          '<a class="dim" href="' + CF.esc(top.url) + '" target="_blank" rel="noopener" title="' +
+          CF.esc(top.question) + '">Polymarket ↗</a></div>';
+      }
+    } catch (e2) { /* quiet */ }
+
+    if (pill) {
+      const bits = [];
+      bits.push(src === "live" ? "live sched" : "snapshot");
+      if (lineOk) bits.push("wire");
+      if (polyOk) bits.push("poly");
+      pill.textContent = bits.join(" · ");
+      pill.className = "tag";
+    }
+
+    root.innerHTML =
+      '<div class="desk-head">' +
+      '<div class="desk-match">' + CF.esc(matchup) + "</div>" +
+      '<div class="desk-when dim"><b>' + CF.esc(CF.fmtDate(g.date)) + "</b> · " +
+      CF.esc(CF.fmtTime(g.date) || "TBD") +
+      (g.tv ? " · TV " + CF.esc(g.tv) : "") +
+      "</div></div>" +
+      '<div class="desk-grid">' +
+      '<div class="matchup-stat"><span class="k">Rest</span><div class="v">' + CF.esc(restBit) +
+      '</div><div class="s">' + CF.esc(restSub) + "</div></div>" +
+      '<div class="matchup-stat"><span class="k">Last meeting</span><div class="v">' + CF.esc(lastBit) +
+      '</div><div class="s">' + CF.esc(lastSub) + "</div></div>" +
+      "</div>" +
+      (histHTML
+        ? '<div class="desk-hist-wrap"><span class="k">Recent vs ' + CF.esc(g.oppAbbr || "OPP") +
+          "</span>" + histHTML + "</div>"
+        : "") +
+      (wireHTML || polyHTML
+        ? '<div class="desk-markets">' +
+          (wireHTML
+            ? '<div class="desk-mkt"><span class="k">Wire line</span>' + wireHTML + "</div>"
+            : "") +
+          (polyHTML
+            ? '<div class="desk-mkt"><span class="k">Polymarket</span>' + polyHTML + "</div>"
+            : "") +
+          "</div>"
+        : '<div class="desk-markets"><div class="dim" style="font-size:13px">No wire line or Bears market right now · <a href="odds.html">Odds →</a></div></div>') +
+      '<p class="src-note" style="margin-top:12px;margin-bottom:0"><a href="games.html#next-opp">Games Sunday desk →</a> · rest &amp; meetings from the season log</p>';
+  }
+
   /* ---------- odds / Polymarket pulse (compact, near week clock) ---------- */
   function formatLineBits(line) {
     if (!line || !line.lines || !line.lines.length) return null;
@@ -480,6 +634,7 @@
     loadInjuries();
     loadWeekClock();
     loadOddsPulse();
+    loadSundayDesk();
     // Keep the home page moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(loadNextGame, 30e3);              // next game + live clock: 30 s
     CF.refresh.register(loadStandings, 60e3);            // NFC North: 60 s
@@ -487,5 +642,6 @@
     CF.refresh.register(loadInjuries, 5 * 60e3, { name: "injuries" }); // local report (repo JSON): 5 min
     CF.refresh.register(loadWeekClock, 60e3, { name: "week-clock" });
     CF.refresh.register(loadOddsPulse, 60e3, { name: "odds-pulse" });
+    CF.refresh.register(loadSundayDesk, 60e3, { name: "sunday-desk" });
   });
 })();

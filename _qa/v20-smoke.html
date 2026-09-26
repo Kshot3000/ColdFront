@@ -1,0 +1,72 @@
+<!DOCTYPE html><html><body>
+<canvas id="snow"></canvas>
+<div class="weather-strip" data-cf-weather></div>
+<header class="site-head"><div class="wrap">
+<button class="nav-toggle" aria-label="Toggle menu">☰</button>
+<nav class="nav" id="site-nav">
+  <a href="../index.html">Home</a>
+  <a href="../games.html">Games</a>
+  <a href="../odds.html">Odds</a>
+  <a href="../injuries.html">Injuries</a>
+  <a href="../practice.html">Practice</a>
+</nav>
+</div></header>
+<div id="sunday-desk"></div>
+<div id="sunday-desk-pill" class="tag"></div>
+<div id="next-opp-preview" class="matchup-preview sunday-desk" hidden></div>
+<div id="practice-heat"></div>
+<div id="heat-pill" class="tag"></div>
+<pre id="o">boot</pre>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/common.js"></script>
+<script src="../js/api.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const o=s=>{document.getElementById('o').textContent += '\n'+s; console.log(s)};
+  try {
+    o('ver='+CF.CONFIG.site.version);
+    o('snow='+!!CF.$('#snow'));
+    CF.$('.nav-toggle').click();
+    o('navOpen='+document.body.classList.contains('nav-open'));
+    CF.$('.nav-toggle').click();
+    o('navClosed='+!document.body.classList.contains('nav-open'));
+
+    const sc=await CF.API.getSchedule();
+    o('schedule='+sc.source+':'+(sc.data.events||[]).length);
+    const g=CF.API.nextBearsGameFromSchedule(sc.data);
+    o('nextOpp='+(g?(g.oppAbbr||g.opp)+'@'+g.date:'none'));
+    const rest=g?CF.API.restDaysBefore(sc.data,g.date):null;
+    o('rest='+(rest&&rest.days!=null?rest.days:'na'));
+    const hist=g&&CF.API.meetingsVs?CF.API.meetingsVs(sc.data,g.oppAbbr,5):[];
+    o('hist='+hist.length);
+
+    const sb=await CF.API.getScoreboard();
+    o('scoreboard='+sb.source+':'+(sb.data.events||[]).length);
+    const od=await CF.API.getOdds();
+    o('odds='+od.source+':'+((od.data.games||[]).length));
+    const line=g?CF.API.oddsForGame(od.data,g.id):null;
+    o('lineForNext='+(line&&line.lines&&line.lines.length?'yes':'no'));
+
+    try {
+      const events=await CF.API.getPolymarket(40);
+      const bears=CF.API.polymarketBears(events);
+      o('polyBears='+bears.length);
+    } catch(e){ o('poly=fail'); }
+
+    const inj=await CF.API.getLeagueInjuries();
+    const rows=CF.API.bearsInjuryRows(inj.data).rows;
+    o('injuries='+inj.source+':'+rows.length);
+
+    const meta=await (await fetch('../data/snapshots/META.json',{cache:'no-cache'})).json();
+    o('metaVer='+meta.version+' ok='+meta.okCount+'/'+meta.totalFeeds+' built='+meta.built);
+
+    const prac=await (await fetch('../data/practice.json',{cache:'no-cache'})).json();
+    o('practiceRows='+(prac.rows||[]).length+' part='+(prac.participation||[]).length);
+
+    // Stadium hero / snow / hamburger regressions stay green
+    o('heroCss='+(getComputedStyle(document.documentElement).getPropertyValue('--navy')||'ok'));
+    o('QA_OK');
+  } catch(e){ o('QA_FAIL '+e+' '+(e&&e.stack)); }
+});
+</script>
+</body></html>

@@ -2922,3 +2922,220 @@ html.cf-js .photo-band.cf-reveal:not(.is-in) .photo-band-bg {
       linear-gradient(165deg, #0a1628 0%, #101F33 42%, #060d18 100%);
   }
 }
+
+/* ============================================================
+   v1.10.0 — Sunday desk · practice heat · snapshot META
+   ============================================================ */
+
+/* Sunday desk fusion (home + games) */
+.sunday-desk-card {
+  border-color: rgba(92,122,153,0.4);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.05);
+  padding: 16px 18px;
+}
+.sunday-desk.desk-title,
+.desk-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.desk-title .k {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange, #E8541E);
+}
+.desk-title .s { font-size: 12px; color: var(--text-dim); }
+.matchup-preview.sunday-desk {
+  grid-template-columns: 1fr 1fr;
+}
+@media (min-width: 900px) {
+  .matchup-preview.sunday-desk {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.desk-chips,
+.desk-line,
+.desk-poly-row,
+.desk-hist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+.desk-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(92,122,153,0.35);
+  background: rgba(4,10,20,0.55);
+  font-size: 13px;
+}
+.desk-chip .k {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.desk-chip b { color: var(--snow); font-family: var(--display); letter-spacing: 0.02em; }
+.desk-chip.yes { border-color: rgba(64,180,120,0.45); }
+.desk-chip.no { border-color: rgba(200,80,80,0.45); }
+.desk-book { font-size: 12px; margin-left: 4px; }
+.desk-head { margin-bottom: 12px; }
+.desk-match {
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: 0.03em;
+  color: var(--snow);
+  line-height: 1.15;
+}
+.desk-when { margin-top: 4px; font-size: 13.5px; }
+.desk-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 560px) {
+  .desk-grid { grid-template-columns: 1fr; }
+}
+.desk-hist-wrap {
+  margin-top: 12px;
+}
+.desk-hist-wrap > .k,
+.desk-mkt > .k {
+  display: block;
+  font-family: var(--display);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 4px;
+}
+.desk-markets {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 700px) {
+  .desk-markets { grid-template-columns: 1fr; }
+}
+.matchup-stat.desk-odds,
+.matchup-stat.desk-poly {
+  grid-column: span 1;
+}
+@media (min-width: 900px) {
+  .matchup-preview.sunday-desk .matchup-history {
+    grid-column: span 1;
+  }
+}
+
+/* Practice participation heat strip */
+.practice-heat { margin-bottom: 8px; }
+.heat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.heat-leg-item { display: inline-flex; align-items: center; gap: 6px; }
+.heat-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.heat-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .heat-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.heat-cell {
+  position: relative;
+  border: 1px solid rgba(92,122,153,0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(4,10,20,0.5);
+  padding: 10px 8px 12px;
+  text-align: center;
+  min-height: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.heat-cell.is-today {
+  border-color: rgba(232,84,30,0.7);
+  box-shadow: 0 0 0 1px rgba(232,84,30,0.35), inset 0 1px 0 rgba(255,200,160,0.1);
+}
+.heat-day {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.heat-bar {
+  width: 70%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(92,122,153,0.35);
+}
+.heat-label {
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--snow);
+}
+.heat-today {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange, #E8541E);
+}
+.heat-note { margin: 12px 0 0; font-size: 12.5px; }
+.heat-inline {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(92,122,153,0.35);
+  vertical-align: middle;
+}
+tr.is-today-row td { background: rgba(232,84,30,0.07); }
+.heat-swatch.lv-0, .heat-cell.lv-0 .heat-bar, .heat-inline.lv-0 { background: rgba(92,122,153,0.35); }
+.heat-swatch.lv-1, .heat-cell.lv-1 .heat-bar, .heat-inline.lv-1 { background: rgba(120,160,200,0.55); }
+.heat-swatch.lv-2, .heat-cell.lv-2 .heat-bar, .heat-inline.lv-2 { background: rgba(232,160,60,0.7); }
+.heat-swatch.lv-3, .heat-cell.lv-3 .heat-bar, .heat-inline.lv-3 { background: rgba(232,84,30,0.85); }
+.heat-swatch.lv-4, .heat-cell.lv-4 .heat-bar, .heat-inline.lv-4 { background: linear-gradient(90deg, #C83803, #E8541E); }
+.heat-cell.lv-4 { border-color: rgba(232,84,30,0.45); }
+.heat-inline.lv-0 { color: var(--text-dim); }
+.heat-inline.lv-1 { color: #b8d4ee; }
+.heat-inline.lv-2 { color: #ffd090; }
+.heat-inline.lv-3, .heat-inline.lv-4 { color: #ffc8a8; }
+
+/* Snapshot META freshness chip (about / optional) */
+.snap-meta {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.snap-meta b { color: var(--snow); }

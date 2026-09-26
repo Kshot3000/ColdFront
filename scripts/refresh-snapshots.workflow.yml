@@ -1,0 +1,44 @@
+# Nightly (and manual) refresh of same-origin data/snapshots/
+# so GitHub Pages visitors still get honest last-known feeds
+# when ESPN / news hosts are quiet on their network.
+name: Refresh snapshots
+
+on:
+  schedule:
+    # ~04:15 UTC ≈ 11:15 PM America/Chicago (CST) / 12:15 AM CDT
+    - cron: "15 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-snapshots
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Harvest snapshots
+        run: node scripts/refresh-snapshots.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "Kshot3000"
+          git config user.email "Kshot3000@users.noreply.github.com"
+          git add data/snapshots/
+          if git diff --cached --quiet; then
+            echo "No snapshot changes."
+            exit 0
+          fi
+          git commit -m "chore: nightly snapshot refresh $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push

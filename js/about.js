@@ -130,11 +130,39 @@
     });
   }
 
+
+  async function loadSnapMeta() {
+    const el = CF.$("#snap-meta");
+    if (!el) return;
+    try {
+      const r = await fetch("data/snapshots/META.json", { cache: "no-cache" });
+      const m = await r.json();
+      const built = m.built ? new Date(m.built) : null;
+      const ageH = built && !isNaN(built.getTime())
+        ? Math.round((Date.now() - built.getTime()) / 3600e3)
+        : null;
+      const feeds = m.feeds || {};
+      const ok = Object.keys(feeds).filter((k) => feeds[k] && feeds[k].ok).length;
+      const total = Object.keys(feeds).length || m.totalFeeds || 0;
+      el.innerHTML =
+        '<div class="snap-meta">' +
+        '<b>Snapshots</b> v' + CF.esc(String(m.version || "?")) +
+        (built ? " · built " + CF.esc(built.toLocaleString()) : "") +
+        (ageH != null ? " · ~" + ageH + "h old" : "") +
+        (total ? " · " + ok + "/" + total + " feeds ok" : "") +
+        '. Nightly workflow (see README) refreshes <code>data/snapshots/</code>; run <code>node scripts/refresh-snapshots.mjs</code> locally anytime.' +
+        "</div>";
+    } catch (e) {
+      el.innerHTML = '<div class="snap-meta dim">Snapshot META unavailable on this network.</div>';
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     donations();
     projects();
     socials();
     dataSources();
     tsdbKeys();
+    loadSnapMeta();
   });
 })();

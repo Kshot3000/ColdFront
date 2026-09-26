@@ -197,12 +197,34 @@
   /* ---------- next opponent card ----------
      Home → Chicago weather chip (existing CF.loadWeather).
      Away → opponent city note from schedule geo / venue / NFL_CITIES. */
-  function paintMatchupPreview(sched, g) {
+  function formatDeskLine(line) {
+    if (!line || !line.lines || !line.lines.length) return null;
+    const l = line.lines[0];
+    const bits = [];
+    if (l.spread) {
+      const h = (typeof l.spread === "object")
+        ? (l.spread.home != null ? l.spread.home : l.spread.away)
+        : l.spread;
+      if (h != null) bits.push({ k: "Spread", v: String(h) });
+    }
+    if (l.total != null) bits.push({ k: "O/U", v: String(l.total) });
+    if (l.ml) {
+      const m = (typeof l.ml === "object")
+        ? (l.ml.home != null ? l.ml.home : l.ml.away)
+        : l.ml;
+      if (m != null) bits.push({ k: "ML", v: String(m) });
+    }
+    return bits.length ? { book: l.book || "Wire", bits } : null;
+  }
+
+  /* Sunday desk — next opp chips + rest + last meetings + wire/Polymarket */
+  async function paintMatchupPreview(sched, g) {
     const root = CF.$("#next-opp-preview");
     if (!root || !g) return;
     const last = CF.API.lastMeetingVs(sched, g.oppAbbr);
     const rest = CF.API.restDaysBefore(sched, g.date);
     const hist = CF.API.meetingsVs ? CF.API.meetingsVs(sched, g.oppAbbr, 5) : [];
+
     let lastHTML =
       '<div class="matchup-stat">' +
       '<span class="k">Last meeting</span>';
@@ -257,7 +279,65 @@
         "</div>";
     }
 
-    root.innerHTML = lastHTML + restHTML + histHTML;
+    // Wire line + Polymarket (best-effort; desk still paints without them)
+    let wireHTML = "";
+    let polyHTML = "";
+    try {
+      const r = await CF.API.getOdds();
+      const line = CF.API.oddsForGame(r.data, g.id);
+      const fmt = formatDeskLine(line);
+      if (fmt) {
+        wireHTML =
+          '<div class="matchup-stat desk-odds">' +
+          '<span class="k">Wire line</span>' +
+          '<div class="desk-chips">' +
+          fmt.bits.map((b) =>
+            '<span class="desk-chip"><span class="k">' + CF.esc(b.k) + "</span><b>" + CF.esc(b.v) + "</b></span>"
+          ).join("") +
+          "</div>" +
+          '<div class="s">' + CF.esc(fmt.book) +
+          (r.source && r.source !== "live" ? " · " + CF.esc(r.source) : "") +
+          ' · <a href="odds.html">board →</a></div></div>';
+      }
+    } catch (e) { /* odds quiet */ }
+
+    try {
+      const events = await CF.API.getPolymarket(80);
+      const bears = CF.API.polymarketBears(events);
+      let top = null;
+      for (const ev of bears) {
+        for (const m of (ev.markets || [])) {
+          if (m.yes != null) { top = m; break; }
+        }
+        if (top) break;
+      }
+      if (top) {
+        const yes = Math.round(top.yes * 100);
+        polyHTML =
+          '<div class="matchup-stat desk-poly">' +
+          '<span class="k">Polymarket</span>' +
+          '<div class="v" style="font-size:14px;line-height:1.35">' + CF.esc(top.question) + "</div>" +
+          '<div class="desk-chips" style="margin-top:8px">' +
+          '<span class="desk-chip yes"><span class="k">YES</span><b>' + yes + "¢</b></span>" +
+          (top.no != null
+            ? '<span class="desk-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
+            : "") +
+          "</div>" +
+          '<div class="s"><a href="' + CF.esc(top.url) + '" target="_blank" rel="noopener">market ↗</a> · <a href="odds.html">more →</a></div></div>';
+      }
+    } catch (e2) { /* poly quiet */ }
+
+    if (!wireHTML && !polyHTML) {
+      wireHTML =
+        '<div class="matchup-stat desk-odds">' +
+        '<span class="k">Wire / markets</span>' +
+        '<div class="v">Quiet</div>' +
+        '<div class="s">No live line or Bears Polymarket right now. <a href="odds.html">Odds board →</a></div></div>';
+    }
+
+    root.innerHTML =
+      '<div class="desk-title"><span class="k">Sunday desk</span> <span class="s">next opp · rest · last meetings · line</span></div>' +
+      lastHTML + restHTML + histHTML + wireHTML + polyHTML;
     root.hidden = false;
   }
 
@@ -296,7 +376,7 @@
       (g.venue ? " · " + CF.esc(g.venue) : "") +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
     chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
-    if (schedData) paintMatchupPreview(schedData, g);
+    if (schedData) await paintMatchupPreview(schedData, g);
 
     // Gameday chrome when kickoff is inside ~30h
     if (CF.applyGamedayMode && g.date) {

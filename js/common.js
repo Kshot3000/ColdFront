@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.9.0",
+    version: "1.10.0",
   },
 
   author: {

@@ -2,7 +2,7 @@
 
 **Chicago Bears × Midwest Winter Football** — an independent fan site for people who think football should be played in a blizzard.
 
-Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** computed from real Chicago weather — with a multi-day sparkline in the weather strip. Live news, injuries, practice intel, every game this side of the frozen lake, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
+Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** computed from real Chicago weather — with a multi-day sparkline in the weather strip. Live news, injuries, practice intel (with a participation heat strip), every game this side of the frozen lake, a **Sunday desk** matchup card, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
 
 > Unofficial, unaffiliated fan project. Not affiliated with or endorsed by the NFL, the Chicago Bears, or any broadcaster. Odds are informational — 18+/21+ where legal.
 
@@ -12,13 +12,13 @@ Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** co
 
 | Page | What's on it |
 |---|---|
-| `index.html` | Next game + live score + countdown, NFC North watch, latest headlines, injury snapshot, quick links, socials |
+| `index.html` | Next game + live score + countdown, **Sunday desk** (rest · last meetings · wire/Polymarket), NFC North watch, latest headlines, injury snapshot, quick links, socials |
 | `news.html` | Live news wire with auto-refresh, plus an **injury wire** rail that flags report-moving headlines |
-| `games.html` | Live scoreboard (auto-refreshing every 30 s), day-by-day picker, full season log with results, **box scores** on tap, division table |
+| `games.html` | Live scoreboard (auto-refreshing every 30 s), day-by-day picker, **Sunday desk** matchup fusion, full season log with results, **box scores** on tap, division table |
 | `stats.html` | Season pulse (record, points, differential from the log), player leaders when the feed exposes season stats, last game box score |
 | `odds.html` | League-wire lines, **Polymarket prediction markets** (live prices, volume), and a full-board box that takes **your own The Odds API key** (free tier) for Bet365/Pinnacle/DraftKings side-by-side |
 | `injuries.html` | Community-maintained report table (`data/injuries.json`) + live injury wire |
-| `practice.html` | The facilities (Halas Hall, Navy Pier, Soldier Field), the honest week-at-the-facility table, media availability, and a practice tracker you can keep (`data/practice.json`) |
+| `practice.html` | Facilities, week rhythm, **participation heat-map week strip**, media availability, and a practice tracker (`data/practice.json` — optional `participation[]`) |
 | `team.html` | Full roster from the league wire — search by name/jersey, filter by position |
 | `about.html` | The site, **@kshot9000** on X, donation addresses (BTC / ERG / ADA) with QR + copy, and the other projects |
 | `404.html` | A whiteout |
@@ -167,7 +167,7 @@ One config block, one JSON per editable dataset:
 |---|---|
 | X profile, GitHub base, donations, projects, socials | `CF.CONFIG` at the top of `js/common.js` (clearly marked `████ CONFIG ████`) |
 | Injury report rows | `data/injuries.json` — `{ name, pos, injury, status, statusCls, eta }` |
-| Practice tracker rows | `data/practice.json` — `{ date, session, focus, media, notes }` |
+| Practice tracker rows | `data/practice.json` — `{ date, session, focus, media, notes, level? }` plus optional `participation[]` `{ day, label, level, note }` for the heat strip (0=off … 4=game) |
 
 Notes:
 
@@ -194,13 +194,49 @@ the-cold-front/
 ├── js/api.js           ESPN / Polymarket / The Odds API layer
 ├── js/<page>.js        one small file per page
 ├── data/injuries.json  community report (you maintain)
-├── data/practice.json  practice tracker (you maintain)
+├── data/practice.json  practice tracker + optional participation heat
+├── data/snapshots/     baked feed fallbacks (META.json + payloads)
+├── scripts/refresh-snapshots.mjs   harvest ESPN + news → snapshots/
+├── scripts/refresh-snapshots.workflow.yml   GitHub Action template (copy into .github/workflows/)
 ├── img/favicon.svg     paw over the cold front
 ├── robots.txt
 └── README.md
 ```
 
 Zero build step, zero npm, zero dependencies. The only external calls are Google Fonts (with system fallbacks), the QR image service on About, and the data feeds above — each with a graceful offline state.
+
+
+## Snapshot freshness (nightly)
+
+Same-origin `data/snapshots/` keeps GitHub Pages panels honest when live ESPN / news hosts are quiet on a visitor's network. Each file is a real harvested payload — never invented scores or lines.
+
+| File | Source |
+|---|---|
+| `schedule.json` | ESPN Bears schedule (team id 3) |
+| `scoreboard.json` | ESPN NFL scoreboard |
+| `odds.json` | Book lines harvested from scoreboard `competitions[].odds` |
+| `roster.json` | ESPN Bears roster |
+| `injuries-bears.json` | ESPN league injuries **trimmed to CHI only** |
+| `gnews.json` | Bing/Google News RSS ("Chicago Bears") |
+| `META.json` | `built`, `version`, per-feed `ok` / counts, freshness hint |
+
+**Refresh locally:**
+
+```bash
+node scripts/refresh-snapshots.mjs
+```
+
+**Nightly (optional):** copy the Action template into the repo (needs a token/`gh` login with the `workflow` scope — the Pages deploy OAuth app cannot create workflow files):
+
+```bash
+mkdir -p .github/workflows
+cp scripts/refresh-snapshots.workflow.yml .github/workflows/refresh-snapshots.yml
+git add .github/workflows/refresh-snapshots.yml && git commit -m "ci: enable nightly snapshot refresh" && git push
+```
+
+Once enabled it runs ~04:15 UTC, harvests, and commits if anything changed (`workflow_dispatch` also). Requires `contents: write` on the default branch.
+
+`META.json` is the age check — if `built` is more than ~36h old on a Pages visit, re-run the script or the Action.
 
 ## Honest limitations
 
