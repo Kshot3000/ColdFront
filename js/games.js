@@ -202,6 +202,7 @@
     if (!root || !g) return;
     const last = CF.API.lastMeetingVs(sched, g.oppAbbr);
     const rest = CF.API.restDaysBefore(sched, g.date);
+    const hist = CF.API.meetingsVs ? CF.API.meetingsVs(sched, g.oppAbbr, 5) : [];
     let lastHTML =
       '<div class="matchup-stat">' +
       '<span class="k">Last meeting</span>';
@@ -235,7 +236,28 @@
         '<div class="s">Rest clock needs a prior completed game in the season log.</div>';
     }
     restHTML += "</div>";
-    root.innerHTML = lastHTML + restHTML;
+
+    let histHTML = "";
+    if (hist && hist.length) {
+      const chips = hist.map((m) => {
+        const site = m.home ? "vs" : "@";
+        const score = (m.scoreMe != null && m.scoreMe !== "" && m.scoreMe !== "–")
+          ? (String(m.scoreMe) + "–" + String(m.scoreOpp))
+          : "";
+        const tip = CF.fmtDate(m.date) + " " + site + " " + (m.oppAbbr || g.oppAbbr || "") +
+          (score ? " · " + score : "") + " · " + m.wl;
+        return '<span class="wl-chip wl-' + m.wl.toLowerCase() + '" title="' + CF.esc(tip) + '">' +
+          CF.esc(m.wl) + "</span>";
+      }).join("");
+      histHTML =
+        '<div class="matchup-history" aria-label="Recent meetings vs opponent">' +
+        '<span class="k">Last ' + hist.length + " vs " + CF.esc(g.oppAbbr || "OPP") + "</span>" +
+        '<div class="wl-chips" role="list">' + chips + "</div>" +
+        '<div class="s">From the season log — scored meetings only.</div>' +
+        "</div>";
+    }
+
+    root.innerHTML = lastHTML + restHTML + histHTML;
     root.hidden = false;
   }
 
@@ -258,6 +280,7 @@
       meta.textContent = "Next kickoff lands here when the schedule answers.";
       chip.innerHTML = '<span class="opp-chip dim">no opponent yet</span>';
       if (preview) { preview.innerHTML = ""; preview.hidden = true; }
+      if (CF.clearKickoffBanner) CF.clearKickoffBanner();
       return;
     }
     const site = g.home ? "Home · Soldier Field" : "Away";
@@ -280,6 +303,7 @@
       const hours = (new Date(g.date).getTime() - Date.now()) / 3600e3;
       CF.applyGamedayMode(hours <= 30 && hours > -6, hours <= 0 ? "live" : "gameday");
     }
+    if (CF.paintKickoffBanner) CF.paintKickoffBanner(g);
 
     if (g.home) {
       try {

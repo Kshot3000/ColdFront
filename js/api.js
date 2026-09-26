@@ -15,7 +15,7 @@ CF.API = {
   /* Alternate-host fetchers: same ESPN JSON from a different piece of
      infrastructure. These ride the Stage-1 race alongside the primary
      host, so a blocked network still gets the data from a working one. */
-  web: (path) => () => CF.fetchJSON(CF.webBase() + path, { timeout: 9000 }),
+  web: (path) => () => CF.fetchJSON(CF.API.webBase() + path, { timeout: 9000 }),
 
   /* ESPN hands scores to us as either a plain string ("34") or an object
      ({value:34, displayValue:"34"}). Every panel needs a plain value. */
@@ -40,18 +40,25 @@ CF.API = {
     const r = await CF.getSource("news",
       () => CF.fetchJSON(CF.base() + "/teams/chicago/news", { timeout: 9000 }), "news", null,
       [CF.API.web("/teams/chicago/news")]);
-    return r.data.news || [];
+    const list = (r.data && (r.data.news || r.data.articles)) || [];
+    // ESPN often returns {} in the off-week — treat as empty (callers fall
+    // through to the wide wire / snapshot).
+    return Array.isArray(list) ? list : [];
   },
 
   getScoreboard: async (dateParam) => {
-    const dp = dateParam || CF.todayParam();
-    const url = CF.base() + "/scoreboard?dates=" + dp;
-    // Pass the dated URL through so the proxy path fetches THIS date, not
-    // just today (urlFor("scoreboard") is pinned to the single current day).
+    // Dated URL when the Games day-picker asks for a specific day.
+    // Default (no dateParam): undated week board — pinning ?dates=today
+    // returns [] on bye/weekdays and wiped the home board + odds harvest.
+    const dp = dateParam || "";
+    const path = dp ? ("/scoreboard?dates=" + dp) : "/scoreboard";
+    const url = CF.base() + path;
+    const alt = CF.API.webBase() + path;
+    const cacheKey = dp ? ("scoreboard." + dp) : "scoreboard";
     const r = await CF.getSource("scoreboard",
       () => CF.fetchJSON(url, { timeout: 9000 }),
-      "scoreboard." + dp, url,
-      [() => CF.fetchJSON(CF.webBase() + "/scoreboard?dates=" + dp, { timeout: 9000 })]);
+      cacheKey, url,
+      [() => CF.fetchJSON(alt, { timeout: 9000 })]);
     return r;
   },
 
@@ -61,7 +68,7 @@ CF.API = {
       () => CF.fetchJSON(url, { timeout: 9000 }), "schedule", url,
       [
         CF.API.web("/teams/chicago/schedule"),
-        () => CF.fetchJSON(CF.cdnBase() + "/teams/chicago/schedule", { timeout: 9000 }),
+        () => CF.fetchJSON(CF.API.cdnBase() + "/teams/chicago/schedule", { timeout: 9000 }),
         CF.API.tsdbKey() ? () => CF.API.tsdbSchedule() : null,
       ].filter(Boolean));
     return r;
@@ -71,6 +78,11 @@ CF.API = {
     const r = await CF.getSource("standings",
       () => CF.fetchJSON(CF.base() + "/standings", { timeout: 9000 }), "standings", null,
       [CF.API.web("/standings")]);
+    // Preseason / early season: endpoint returns a stub with only
+    // fullViewLink — treat as empty so callers use derived standings.
+    const d = r && r.data;
+    const stub = d && typeof d === "object" && d.fullViewLink && !d.children && !d.standings && !d.groups;
+    if (stub) throw new Error("standings stub");
     return r;
   },
 
@@ -88,10 +100,28 @@ CF.API = {
   /* League-wide injury report. Heavy payload (~9 MB) but it carries the
      full Bears list: status per player + editorial notes on the wire. */
   getLeagueInjuries: async () => {
-    const r = await CF.getSource("injuries",
-      () => CF.fetchJSON(CF.base() + "/injuries", { timeout: 15000 }), "injuries", null,
-      [() => CF.fetchJSON(CF.webBase() + "/injuries", { timeout: 15000 })]);
-    return r;
+    /* League injuries payload is ~9 MB. Race direct hosts (short) against
+       a Bears-only same-origin snapshot so the panel never waits on a
+       multi-megabyte download when the wire is slow. */
+    const ttl = (CF.CONFIG.ttl && CF.CONFIG.ttl.injuries) || 300e3;
+    const cached = CF.cacheGet("injuries");
+    const live = CF.raceJSON([
+      () => CF.fetchJSON(CF.API.base() + "/injuries", { timeout: 8000 }),
+      () => CF.fetchJSON(CF.API.webBase() + "/injuries", { timeout: 8000 }),
+    ]).then((data) => ({ data, source: "live" }));
+    const snap = (async () => {
+      const s = CF.snapshotGet ? await CF.snapshotGet("injuries-bears") : null;
+      if (!s) throw new Error("no injury snapshot");
+      return { data: s, source: "snapshot" };
+    })();
+    try {
+      const r = await Promise.any([live, snap]);
+      if (r.source === "live") CF.cacheSet("injuries", r.data, ttl);
+      return { data: r.data, source: r.source, name: "injuries" };
+    } catch (e) {
+      if (cached) return { data: cached, source: "cache", name: "injuries" };
+      throw e;
+    }
   },
 
   getEvent: async (id) => {
@@ -110,10 +140,35 @@ CF.API = {
   },
 
   getOdds: async () => {
-    const r = await CF.getSource("odds",
-      () => CF.fetchJSON(CF.base() + "/odds", { timeout: 9000 }), "odds", null,
-      [CF.API.web("/odds")]);
-    return r;
+    /* ESPN /odds is a hard 404 (2025+). Harvest book lines from the
+       scoreboard competitions[].odds array instead, then fall back to a
+       same-origin snapshot. Never leave the odds panel on a spinner. */
+    try {
+      const sb = await CF.API.getScoreboard();
+      const games = ((sb.data && sb.data.events) || []).map((e) => {
+        const c = (e.competitions || [])[0] || {};
+        return {
+          id: e.id,
+          name: e.name || "",
+          date: e.date,
+          odds: c.odds || [],
+        };
+      }).filter((g) => g.odds && g.odds.length);
+      if (games.length) {
+        const data = { games };
+        CF.cacheSet("odds", data, (CF.CONFIG.ttl && CF.CONFIG.ttl.scoreboard) || 600e3);
+        return { data, source: sb.source || "live", name: "odds" };
+      }
+    } catch (e) { /* try snapshot */ }
+    try {
+      const snap = CF.snapshotGet ? await CF.snapshotGet("odds") : null;
+      if (snap && (snap.games || []).length) {
+        return { data: snap, source: "snapshot", name: "odds" };
+      }
+    } catch (e2) { /* fall through */ }
+    const cached = CF.cacheGet("odds");
+    if (cached) return { data: cached, source: "cache", name: "odds" };
+    throw new Error("odds unavailable");
   },
 
   /* ---------- Polymarket (prediction markets) ---------- */
@@ -159,18 +214,40 @@ CF.API = {
 
   getGoogleNews: async (query, max) => {
     const q = query || 'Chicago Bears';
+    const cached = CF.cacheGet("gnews." + q);
     const feeds = [
       CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en",
       CF.CONFIG.endpoints.bingNews + "?q=" + encodeURIComponent(q) + "&format=RSS",
     ];
     let items = [];
-    for (const url of feeds) {
+    // Race live RSS (short) against same-origin snapshot so Pages never
+    // waits on dead CORS proxies when Google/Bing block the browser.
+    const live = (async () => {
+      for (const url of feeds) {
+        try {
+          const xml = await CF.fetchText(url, { timeout: 6500 });
+          const list = CF.API.parseRss(xml).slice(0, max || 12);
+          if (list.length) return list;
+        } catch (e) { /* next upstream */ }
+      }
+      return [];
+    })();
+    const snapP = (async () => {
       try {
-        const xml = await CF.fetchText(url, { timeout: 10000 });
-        items = CF.API.parseRss(xml).slice(0, max || 12);
-        if (items.length) break;
-      } catch (e) { /* next upstream */ }
+        const snap = CF.snapshotGet ? await CF.snapshotGet("gnews") : null;
+        const list = snap && (snap.items || snap);
+        return Array.isArray(list) ? list.slice(0, max || 12) : [];
+      } catch (e) { return []; }
+    })();
+    try {
+      items = await Promise.any([
+        live.then((list) => { if (!list.length) throw new Error("empty live"); return list; }),
+        snapP.then((list) => { if (!list.length) throw new Error("empty snap"); return list; }),
+      ]);
+    } catch (e) {
+      items = [];
     }
+    if (!items.length && cached && cached.length) items = cached.slice(0, max || 12);
     if (!items.length) throw new Error("empty news feed");
     CF.cacheSet("gnews." + q, items, 5 * 60e4);
     return items;
@@ -306,6 +383,42 @@ CF.API = {
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     return rows[0] || null;
+  },
+
+  /* W/L/T from scored meeting only — never invent a result. */
+  meetingResult: (r) => {
+    if (!r) return null;
+    const a = parseInt(r.scoreMe, 10), b = parseInt(r.scoreOpp, 10);
+    if (!isNaN(a) && !isNaN(b)) return a > b ? "W" : a < b ? "L" : "T";
+    const m = String(r.result || "").trim().toUpperCase();
+    if (m === "W" || m === "L" || m === "T") return m;
+    return null;
+  },
+
+  /* Last N completed meetings vs opponent (season log only). */
+  meetingsVs: (sched, oppAbbr, limit) => {
+    if (!oppAbbr) return [];
+    const want = String(oppAbbr).toUpperCase();
+    const cap = Math.max(1, Math.min(Number(limit) || 5, 5));
+    const now = Date.now();
+    return CF.API.scheduleList(sched)
+      .filter((r) => {
+        if (!r || !r.date) return false;
+        if (String(r.oppAbbr || "").toUpperCase() !== want) return false;
+        const t = new Date(r.date).getTime();
+        if (isNaN(t) || t > now - 2 * 3600e3) return false;
+        const hasScore = (r.scoreMe != null && r.scoreMe !== "" && r.scoreMe !== "–")
+          || (r.scoreOpp != null && r.scoreOpp !== "" && r.scoreOpp !== "–");
+        const done = hasScore || /final|fte|f\/ot|completed/i.test(String(r.result || ""));
+        return done;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, cap)
+      .map((r) => {
+        const wl = CF.API.meetingResult(r);
+        return wl ? Object.assign({}, r, { wl: wl }) : null;
+      })
+      .filter(Boolean);
   },
 
   /* Rest days between the most recent completed Bears game and a kickoff date. */
@@ -461,13 +574,54 @@ CF.API = {
   preseasonStandings: async (startParam, endParam) => {
     const key = startParam + "-" + endParam;
     const rangeUrl = CF.base() + "/scoreboard?dates=" + key;
-    // Pass the range URL explicitly: urlFor("scoreboard") is hardcoded to the
-    // single day (today), so without this the proxy path would fetch today's
-    // board instead of the season window the derived table needs.
-    const r = await CF.getSource("scoreboard",
-      () => CF.fetchJSON(rangeUrl, { timeout: 15000 }),
-      "scoreboard." + key, rangeUrl);
-    return CF.API.aggregateStandings(r.data);
+    const altUrl = CF.API.webBase() + "/scoreboard?dates=" + key;
+    try {
+      const r = await CF.getSource("scoreboard",
+        () => CF.fetchJSON(rangeUrl, { timeout: 15000 }),
+        "scoreboard." + key, rangeUrl,
+        [() => CF.fetchJSON(altUrl, { timeout: 15000 })]);
+      const table = CF.API.aggregateStandings(r.data);
+      if (table && table.rows && table.rows.length) return table;
+    } catch (e) { /* range unsupported on some hosts — derive from schedule */ }
+    // Schedule-derived NFC North (completed games only — no fake rows).
+    try {
+      const s = await CF.API.getSchedule();
+      const table = CF.API.standingsFromBearsSchedule(s.data);
+      if (table && table.rows && table.rows.length) return table;
+    } catch (e2) { /* fall */ }
+    throw new Error("derived standings unavailable");
+  },
+
+  /* Build a minimal division table from the Bears season log + known
+     NFC North abbrs. Only counts completed scored games — never invents. */
+  standingsFromBearsSchedule: (sched) => {
+    const north = ["CHI", "DET", "GB", "MIN"];
+    const stats = {};
+    north.forEach((a) => { stats[a] = { abbr: a, name: a, gp: 0, w: 0, l: 0 }; });
+    const names = { CHI: "Chicago Bears", DET: "Detroit Lions", GB: "Green Bay Packers", MIN: "Minnesota Vikings" };
+    north.forEach((a) => { stats[a].name = names[a]; });
+    CF.API.scheduleList(sched).forEach((r) => {
+      const a = parseInt(r.scoreMe, 10), b = parseInt(r.scoreOpp, 10);
+      if (isNaN(a) || isNaN(b)) return;
+      const me = stats.CHI;
+      me.gp += 1;
+      if (a > b) me.w += 1; else if (a < b) me.l += 1;
+      const opp = String(r.oppAbbr || "").toUpperCase();
+      if (stats[opp]) {
+        stats[opp].gp += 1;
+        if (b > a) stats[opp].w += 1; else if (b < a) stats[opp].l += 1;
+      }
+    });
+    const rows = north.map((a) => {
+      const s = stats[a];
+      return {
+        name: s.name, abbr: s.abbr, gp: s.gp, w: s.w, l: s.l,
+        pct: s.gp ? s.w / s.gp : 0, div: null, streak: "", isMe: a === "CHI",
+      };
+    }).filter((r) => r.gp > 0 || r.abbr === "CHI")
+      .sort((a, b) => (b.w - a.w) || (a.l - b.l));
+    if (!rows.length) return null;
+    return { name: "NFC North (from season log)", rows };
   },
 
   aggregateStandings: (sb) => {
@@ -748,21 +902,45 @@ CF.API = {
     const games = (oddsPayload && (oddsPayload.games || oddsPayload)) || [];
     const list = Array.isArray(games) ? games : [];
     const g = list.find((x) => String(x.id) === String(gameId)) ||
-      list.find((x) => /bears/i.test(x.name || ""));
+      list.find((x) => /bears/i.test(x.name || "")) ||
+      list[0];
     if (!g) return null;
     const arr = Array.isArray(g.odds) ? g.odds : (g.odds ? [g.odds] : []);
-    return {
-      id: g.id,
-      name: g.name || "",
-      date: g.date,
-      lines: arr.map((o) => ({
-        book: o.provider ? (o.provider.name || o.provider.displayName || "Book") : "Book",
-        spread: o.spread || o.spreadLine || null,
-        total: o.overUnder || o.total != null ? o.overUnder || o.total : null,
-        ml: o.moneyline || o.moneyLine || null,
-        url: o.links && o.links.web ? o.links.web.href : null,
-      })).filter((l) => l.spread || l.total || l.ml),
+    const closeLine = (side) => {
+      if (!side) return null;
+      const c = side.close || side.open || side;
+      if (c == null) return null;
+      if (typeof c !== "object") return c;
+      return c.line != null ? c.line : (c.odds != null ? c.odds : null);
     };
+    const lines = arr.map((o) => {
+      const book = o.provider ? (o.provider.name || o.provider.displayName || "Book") : "Book";
+      let spread = null;
+      if (o.pointSpread && (o.pointSpread.home || o.pointSpread.away)) {
+        spread = { home: closeLine(o.pointSpread.home), away: closeLine(o.pointSpread.away) };
+      } else if (o.spread && typeof o.spread === "object") {
+        spread = o.spread;
+      } else if (typeof o.spread === "number" || (typeof o.spread === "string" && o.spread !== "" && !isNaN(Number(o.spread)))) {
+        const n = Number(o.spread);
+        spread = { home: n, away: -n };
+      }
+      let total = null;
+      if (o.overUnder != null) total = o.overUnder;
+      else if (o.total && o.total.over) total = closeLine(o.total.over);
+      else if (o.total != null && typeof o.total !== "object") total = o.total;
+      let ml = null;
+      if (o.moneyline && (o.moneyline.home || o.moneyline.away)) {
+        ml = { home: closeLine(o.moneyline.home), away: closeLine(o.moneyline.away) };
+      } else if (o.moneyLine && (o.moneyLine.home || o.moneyLine.away)) {
+        ml = { home: closeLine(o.moneyLine.home), away: closeLine(o.moneyLine.away) };
+      }
+      if (spread && spread.home == null && spread.away == null) spread = null;
+      if (ml && ml.home == null && ml.away == null) ml = null;
+      const url = (o.link && (o.link.web || o.link.href)) || (o.links && o.links.web && o.links.web.href) || null;
+      return { book: book, spread: spread, total: total, ml: ml, url: url };
+    }).filter((l) => l.spread || l.total != null || l.ml);
+    if (!lines.length) return null;
+    return { id: g.id, name: g.name || "", date: g.date, lines: lines };
   },
 
   // Bears-relevant Polymarket events.

@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><body><pre id="o">starting…</pre>
+<script>
+(async()=>{
+  const o = (s)=>{document.getElementById('o').textContent += s+'\n'; console.log(s)};
+  // Load live common+api in iframe? Better: navigate parent. Instead reimplement key checks against live URLs.
+  const base = 'https://kshot3000.github.io/ColdFront/';
+  // Fetch live JS and eval? Cross-origin. Just open live pages via fetch text and separately test APIs.
+  const apis = [
+    ['web.schedule','https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/teams/chicago/schedule'],
+    ['web.scoreboard','https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'],
+    ['web.standings','https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/standings'],
+    ['site.odds','https://site.api.espn.com/apis/site/v2/sports/football/nfl/odds'],
+    ['poly','https://gamma-api.polymarket.com/events?limit=5&active=true&closed=false&tag_slug=nfl'],
+    ['wx','https://api.open-meteo.com/v1/forecast?latitude=41.8781&longitude=-87.6298&current=temperature_2m,weather_code,wind_speed_10m'],
+    ['gnews-direct','https://news.google.com/rss/search?q=Chicago+Bears&hl=en-US&gl=US&ceid=US:en'],
+    ['injuries.json', base+'data/injuries.json'],
+    ['practice.json', base+'data/practice.json'],
+  ];
+  for (const [n,u] of apis){
+    const t0=performance.now();
+    try{
+      const r=await fetch(u);
+      const t=await r.text();
+      o(n+' '+r.status+' '+t.length+'b '+Math.round(performance.now()-t0)+'ms');
+    }catch(e){o(n+' FAIL '+e+' '+Math.round(performance.now()-t0)+'ms');}
+  }
+  o('DONE');
+})();
+</script></body></html>

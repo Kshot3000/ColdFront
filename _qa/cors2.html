@@ -1,0 +1,9 @@
+<!DOCTYPE html><html><body><pre id="o"></pre><script>
+(async()=>{
+ const o=s=>{document.getElementById('o').textContent+=s+'\n';console.log(s)};
+ try{const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.87&longitude=-87.62&current=temperature_2m');o('meteo '+r.status+' '+(await r.text()).slice(0,60));}catch(e){o('meteo FAIL '+e)}
+ try{const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');o('espn '+r.status+' len '+(await r.text()).length);}catch(e){o('espn FAIL '+e)}
+ try{const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',{headers:{Accept:'application/json, text/xml;q=0.9, */*;q=0.8'}});o('espn+Accept '+r.status);}catch(e){o('espn+Accept FAIL '+e)}
+ o('DONE');
+})();
+</script></body></html>

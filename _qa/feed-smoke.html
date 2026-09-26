@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><body><pre id="o">boot…</pre>
+<script src="../js/common.js"></script>
+<script src="../js/api.js"></script>
+<script>
+(async()=>{
+  const o=s=>{document.getElementById('o').textContent+=s+'\n';console.log(s)};
+  try{
+    o('proxy='+JSON.stringify(CF.usableLocalProxy()));
+    o('base='+CF.CONFIG.endpoints.espnBase);
+    const sc=await CF.API.getSchedule();
+    o('schedule '+sc.source+' '+(sc.data.events||[]).length);
+    const sb=await CF.API.getScoreboard();
+    o('scoreboard '+sb.source+' '+(sb.data.events||[]).length);
+    try{await CF.API.getStandings();o('standings live');}
+    catch(e){const d=await CF.API.preseasonStandingsAuto();o('standings '+d.name+' '+d.rows.length);}
+    const od=await CF.API.getOdds();
+    o('odds '+od.source+' '+od.data.games.length+' books='+CF.API.oddsForGame(od.data).lines.length);
+    const gn=await CF.API.getGoogleNews('Chicago Bears',4);
+    o('gnews '+gn.length);
+    const ro=await CF.API.getRoster();
+    o('roster '+ro.source+' '+CF.API.rosterPlayers(ro.data).length);
+    const wx=await CF.loadWeather();
+    o('wx '+(wx&&wx.tempC));
+    const inj=await CF.API.getLeagueInjuries();
+    o('injuries '+inj.source+' '+CF.API.bearsInjuryRows(inj.data).rows.length);
+    o('BROWSER_SMOKE_OK');
+  }catch(e){o('BROWSER_SMOKE_FAIL '+e);}
+})();
+</script></body></html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><body><pre id="o"></pre><script>
+(async()=>{
+ const o=s=>{document.getElementById('o').textContent+=s+'\n';console.log(s)};
+ const url='https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+ for (const [n,headers] of [
+   ['none', undefined],
+   ['star', {Accept:'*/*'}],
+   ['cf', {Accept:'application/json, text/xml;q=0.9, */*;q=0.8'}],
+ ]){
+   try{
+     const r=await fetch(url, headers?{headers}:undefined);
+     o(n+' '+r.status+' '+(await r.text()).length);
+   }catch(e){o(n+' FAIL '+e)}
+ }
+ // Simulate CF.raceJSON: site.api fail + web win
+ try{
+   const data = await Promise.any([
+     fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}),
+     fetch('https://site.web.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}),
+   ]);
+   o('race events='+((data.events||[]).length));
+ }catch(e){o('race FAIL '+e)}
+ // local proxy from https? we're on http localhost
+ try{
+   await fetch('http://127.0.0.1:8799/fetch?url='+encodeURIComponent(url), {signal:AbortSignal.timeout(1500)});
+   o('localProxy unexpected ok');
+ }catch(e){o('localProxy '+e.name+': '+e.message)}
+ o('DONE');
+})();
+</script></body></html>
