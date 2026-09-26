@@ -1,0 +1,45 @@
+<!DOCTYPE html><html><body>
+<canvas id="snow"></canvas>
+<div class="weather-strip" data-cf-weather></div>
+<header class="site-head"><div class="wrap">
+<button class="nav-toggle" aria-label="Toggle menu">☰</button>
+<nav class="nav" id="site-nav"><a href="index.html">Home</a><a href="games.html">Games</a></nav>
+</div></header>
+<section class="hero"><div class="hero-photo" data-cf-hero-rotator aria-hidden="true">
+  <div class="hero-fallback"></div>
+  <picture class="hero-layer is-active" data-hero-layer="0">
+    <img class="hero-photo-img" src="../img/hero-soldier-desk.webp" alt="" width="1600" height="928">
+  </picture>
+  <picture class="hero-layer" data-hero-layer="1">
+    <img class="hero-photo-img" src="../img/hero-soldier-alt-desk.webp" alt="" width="1600" height="928">
+  </picture>
+</div></section>
+<div class="photo-band soldier"><div class="photo-band-bg"></div><div class="photo-band-inner">band</div></div>
+<pre id="o">boot</pre>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/common.js"></script>
+<script src="../js/api.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const o=s=>{document.getElementById('o').textContent += '\\n'+s; console.log(s)};
+  try {
+    o('ver='+CF.CONFIG.site.version);
+    o('heroLayers='+document.querySelectorAll('.hero-layer').length);
+    o('heroActive='+document.querySelectorAll('.hero-layer.is-active').length);
+    o('snow='+!!CF.$('#snow'));
+    o('navToggle='+!!CF.$('.nav-toggle'));
+    CF.$('.nav-toggle').click();
+    o('navOpen='+document.body.classList.contains('nav-open')+','+CF.$('.nav').classList.contains('open'));
+    CF.$('.nav-toggle').click();
+    o('navClosed='+(!document.body.classList.contains('nav-open')));
+    o('revealClass='+document.querySelector('.photo-band').className);
+    // force gameday banner with fake near kickoff
+    CF.paintKickoffBanner({id:'qa', date: new Date(Date.now()+3600e3).toISOString(), oppAbbr:'PHI', home:true});
+    o('banner='+!!CF.$('#cf-kickoff-banner'));
+    const sc=await CF.API.getSchedule();
+    o('schedule='+sc.source+':'+(sc.data.events||[]).length);
+    o('QA_OK');
+  } catch(e){ o('QA_FAIL '+e); }
+});
+</script>
+</body></html>

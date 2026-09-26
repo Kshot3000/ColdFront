@@ -10,7 +10,7 @@
   <meta property="og:description" content="News, injuries, odds, stats, schedule, roster & practice — everything a Bears fan wants in one place.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-  <link rel="preload" as="image" href="img/hero-chicago-night.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="img/hero-soldier-desk.webp" type="image/webp" fetchpriority="high" imagesrcset="img/hero-soldier-mobile.webp 900w, img/hero-soldier-desk.webp 1600w" imagesizes="100vw">
   <link rel="dns-prefetch" href="https://site.api.espn.com">
   <link rel="dns-prefetch" href="https://news.google.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,7 +60,29 @@
 
 <main>
   <section class="hero">
-    <div class="hero-photo" aria-hidden="true"></div>
+    <div class="hero-photo" aria-hidden="true" data-cf-hero-rotator>
+      <div class="hero-fallback" aria-hidden="true">
+        <div class="hero-fallback-gridiron"></div>
+        <svg class="hero-fallback-marks" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="100" cy="60" rx="78" ry="42" fill="none" stroke="#C83803" stroke-width="3" opacity="0.4"/>
+          <ellipse cx="100" cy="60" rx="52" ry="28" fill="none" stroke="#E8541E" stroke-width="2" opacity="0.5"/>
+          <path d="M40 60 Q100 28 160 60 Q100 92 40 60" fill="none" stroke="#9FB8CC" stroke-width="1.5" opacity="0.45"/>
+          <circle cx="100" cy="60" r="4" fill="#E8541E" opacity="0.75"/>
+        </svg>
+      </div>
+      <picture class="hero-layer is-active" data-hero-layer="0">
+        <source media="(max-width: 700px)" srcset="img/hero-soldier-mobile.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/hero-soldier-desk.webp" alt="" width="1600" height="928" fetchpriority="high" decoding="async">
+      </picture>
+      <picture class="hero-layer" data-hero-layer="1">
+        <source media="(max-width: 700px)" srcset="img/hero-soldier-alt-mobile.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/hero-soldier-alt-desk.webp" alt="" width="1600" height="928" loading="lazy" decoding="async">
+      </picture>
+      <picture class="hero-layer" data-hero-layer="2">
+        <source media="(max-width: 700px)" srcset="img/soldier-field-dark-sm.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/soldier-field-dark.webp" alt="" width="1400" height="1867" loading="lazy" decoding="async">
+      </picture>
+    </div>
     <div class="wrap">
       <div class="kicker-line">
         <svg class="front-mark" viewBox="0 0 46 14" aria-hidden="true">

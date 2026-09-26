@@ -20,3 +20,8 @@ Unsplash (v1.7.0):
 
 Wikimedia Commons (v1.7.0):
 - File:Chicago_in_2022_Marina_City_at_night_(52053164103).jpg (CC BY 2.0, Chris Rycroft) → chicago-marina-city-night.webp
+
+v1.8.0 stadium hero crops (derived from existing Wikimedia Soldier Field assets above — no new third-party photos):
+- hero-soldier-desk.webp / hero-soldier-mobile.webp ← art-directed crops of soldier-field-dark.webp
+- hero-soldier-alt-desk.webp / hero-soldier-alt-mobile.webp ← art-directed crops of soldier-field.webp
+Layered fail-soft: primary night stadium → alt stadium → CSS gridiron + original football SVG silhouette.

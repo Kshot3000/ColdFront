@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.7.1",
+    version: "1.8.0",
   },
 
   author: {
@@ -1062,6 +1062,125 @@ CF.initChrome = () => {
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
+
+  if (CF.initHeroRotator) CF.initHeroRotator();
+  if (CF.initReveal) CF.initReveal();
+};
+
+
+/* ---------- v1.8.0 — stadium hero rotator · kickoff banner · reveal ---------- */
+
+/* Layered hero: primary Soldier Field → alt stadium → CSS gridiron fallback.
+   Soft crossfade rotation when motion is allowed; onerror advances layers. */
+CF.initHeroRotator = () => {
+  const root = CF.$("[data-cf-hero-rotator]");
+  if (!root) return;
+  const layers = CF.$$(".hero-layer", root);
+  if (!layers.length) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const activate = (idx) => {
+    layers.forEach((el, i) => el.classList.toggle("is-active", i === idx));
+    root.setAttribute("data-hero-active", String(idx));
+  };
+
+  layers.forEach((layer, i) => {
+    const img = layer.querySelector("img");
+    if (!img) return;
+    const fail = () => {
+      layer.classList.add("is-failed");
+      // Advance to next non-failed layer; CSS fallback stays underneath.
+      const next = layers.findIndex((el, j) => j > i && !el.classList.contains("is-failed"));
+      if (next >= 0) activate(next);
+      else root.classList.add("is-fallback-only");
+    };
+    img.addEventListener("error", fail);
+    if (img.complete && img.naturalWidth === 0) fail();
+  });
+
+  if (reduce || layers.length < 2) return;
+
+  let idx = 0;
+  const tick = () => {
+    const live = layers.map((el, i) => ({ el, i })).filter((x) => !x.el.classList.contains("is-failed"));
+    if (live.length < 2) return;
+    idx = (idx + 1) % live.length;
+    activate(live[idx].i);
+  };
+  // Atmospheric rotate ~14s — no video, no sound.
+  setInterval(tick, 14000);
+};
+
+/* Soft gameday-window banner (no sound). Links to board + odds. */
+CF.clearKickoffBanner = () => {
+  const el = CF.$("#cf-kickoff-banner");
+  if (el) el.remove();
+};
+CF.paintKickoffBanner = (game) => {
+  if (!game || !game.date) { CF.clearKickoffBanner(); return; }
+  const kick = new Date(game.date).getTime();
+  if (isNaN(kick)) { CF.clearKickoffBanner(); return; }
+  const hours = (kick - Date.now()) / 3600e3;
+  const inWindow = hours <= 30 && hours > -6;
+  if (!inWindow) { CF.clearKickoffBanner(); return; }
+
+  const key = String(game.id || game.date);
+  try {
+    if (sessionStorage.getItem("cf-kickoff-dismiss") === key) return;
+  } catch (e) { /* private mode */ }
+
+  let el = CF.$("#cf-kickoff-banner");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "cf-kickoff-banner";
+    el.className = "cf-kickoff-banner";
+    el.setAttribute("role", "status");
+    const host = CF.$(".weather-strip") || CF.$(".site-head") || document.body.firstChild;
+    if (host && host.parentNode) host.parentNode.insertBefore(el, host.nextSibling);
+    else document.body.insertBefore(el, document.body.firstChild);
+  }
+  const opp = game.oppAbbr || game.opp || "opponent";
+  const site = game.home === true ? "vs" : (game.home === false ? "@" : "vs");
+  const when = CF.fmtDate(game.date) + (CF.fmtTime(game.date) ? " · " + CF.fmtTime(game.date) : "");
+  const live = hours <= 0;
+  el.innerHTML =
+    '<div class="wrap cf-kickoff-inner">' +
+    '<span class="cf-kickoff-mark" aria-hidden="true">❄</span>' +
+    '<span class="cf-kickoff-copy"><b>' + (live ? "Kickoff window · live beat" : "Gameday window") + "</b> " +
+    CF.esc(site) + " " + CF.esc(String(opp)) + " · " + CF.esc(when) + "</span>" +
+    '<span class="cf-kickoff-actions">' +
+    '<a class="btn small" href="games.html#board">Board →</a>' +
+    '<a class="btn small" href="odds.html">Odds →</a>' +
+    '<button type="button" class="cf-kickoff-dismiss" aria-label="Dismiss gameday banner">×</button>' +
+    "</span></div>";
+  const btn = el.querySelector(".cf-kickoff-dismiss");
+  if (btn) btn.addEventListener("click", () => {
+    try { sessionStorage.setItem("cf-kickoff-dismiss", key); } catch (e2) { /* ignore */ }
+    CF.clearKickoffBanner();
+  });
+};
+
+/* IntersectionObserver fade-in for photo bands; defer BG paint until in view. */
+CF.initReveal = () => {
+  try { document.documentElement.classList.add("cf-js"); } catch (e) { /* ignore */ }
+  const nodes = CF.$$(".photo-band");
+  if (!nodes.length) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce || !("IntersectionObserver" in window)) {
+    nodes.forEach((n) => n.classList.add("cf-reveal", "is-in"));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add("is-in");
+      io.unobserve(en.target);
+    });
+  }, { rootMargin: "120px 0px", threshold: 0.08 });
+  nodes.forEach((n) => {
+    n.classList.add("cf-reveal");
+    io.observe(n);
+  });
 };
 
 document.addEventListener("DOMContentLoaded", CF.initChrome);

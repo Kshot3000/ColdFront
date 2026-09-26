@@ -76,6 +76,14 @@
       if (CF.applyGamedayMode) {
         CF.applyGamedayMode(game.state === "in" || game.state === "pre", game.state === "in" ? "live" : "gameday");
       }
+      if (CF.paintKickoffBanner) {
+        CF.paintKickoffBanner({
+          id: game.id, date: game.date,
+          opp: (game.home && game.home.abbr === "CHI") ? (game.away && game.away.name) : (game.home && game.home.name),
+          oppAbbr: (game.home && game.home.abbr === "CHI") ? (game.away && game.away.abbr) : (game.home && game.home.abbr),
+          home: !!(game.home && game.home.abbr === "CHI"),
+        });
+      }
       // Live-clock refresh comes from the shared CF.refresh job registered
       // below (30 s, whether the game is scheduled, live, or just final).
       return;
@@ -102,6 +110,12 @@
     const bits = ["<b>" + CF.fmtDate(g.date) + "</b>", (CF.fmtTime(g.date) || "TBD")];
     if (g.tv) bits.push("TV: <b>" + CF.esc(g.tv) + "</b>");
     meta.innerHTML = bits.join(" · ");
+
+    if (CF.applyGamedayMode && g.date) {
+      const hours = (new Date(g.date).getTime() - Date.now()) / 3600e3;
+      CF.applyGamedayMode(hours <= 30 && hours > -6, hours <= 0 ? "live" : "gameday");
+    }
+    if (CF.paintKickoffBanner) CF.paintKickoffBanner(g);
 
     // Countdown.
     const render = () => {

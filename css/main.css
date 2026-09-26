@@ -2710,3 +2710,182 @@ body.cf-gameday .weather-strip {
 .wl-chip.wl-l { border-color: rgba(255,90,90,0.5); color: #ff9a9a; background: rgba(60,20,24,0.55); }
 .wl-chip.wl-t { border-color: rgba(159,184,204,0.45); color: var(--frost); }
 .matchup-history .s { margin-top: 8px; font-size: 12px; color: var(--text-dim); }
+
+
+/* ============================================================
+   v1.8.0 — stadium cinematic hero · Ken Burns · kickoff banner · reveal
+   ============================================================ */
+
+/* Hero photo: layered <picture> over fail-soft stadium CSS */
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(2,6,14,0.55) 0%, rgba(2,6,14,0.25) 28%, rgba(2,6,14,0.72) 78%, rgba(2,6,14,0.97) 100%),
+    linear-gradient(105deg, rgba(2,6,14,0.7) 0%, rgba(2,6,14,0.35) 32%, transparent 55%),
+    radial-gradient(ellipse 58% 48% at 72% 38%, rgba(255,90,31,0.26), transparent 64%),
+    linear-gradient(165deg, #0a1628 0%, #101F33 42%, #060d18 100%);
+}
+.hero-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 70% 40%, rgba(255,90,31,0.22), transparent 62%),
+    radial-gradient(ellipse 40% 30% at 20% 70%, rgba(200,56,3,0.18), transparent 70%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 48px,
+      rgba(159,184,204,0.05) 48px,
+      rgba(159,184,204,0.05) 49px
+    ),
+    linear-gradient(180deg, #0c1a2e 0%, #081018 100%);
+}
+.hero-fallback-gridiron {
+  position: absolute;
+  inset: 18% 8% 22% 8%;
+  border: 1px solid rgba(159,184,204,0.18);
+  border-radius: 4px;
+  box-shadow: inset 0 0 40px rgba(255,90,31,0.08);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 11%,
+      rgba(232,84,30,0.12) 11% 12%
+    );
+  opacity: 0.55;
+}
+.hero-fallback-marks {
+  position: absolute;
+  right: 8%;
+  bottom: 18%;
+  width: min(280px, 42vw);
+  opacity: 0.55;
+  filter: drop-shadow(0 0 24px rgba(255,90,31,0.35));
+}
+.hero-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-out);
+}
+.hero-layer.is-active { opacity: 1; z-index: 2; }
+.hero-layer.is-failed { display: none; }
+.hero-photo.is-fallback-only .hero-fallback { opacity: 1; }
+.hero-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 32%;
+  display: block;
+  transform: scale(1.06);
+  filter: saturate(1.05) brightness(0.72) contrast(1.06);
+}
+/* Art-directed crop focus */
+@media (max-width: 700px) {
+  .hero-photo-img { object-position: center 28%; }
+}
+/* Ken Burns — subtle pan/zoom; honor reduced motion */
+@keyframes cfHeroKenBurns {
+  0%   { transform: scale(1.06) translate(0, 0); }
+  100% { transform: scale(1.14) translate(-1.6%, -1.1%); }
+}
+.hero-layer.is-active .hero-photo-img {
+  animation: cfHeroKenBurns 28s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-layer.is-active .hero-photo-img {
+    animation: none !important;
+    transform: scale(1.04);
+  }
+  .hero-layer { transition: none; }
+}
+
+/* Keep frost overlays above photo layers */
+.hero-photo::before,
+.hero-photo::after {
+  z-index: 3;
+}
+
+/* Soft kickoff-window banner (no sound) */
+.cf-kickoff-banner {
+  position: relative;
+  z-index: 55;
+  background: linear-gradient(90deg, rgba(200,56,3,0.22), rgba(16,31,51,0.92) 40%, rgba(8,14,24,0.95));
+  border-bottom: 1px solid rgba(255,90,31,0.4);
+  box-shadow: 0 8px 28px rgba(209,58,2,0.18);
+  animation: cfKickIn 0.45s var(--ease-out);
+}
+@keyframes cfKickIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-kickoff-banner { animation: none; }
+}
+.cf-kickoff-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  font-size: 13.5px;
+  color: var(--frost);
+}
+.cf-kickoff-mark { font-size: 16px; }
+.cf-kickoff-copy { flex: 1 1 200px; line-height: 1.35; }
+.cf-kickoff-copy b { color: var(--orange-hot); letter-spacing: 0.02em; }
+.cf-kickoff-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cf-kickoff-dismiss {
+  appearance: none;
+  border: 1px solid rgba(159,184,204,0.35);
+  background: rgba(4,10,20,0.5);
+  color: var(--snow);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.cf-kickoff-dismiss:hover { border-color: rgba(255,90,31,0.55); }
+
+/* Photo-band reveal + deferred BG when JS is on */
+.cf-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+}
+.cf-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+html.cf-js .photo-band.cf-reveal:not(.is-in) .photo-band-bg {
+  background-image: none !important;
+  background-color: rgba(6, 12, 22, 0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Hamburger / snow stay rock-solid */
+@media (max-width: 960px) {
+  .nav-toggle { position: relative; z-index: 70; }
+  body.nav-open #snow { pointer-events: none; }
+  body.nav-open .cf-kickoff-banner { z-index: 50; }
+}
+
+@media (max-width: 700px) {
+  .hero-photo {
+    background:
+      linear-gradient(180deg, rgba(2,6,14,0.55) 0%, rgba(2,6,14,0.25) 28%, rgba(2,6,14,0.72) 78%, rgba(2,6,14,0.97) 100%),
+      linear-gradient(105deg, rgba(2,6,14,0.7) 0%, rgba(2,6,14,0.35) 32%, transparent 55%),
+      radial-gradient(ellipse 58% 48% at 72% 38%, rgba(255,90,31,0.26), transparent 64%),
+      linear-gradient(165deg, #0a1628 0%, #101F33 42%, #060d18 100%);
+  }
+}
