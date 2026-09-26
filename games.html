@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#060d18">
   <title>Games — THE COLD FRONT</title>
   <meta name="description" content="Chicago Bears games: live scoreboard, full season log with results, box scores, and NFC North standings. Independent fan site.">
   <meta property="og:title" content="Games — THE COLD FRONT">
@@ -89,7 +90,7 @@
       </span>
     </div>
     <div id="board">
-      <div class="empty"><div class="big">🏈</div>Reading the board…</div>
+      <div class="empty is-loading" role="status"><div class="big">🏈</div><div class="empty-title">Reading the board</div><p class="empty-sub">Scoreboard for the day you picked — live when the feed answers.</p></div>
     </div>
 
     <!-- Season log -->
@@ -115,7 +116,7 @@
       <span class="rule"></span>
     </div>
     <div id="boxscore">
-      <div class="empty"><div class="big">📋</div>Tap any <b style="color:var(--snow)">result</b> row in the log to pull that game's box score — or it will appear here for today's game automatically.</div>
+      <div class="empty" role="status"><div class="big">📋</div><div class="empty-title">Box score on deck</div><p class="empty-sub">Tap any <b style="color:var(--snow)">result</b> row in the log to pull that game&rsquo;s box — or it appears here for today&rsquo;s game automatically.</p></div>
     </div>
 
     <!-- Division -->

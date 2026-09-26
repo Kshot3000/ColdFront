@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#060d18">
   <title>Injuries — THE COLD FRONT</title>
   <meta name="description" content="Chicago Bears injury report: community-maintained table plus a live injury wire that flags report-moving headlines. Independent fan site.">
   <meta property="og:title" content="Injuries — THE COLD FRONT">
@@ -71,7 +72,11 @@
         <div class="tbl-wrap">
           <table class="tbl" id="report-table">
             <thead><tr><th>Player</th><th>Pos</th><th>Injury</th><th>Status</th><th>ETA</th></tr></thead>
-            <tbody><tr><td colspan="5" class="dim">Loading the report…</td></tr></tbody>
+            <tbody class="skel-table">
+              <tr><td colspan="5"><span class="skel lg" style="width:82%"></span></td></tr>
+              <tr><td colspan="5"><span class="skel" style="width:70%"></span></td></tr>
+              <tr><td colspan="5"><span class="skel" style="width:76%"></span></td></tr>
+            </tbody>
           </table>
         </div>
         <p class="src-note" id="rep-note"></p>
@@ -87,7 +92,7 @@
         </div>
         <p class="dim" style="font-size:12.5px;margin:6px 0 12px">Live from the league wire — report-moving headlines, newest first.</p>
         <div class="news-list" id="wire-list">
-          <div class="empty" style="padding:18px 14px;font-size:12.5px">Tuning in…</div>
+          <div class="empty is-loading" style="padding:18px 14px;font-size:12.5px" role="status"><div class="empty-title" style="font-size:12px">Tuning injury wire</div><p class="empty-sub">Flagging headlines that smell like a report change.</p></div>
         </div>
       </div>
     </div>

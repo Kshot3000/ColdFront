@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.1.0",
+    version: "1.2.0",
   },
 
   author: {
@@ -716,8 +716,12 @@ CF._snow = (function () {
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", onVis);
     flakes = [];
+    // Mobile / narrow: cut flake count ~45% for smoother scroll & battery.
+    const narrow = window.matchMedia("(max-width: 700px), (hover: none)").matches;
+    const scale = narrow ? 0.55 : 1;
     for (const L of LAYERS) {
-      for (let i = 0; i < L.n; i++) flakes.push(mk(true, L));
+      const n = Math.max(8, Math.round(L.n * scale));
+      for (let i = 0; i < n; i++) flakes.push(mk(true, L));
     }
     running = true;
     loop();
@@ -770,7 +774,25 @@ CF.initChrome = () => {
   });
   const toggle = CF.$(".nav-toggle");
   const nav = CF.$(".nav");
-  if (toggle && nav) toggle.addEventListener("click", () => nav.classList.toggle("open"));
+  if (toggle && nav) {
+    toggle.addEventListener("click", () => {
+      const open = nav.classList.toggle("open");
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    toggle.setAttribute("aria-expanded", "false");
+    // Close drawer after a tap so mobile chrome doesn't stay open over the next page paint.
+    nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
+      nav.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    }));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && nav.classList.contains("open")) {
+        nav.classList.remove("open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus();
+      }
+    });
+  }
 
   // author slots anywhere on the page
   CF.$$("[data-cf-x-handle]").forEach((el) => { el.textContent = CF.CONFIG.author.xHandle; });

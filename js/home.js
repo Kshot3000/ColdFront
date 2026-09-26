@@ -148,7 +148,7 @@
     if (!div || !div.rows.length) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      body.innerHTML = '<tr><td colspan="4" class="dim">Standings unavailable right now — check back when the feed is reachable.</td></tr>';
+      body.innerHTML = '<tr><td colspan="4" class="dim">Standings unavailable — check back when the feed answers. NFC North will refill from the live table or completed games.</td></tr>';
       return;
     }
     pill.className = "pill ok";
@@ -203,10 +203,10 @@
       pill.textContent = "wide wire";
     } catch (e2) {
       pill.textContent = "offline";
-      box.innerHTML = '<div class="empty"><div class="big">📡</div>' +
-        "Both wires are down on this network and no snapshot is saved yet.<br>" +
-        "Once either feed answers (or you visit while online), headlines cache locally." +
-        '<br><a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a></div>';
+      box.innerHTML = '<div class="empty" role="status"><div class="big">📡</div>' +
+        '<div class="empty-title">Wire is dark</div>' +
+        '<p class="empty-sub">Both feeds are down on this network and no snapshot is saved yet. Visit once while online and headlines cache locally.</p>' +
+        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a></div>';
     }
   }
 

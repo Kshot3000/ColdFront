@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#060d18">
   <title>News Wire — THE COLD FRONT</title>
   <meta name="description" content="Live Chicago Bears news wire: headlines as they drop, with an injury wire rail. Independent fan site.">
   <meta property="og:title" content="News Wire — THE COLD FRONT">
@@ -62,7 +63,7 @@
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 8px" class="badge-row">
-      <span class="pill cache" id="feed-pill">connecting…</span>
+      <span class="pill cache is-loading" id="feed-pill">connecting…</span>
       <span class="dim" id="feed-updated" style="font-size:12.5px"></span>
       <span style="margin-left:auto;display:flex;gap:8px">
         <button class="btn small" id="refresh" type="button">↻ Refresh now</button>
@@ -72,7 +73,7 @@
 
     <div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start" id="news-grid">
       <div class="news-list" id="news-list">
-        <div class="empty"><div class="big">📡</div>Tuning in…</div>
+        <div class="empty is-loading" role="status"><div class="big">📡</div><div class="empty-title">Tuning in</div><p class="empty-sub">League wire first — then we keep the rail warm.</p></div>
       </div>
       <div class="rail" id="injury-rail">
         <h3>🩹 Injury wire</h3>
@@ -87,10 +88,10 @@
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
         <h2 style="margin:0;font-size:20px;letter-spacing:.5px">The Wide Wire</h2>
         <span class="dim" style="font-size:12.5px">the same story, every other outlet — Google News RSS</span>
-        <span class="pill cache" id="gn-pill" style="margin-left:auto">connecting…</span>
+        <span class="pill cache is-loading" id="gn-pill" style="margin-left:auto">connecting…</span>
       </div>
       <div class="news-list" id="gn-list">
-        <div class="empty"><div class="big">📰</div>Tuning the shortwave…</div>
+        <div class="empty is-loading" role="status"><div class="big">📰</div><div class="empty-title">Tuning the shortwave</div><p class="empty-sub">Wide wire across outlets — same story, every angle.</p></div>
       </div>
     </div>
   </div>

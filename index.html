@@ -2,13 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>THE COLD FRONT — Chicago Bears × Midwest Winter Football</title>
   <meta name="description" content="THE COLD FRONT — the all-in-one Chicago Bears fan hub. Live news, injury report, betting odds, game stats & schedule, roster, practice intel. Independent. Unofficial. Built for Da Bears.">
+  <meta name="theme-color" content="#060d18">
   <meta property="og:title" content="THE COLD FRONT — Chicago Bears × Midwest Winter Football">
   <meta property="og:description" content="News, injuries, odds, stats, schedule, roster & practice — everything a Bears fan wants in one place.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
+  <link rel="preload" as="image" href="img/hero-chicago-night.webp" type="image/webp" fetchpriority="high">
+  <link rel="dns-prefetch" href="https://site.api.espn.com">
+  <link rel="dns-prefetch" href="https://news.google.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -69,7 +73,7 @@
         <span class="eyebrow" style="margin:0">Independent Bears fan hub · Unofficial</span>
       </div>
       <h1>One Hub. Every <span class="hot">Bears</span> Beat <span class="hot">Covered</span>.</h1>
-      <p class="sub">News wire, injury report, Vegas &amp; prediction odds, live scores &amp; schedule, player stats, roster search, and practice intel — the full Chicago Bears toolkit in one place. Independent. Unofficial. Built for fans who live this team.</p>
+      <p class="sub">Built for the week that never really ends — Friday injury whispers, Sunday kickoff wind off the lake, Monday film, Wednesday practice notes. News wire, injury report, Vegas &amp; prediction odds, live scores &amp; schedule, player stats, roster search, and practice intel. Independent. Unofficial. Loud for Da Bears.</p>
 
       <div class="hub-pitch" aria-label="What you get">
         <span><b>News</b> wire</span>
@@ -85,7 +89,7 @@
         <div class="card game-card" id="next-game" aria-live="polite">
           <div class="badge-row" style="justify-content:space-between">
             <h3 style="margin:0" id="ng-title">Next on the board…</h3>
-            <span class="pill" id="ng-pill">loading</span>
+            <span class="pill is-loading" id="ng-pill">loading</span>
           </div>
           <div class="vs">
             <div class="side">
@@ -105,12 +109,17 @@
         <div class="card" id="division">
           <div class="badge-row" style="justify-content:space-between;margin-bottom:12px">
             <h3 style="margin:0">NFC North watch</h3>
-            <span class="pill cache" id="div-pill">loading</span>
+            <span class="pill cache is-loading" id="div-pill">loading</span>
           </div>
           <div class="tbl-wrap" style="border:none">
             <table class="tbl" style="min-width:0" id="div-table">
               <thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead>
-              <tbody><tr><td colspan="4" class="dim">Reading the standings…</td></tr></tbody>
+              <tbody class="skel-table">
+                <tr><td colspan="4"><span class="skel lg" style="width:72%"></span></td></tr>
+                <tr><td colspan="4"><span class="skel" style="width:64%"></span></td></tr>
+                <tr><td colspan="4"><span class="skel" style="width:68%"></span></td></tr>
+                <tr><td colspan="4"><span class="skel" style="width:60%"></span></td></tr>
+              </tbody>
             </table>
           </div>
           <p class="src-note">Live from ESPN when the feed answers; otherwise your last saved snapshot.</p>
@@ -146,14 +155,39 @@
   <section>
     <div class="wrap">
       <div class="section-head">
-        <h2>Chicago after dark</h2>
-        <span class="tag">skyline · field · lake</span>
+        <h2>How a Bears week feels</h2>
+        <span class="tag">story of the hub</span>
         <span class="rule"></span>
       </div>
-      <div class="city-strip" aria-label="Chicago photography">
+      <div class="story-beats" aria-label="Cold Front storytelling beats">
+        <article class="story-beat">
+          <div class="beat-num">01 · Midweek</div>
+          <h3>Practice fog &amp; the wire</h3>
+          <p>Facility notes, availability whispers, and the injury rail — so you know who&rsquo;s warming up before the lineup graphic drops.</p>
+        </article>
+        <article class="story-beat">
+          <div class="beat-num">02 · Gameday</div>
+          <h3>Kickoff in the wind</h3>
+          <p>Next-game countdown, NFC North watch, live board, and odds in one glance. Lake wind optional. Heart rate not.</p>
+        </article>
+        <article class="story-beat">
+          <div class="beat-num">03 · After</div>
+          <h3>Film, numbers, next</h3>
+          <p>Box scores, leaders, and the roster search stay hot long after the lights cut — ready for the next cold snap.</p>
+        </article>
+      </div>
+
+      <div class="section-head">
+        <h2>Chicago after dark</h2>
+        <span class="tag">skyline · field · lake · L</span>
+        <span class="rule"></span>
+      </div>
+      <div class="city-strip city-strip-5" aria-label="Chicago photography">
         <div class="city-tile t-river"><div class="city-tile-bg"></div><span class="city-tile-label">River night</span></div>
         <div class="city-tile t-soldier"><div class="city-tile-bg"></div><span class="city-tile-label">Soldier Field</span></div>
         <div class="city-tile t-winter"><div class="city-tile-bg"></div><span class="city-tile-label">Lakefront winter</span></div>
+        <div class="city-tile t-bean-dusk"><div class="city-tile-bg"></div><span class="city-tile-label">Cloud Gate</span></div>
+        <div class="city-tile t-cta"><div class="city-tile-bg"></div><span class="city-tile-label">The L at night</span></div>
       </div>
       <div class="photo-band soldier" style="margin-top:18px">
         <div class="photo-band-bg" aria-hidden="true"></div>
@@ -164,11 +198,26 @@
             <p>Soldier Field on the lakefront — neoclassical stone, modern bowl, lake wind. Independent photography; Cold Front marks only. No NFL trademarks.</p>
           </div>
           <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark lg" src="img/paw-mark.svg" alt="">
-            <img class="art-mark" src="img/football-silhouette.svg" alt="">
+            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
+            <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
           </div>
         </div>
       </div>
+      <div class="photo-band cta-night" style="margin-top:14px">
+        <div class="photo-band-bg" aria-hidden="true"></div>
+        <div class="photo-band-inner">
+          <div class="photo-band-copy">
+            <div class="eyebrow" style="margin:0 0 6px">Loop steel</div>
+            <h3>Elevated tracks. Midnight navy.</h3>
+            <p>The L cutting through downtown after dark — the same grit that rides you out to the lake on game day. Fan photography from Wikimedia; Cold Front art only.</p>
+          </div>
+          <div class="photo-band-art" aria-hidden="true">
+            <img class="art-mark" src="img/jersey-54.svg" alt="" width="88" height="88" decoding="async">
+            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
+          </div>
+        </div>
+      </div>
+      <p class="photo-credit">Photos: Unsplash &amp; Wikimedia Commons · marks: original Cold Front SVGs · see <a href="img/ATTRIBUTION.txt">ATTRIBUTION</a></p>
     </div>
   </section>
 
@@ -176,12 +225,23 @@
     <div class="wrap">
       <div class="section-head">
         <h2>On the wire</h2>
-        <span class="tag" id="wire-pill">live feed</span>
+        <span class="tag" id="wire-pill">tuning…</span>
         <span class="rule"></span>
         <a class="btn small" href="news.html">Full feed →</a>
       </div>
       <div class="news-list" id="home-news">
-        <div class="empty"><div class="big">📡</div>Pulling the wire…</div>
+        <div class="empty is-loading" role="status" aria-live="polite">
+          <div class="big">📡</div>
+          <div class="empty-title">Pulling the wire</div>
+          <p class="empty-sub">League feed first, then the wide wire — headlines cache on this device when a feed answers.</p>
+          <div class="skel-row" style="border:none;justify-content:center;margin-top:14px">
+            <span class="skel thumb"></span>
+            <div class="skel-col" style="max-width:280px">
+              <span class="skel lg" style="width:90%"></span>
+              <span class="skel" style="width:55%"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -197,7 +257,11 @@
       <div class="tbl-wrap">
         <table class="tbl" id="home-injuries">
           <thead><tr><th>Player</th><th>Pos</th><th>Injury</th><th>Status</th></tr></thead>
-          <tbody><tr><td colspan="4" class="dim">Loading the report…</td></tr></tbody>
+          <tbody class="skel-table">
+            <tr><td colspan="4"><span class="skel lg" style="width:78%"></span></td></tr>
+            <tr><td colspan="4"><span class="skel" style="width:70%"></span></td></tr>
+            <tr><td colspan="4"><span class="skel" style="width:74%"></span></td></tr>
+          </tbody>
         </table>
       </div>
       <p class="src-note">Heads up: the report table is community-maintained (see <a href="injuries.html">Injuries</a>) — always cross-check with the official pregame report.</p>
@@ -206,17 +270,17 @@
 
   <section>
     <div class="wrap">
-      <div class="photo-band theatre">
+      <div class="photo-band bean-dusk">
         <div class="photo-band-bg" aria-hidden="true"></div>
         <div class="photo-band-inner">
           <div class="photo-band-copy">
-            <div class="eyebrow" style="margin:0 0 6px">State Street grit</div>
-            <h3>Orange lights. Navy night. Da city.</h3>
-            <p>Chicago Theatre marquee energy for a hub that stays loud when the temp drops. Fan-made marks — paw, pigskin, jersey numbers — never league logos.</p>
+            <div class="eyebrow" style="margin:0 0 6px">Millennium Park</div>
+            <h3>Mirror steel. Skyline flex. Da city.</h3>
+            <p>Cloud Gate throwing the skyline back at you — same downtown pulse that feeds this hub. Unsplash photography; Cold Front marks only. Never league logos.</p>
           </div>
           <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark" src="img/jersey-54.svg" alt="">
-            <img class="art-mark" src="img/paw-mark.svg" alt="">
+            <img class="art-mark" src="img/jersey-54.svg" alt="" width="88" height="88" decoding="async">
+            <img class="art-mark" src="img/paw-mark.svg" alt="" width="88" height="88" decoding="async">
           </div>
         </div>
       </div>
