@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.6.0",
+    version: "1.7.0",
   },
 
   author: {
@@ -644,7 +644,8 @@ CF.renderWeatherStrip = (root) => {
     '<span class="wx-gauge" id="wx-gauge">reading the front…</span>';
   const update = () => CF.loadWeather().then((wx) => {
     CF.setSnow(true); // theme snow stays on; weather only boosts density
-    if (CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(wx));
+    if (CF._syncGamedaySnow) CF._syncGamedaySnow();
+    else if (CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(wx));
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
     if (!wx) {
@@ -801,13 +802,37 @@ CF._snow = (function () {
     if (CF._snowOn && !running) start();
   }
   function setIntensity(n) {
-    const next = Math.max(0.8, Math.min(1.8, Number(n) || 1));
+    const next = Math.max(0.8, Math.min(2.15, Number(n) || 1));
     if (Math.abs(next - intensity) < 0.05) return;
     intensity = next;
     if (running) rebuildFlakes();
   }
-  return { start, stop, ensureRunning, setIntensity };
+  function getIntensity() { return intensity; }
+  return { start, stop, ensureRunning, setIntensity, getIntensity };
 })();
+
+/* Gameday mode: denser snow + hotter orange rim when kickoff window / live. */
+CF._gamedayOn = false;
+CF._gamedayWxBoost = 1;
+CF.applyGamedayMode = (on, reason) => {
+  const next = !!on;
+  if (CF._gamedayOn === next) {
+    if (next) CF._syncGamedaySnow();
+    return;
+  }
+  CF._gamedayOn = next;
+  document.body.classList.toggle("cf-gameday", next);
+  if (next) document.body.setAttribute("data-cf-gameday", reason || "on");
+  else document.body.removeAttribute("data-cf-gameday");
+  CF._syncGamedaySnow();
+};
+CF._syncGamedaySnow = () => {
+  if (!CF._snow || !CF._snow.setIntensity) return;
+  const wx = CF.cacheGet("weather");
+  let n = CF.snowIntensity(wx);
+  if (CF._gamedayOn) n = Math.max(n, 1.72);
+  CF._snow.setIntensity(n);
+};
 
 /* Shared status pill class for injury rows (Out / Questionable / IR / …). */
 CF.injStatusCls = (s) => {
@@ -977,7 +1002,8 @@ CF.initChrome = () => {
   // Theme snow: always on (unless reduced-motion). Weather only boosts intensity.
   CF.setSnow(true);
   const cachedWx = CF.cacheGet("weather");
-  if (cachedWx && CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(cachedWx));
+  if (CF._syncGamedaySnow) CF._syncGamedaySnow();
+  else if (cachedWx && CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(cachedWx));
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();

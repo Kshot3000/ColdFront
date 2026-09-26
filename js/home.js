@@ -73,6 +73,9 @@
       if (game.clock) bits.push("Clock: " + CF.esc(game.clock));
       meta.innerHTML = bits.join(" · ");
       cd.innerHTML = "";
+      if (CF.applyGamedayMode) {
+        CF.applyGamedayMode(game.state === "in" || game.state === "pre", game.state === "in" ? "live" : "gameday");
+      }
       // Live-clock refresh comes from the shared CF.refresh job registered
       // below (30 s, whether the game is scheduled, live, or just final).
       return;
@@ -435,6 +438,10 @@
     if (pill) {
       pill.textContent = phase.pill || "week";
       pill.className = "tag" + (phase.pill === "live" ? " live" : "");
+    }
+    if (CF.applyGamedayMode) {
+      const hot = phase.active === "gameday" || phase.pill === "live";
+      CF.applyGamedayMode(hot, phase.pill === "live" ? "live" : (hot ? "gameday" : ""));
     }
   }
 

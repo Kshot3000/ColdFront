@@ -197,15 +197,59 @@
   /* ---------- next opponent card ----------
      Home → Chicago weather chip (existing CF.loadWeather).
      Away → opponent city note from schedule geo / venue / NFL_CITIES. */
+  function paintMatchupPreview(sched, g) {
+    const root = CF.$("#next-opp-preview");
+    if (!root || !g) return;
+    const last = CF.API.lastMeetingVs(sched, g.oppAbbr);
+    const rest = CF.API.restDaysBefore(sched, g.date);
+    let lastHTML =
+      '<div class="matchup-stat">' +
+      '<span class="k">Last meeting</span>';
+    if (last) {
+      const site = last.home ? "vs" : "@";
+      const score = (last.scoreMe != null && last.scoreMe !== "" && last.scoreMe !== "–")
+        ? (CF.esc(String(last.scoreMe)) + "–" + CF.esc(String(last.scoreOpp)))
+        : "final";
+      lastHTML +=
+        '<div class="v">' + CF.esc(site) + " " + CF.esc(last.oppAbbr || g.oppAbbr || "OPP") + "</div>" +
+        '<div class="s">' + CF.esc(CF.fmtDate(last.date)) + " · " + score +
+        (last.result ? " · " + CF.esc(last.result) : "") + "</div>";
+    } else {
+      lastHTML +=
+        '<div class="v">No prior</div>' +
+        '<div class="s">No completed meeting vs ' + CF.esc(g.oppAbbr || "this opponent") + " in the loaded log yet.</div>";
+    }
+    lastHTML += "</div>";
+
+    let restHTML =
+      '<div class="matchup-stat">' +
+      '<span class="k">Rest days</span>';
+    if (rest && rest.days != null) {
+      restHTML +=
+        '<div class="v">' + rest.days + (rest.days === 1 ? " day" : " days") + "</div>" +
+        '<div class="s">Since ' + CF.esc(CF.fmtDate(rest.last.date)) +
+        (rest.last.oppAbbr ? (" vs " + CF.esc(rest.last.oppAbbr)) : "") + "</div>";
+    } else {
+      restHTML +=
+        '<div class="v">—</div>' +
+        '<div class="s">Rest clock needs a prior completed game in the season log.</div>';
+    }
+    restHTML += "</div>";
+    root.innerHTML = lastHTML + restHTML;
+    root.hidden = false;
+  }
+
   async function loadNextOpponent() {
     const vs = CF.$("#next-opp-vs");
     const meta = CF.$("#next-opp-meta");
     const chip = CF.$("#next-opp-chip");
     const pill = CF.$("#next-opp-pill");
+    const preview = CF.$("#next-opp-preview");
     if (!vs || !meta || !chip) return;
-    let g = null;
+    let g = null, schedData = null;
     try {
       const sc = await CF.API.getSchedule();
+      schedData = sc.data;
       g = CF.API.nextBearsGameFromSchedule(sc.data);
     } catch (e) { /* schedule quiet */ }
     if (!g) {
@@ -213,6 +257,7 @@
       vs.textContent = "Board is quiet";
       meta.textContent = "Next kickoff lands here when the schedule answers.";
       chip.innerHTML = '<span class="opp-chip dim">no opponent yet</span>';
+      if (preview) { preview.innerHTML = ""; preview.hidden = true; }
       return;
     }
     const site = g.home ? "Home · Soldier Field" : "Away";
@@ -228,6 +273,13 @@
       (g.venue ? " · " + CF.esc(g.venue) : "") +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
     chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
+    if (schedData) paintMatchupPreview(schedData, g);
+
+    // Gameday chrome when kickoff is inside ~30h
+    if (CF.applyGamedayMode && g.date) {
+      const hours = (new Date(g.date).getTime() - Date.now()) / 3600e3;
+      CF.applyGamedayMode(hours <= 30 && hours > -6, hours <= 0 ? "live" : "gameday");
+    }
 
     if (g.home) {
       try {

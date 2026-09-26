@@ -288,6 +288,50 @@ CF.API = {
     });
   },
 
+  /* Last completed meeting vs an opponent abbr (same season log), if any. */
+  lastMeetingVs: (sched, oppAbbr) => {
+    if (!oppAbbr) return null;
+    const want = String(oppAbbr).toUpperCase();
+    const now = Date.now();
+    const rows = CF.API.scheduleList(sched)
+      .filter((r) => {
+        if (!r || !r.date) return false;
+        if (String(r.oppAbbr || "").toUpperCase() !== want) return false;
+        const t = new Date(r.date).getTime();
+        if (isNaN(t) || t > now - 2 * 3600e3) return false;
+        const hasScore = (r.scoreMe != null && r.scoreMe !== "" && r.scoreMe !== "–")
+          || (r.scoreOpp != null && r.scoreOpp !== "" && r.scoreOpp !== "–");
+        const done = hasScore || /final|fte|f\/ot|completed/i.test(String(r.result || ""));
+        return done;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    return rows[0] || null;
+  },
+
+  /* Rest days between the most recent completed Bears game and a kickoff date. */
+  restDaysBefore: (sched, nextDate) => {
+    if (!nextDate) return null;
+    const kick = new Date(nextDate).getTime();
+    if (isNaN(kick)) return null;
+    const now = Date.now();
+    const past = CF.API.scheduleList(sched)
+      .filter((r) => {
+        if (!r || !r.date) return false;
+        const t = new Date(r.date).getTime();
+        if (isNaN(t) || t >= kick - 6 * 3600e3) return false;
+        if (t > now + 3600e3) return false;
+        const hasScore = (r.scoreMe != null && r.scoreMe !== "" && r.scoreMe !== "–")
+          || (r.scoreOpp != null && r.scoreOpp !== "" && r.scoreOpp !== "–");
+        return hasScore || /final|fte|f\/ot|completed/i.test(String(r.result || ""));
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!past.length) return null;
+    const last = past[0];
+    const lastT = new Date(last.date).getTime();
+    const days = Math.max(0, Math.round((kick - lastT) / 86400e3));
+    return { days, last };
+  },
+
   // NFC North (or group containing CHI) from a standings payload.
   divisionTable: (stand) => {
     const groups = [];

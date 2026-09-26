@@ -2370,3 +2370,302 @@ body:not(.prefers-reduced-motion) #snow {
 .hero .hub-pitch {
   letter-spacing: 0.01em;
 }
+
+
+/* ============================================================
+   v1.7.0 — imagery craft · gameday mode · matchup preview · rhythm
+   ============================================================ */
+
+/* Hero: deeper vignette, readable left stack, frost rim */
+.hero-photo {
+  background:
+    linear-gradient(180deg, rgba(2,6,14,0.62) 0%, rgba(2,6,14,0.28) 22%, rgba(2,6,14,0.55) 58%, rgba(2,6,14,0.94) 88%, rgba(2,6,14,0.99) 100%),
+    linear-gradient(105deg, rgba(2,6,14,0.72) 0%, rgba(2,6,14,0.42) 28%, transparent 52%, rgba(2,6,14,0.35) 100%),
+    radial-gradient(ellipse 58% 48% at 72% 38%, rgba(255,90,31,0.28), transparent 64%),
+    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(2,6,14,0.9), transparent 55%),
+    url("../img/hero-chicago-night.webp") center 35% / cover no-repeat;
+}
+.hero-photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 120px rgba(2,6,14,0.55),
+    inset 0 -80px 100px rgba(2,6,14,0.65),
+    inset 0 0 0 1px rgba(159,184,204,0.12);
+  background:
+    radial-gradient(ellipse 45% 35% at 16% 68%, rgba(255,90,31,0.14), transparent 72%);
+}
+.hero-photo::after {
+  background:
+    radial-gradient(ellipse 55% 42% at 18% 72%, rgba(255,90,31,0.1), transparent 70%),
+    linear-gradient(180deg, transparent 48%, rgba(2,6,14,0.88) 100%);
+}
+.hero h1 {
+  text-shadow:
+    0 2px 4px rgba(0,0,0,0.55),
+    0 8px 42px rgba(0,0,0,0.72),
+    0 0 100px rgba(209,58,2,0.22),
+    0 1px 0 rgba(255,255,255,0.05);
+}
+.hero .sub {
+  text-shadow: 0 2px 22px rgba(0,0,0,0.75), 0 1px 2px rgba(0,0,0,0.5);
+  max-width: 58ch;
+}
+.hero .hub-pitch {
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.45));
+}
+.hero .hub-pitch span {
+  background: rgba(4, 10, 20, 0.78);
+  border-color: rgba(159, 184, 204, 0.34);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.55);
+}
+
+/* Unified photo-band treatment sitewide */
+.photo-band {
+  margin: 40px 0 12px;
+  min-height: 236px;
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid rgba(159,184,204,0.28);
+  box-shadow:
+    var(--shadow),
+    inset 0 0 0 1px rgba(255,90,31,0.1),
+    0 0 48px rgba(209,58,2,0.08);
+}
+.photo-band::before {
+  background:
+    linear-gradient(100deg, rgba(2,6,14,0.92) 0%, rgba(2,6,14,0.68) 38%, rgba(2,6,14,0.38) 68%, rgba(2,6,14,0.55) 100%),
+    linear-gradient(180deg, rgba(2,6,14,0.2) 0%, rgba(2,6,14,0.72) 100%),
+    radial-gradient(ellipse 48% 70% at 86% 48%, rgba(255,90,31,0.22), transparent 68%);
+}
+.photo-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 80px rgba(2,6,14,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.photo-band .photo-band-bg {
+  transform: scale(1.05);
+  filter: saturate(1.02) brightness(0.62) contrast(1.05);
+}
+.photo-band .photo-band-inner {
+  padding: 40px 32px;
+  min-height: 236px;
+  gap: 24px;
+}
+.photo-band .photo-band-copy h3 {
+  font-size: clamp(22px, 3.1vw, 32px);
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.7), 0 0 48px rgba(255,90,31,0.22);
+}
+.photo-band .photo-band-copy p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  max-width: 52ch;
+  color: var(--frost);
+  text-shadow: 0 1px 12px rgba(0,0,0,0.55);
+}
+.photo-band .eyebrow {
+  text-shadow: 0 1px 10px rgba(0,0,0,0.55);
+}
+
+/* New cinematic bands */
+.photo-band.navy-pier .photo-band-bg {
+  background-image: url("../img/chicago-navy-pier-night.webp");
+  background-position: center 42%;
+  filter: saturate(1.08) brightness(0.58);
+}
+.photo-band.lincoln-park .photo-band-bg {
+  background-image: url("../img/chicago-lincoln-park-night.webp");
+  background-position: center 48%;
+  filter: saturate(1.05) brightness(0.6);
+}
+.photo-band.marina-city .photo-band-bg {
+  background-image: url("../img/chicago-marina-city-night.webp");
+  background-position: center 35%;
+  filter: saturate(0.95) brightness(0.68) contrast(1.08);
+}
+@media (max-width: 700px) {
+  .photo-band.navy-pier .photo-band-bg {
+    background-image: url("../img/chicago-navy-pier-night-sm.webp");
+  }
+  .photo-band.lincoln-park .photo-band-bg {
+    background-image: url("../img/chicago-lincoln-park-night-sm.webp");
+  }
+  .photo-band.marina-city .photo-band-bg {
+    background-image: url("../img/chicago-marina-city-night-sm.webp");
+  }
+  .hero-photo {
+    background:
+      linear-gradient(180deg, rgba(2,6,14,0.62) 0%, rgba(2,6,14,0.28) 22%, rgba(2,6,14,0.55) 58%, rgba(2,6,14,0.94) 88%, rgba(2,6,14,0.99) 100%),
+      linear-gradient(105deg, rgba(2,6,14,0.72) 0%, rgba(2,6,14,0.42) 28%, transparent 52%, rgba(2,6,14,0.35) 100%),
+      radial-gradient(ellipse 58% 48% at 72% 38%, rgba(255,90,31,0.28), transparent 64%),
+      url("../img/hero-chicago-night-sm.webp") center 35% / cover no-repeat;
+  }
+  .photo-band .photo-band-inner { padding: 30px 18px; gap: 16px; }
+}
+
+/* City tiles for new photos */
+.city-tile.t-navy-pier .city-tile-img,
+.city-tile.t-navy-pier .city-tile-bg { object-position: center 40%; }
+.city-tile.t-lincoln-park .city-tile-img,
+.city-tile.t-lincoln-park .city-tile-bg { object-position: center 45%; }
+.city-tile.t-marina-city .city-tile-img,
+.city-tile.t-marina-city .city-tile-bg { object-position: center 32%; }
+.city-tile.t-navy-pier .city-tile-bg {
+  background-image: url("../img/chicago-navy-pier-night.webp");
+}
+.city-tile.t-lincoln-park .city-tile-bg {
+  background-image: url("../img/chicago-lincoln-park-night.webp");
+}
+.city-tile.t-marina-city .city-tile-bg {
+  background-image: url("../img/chicago-marina-city-night.webp");
+}
+@media (max-width: 700px) {
+  .city-tile.t-navy-pier .city-tile-bg {
+    background-image: url("../img/chicago-navy-pier-night-sm.webp");
+  }
+  .city-tile.t-lincoln-park .city-tile-bg {
+    background-image: url("../img/chicago-lincoln-park-night-sm.webp");
+  }
+  .city-tile.t-marina-city .city-tile-bg {
+    background-image: url("../img/chicago-marina-city-night-sm.webp");
+  }
+}
+
+/* Spacing rhythm + card elevation + type scale */
+.section-head {
+  margin: 56px 0 22px;
+}
+.section-head h2 {
+  font-size: clamp(22px, 2.6vw, 28px);
+  letter-spacing: 0.04em;
+}
+.page-intro {
+  margin: 8px 0 18px;
+  padding-bottom: 4px;
+}
+.page-intro h1 {
+  font-size: clamp(32px, 5.2vw, 48px);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+.page-intro p {
+  margin-top: 12px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  max-width: 60ch;
+}
+.card {
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: transform 0.22s var(--ease-out), box-shadow 0.22s var(--ease-out), border-color 0.22s ease;
+}
+.card:hover {
+  border-color: rgba(159,184,204,0.38);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.story-beats {
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.story-beat {
+  padding: 20px 18px;
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.grid.quick a {
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+main > section {
+  padding-bottom: 8px;
+}
+.divider {
+  margin: 40px 0;
+}
+
+/* Matchup preview (last meeting + rest) */
+.matchup-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+@media (max-width: 640px) {
+  .matchup-preview { grid-template-columns: 1fr; }
+}
+.matchup-stat {
+  border: 1px solid rgba(92,122,153,0.28);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(165deg, rgba(255,255,255,0.04), transparent 50%), rgba(4,10,20,0.45);
+  padding: 12px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.matchup-stat .k {
+  display: block;
+  font-family: var(--display);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 4px;
+}
+.matchup-stat .v {
+  font-family: var(--display);
+  font-size: 18px;
+  letter-spacing: 0.03em;
+  color: var(--snow);
+  line-height: 1.2;
+}
+.matchup-stat .s {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.next-opp-card {
+  border-color: rgba(92,122,153,0.36);
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Gameday mode — denser snow + hotter orange rim (live / gameday window) */
+body.cf-gameday {
+  --rim-glow: 0 0 0 1px rgba(255,110,40,0.78), 0 0 42px rgba(255,90,31,0.55), 0 0 88px rgba(209,58,2,0.32);
+  --glass-border-hot: rgba(255,110,40,0.85);
+  --shadow-glow: 0 0 72px rgba(255,90,31,0.42);
+}
+body.cf-gameday #snow {
+  opacity: 0.92;
+}
+body.cf-gameday .cf-atmosphere .cf-aurora {
+  opacity: 1;
+  filter: blur(40px) saturate(1.15);
+}
+body.cf-gameday .site-head {
+  box-shadow: 0 1px 0 rgba(255,90,31,0.35), 0 12px 40px rgba(209,58,2,0.18);
+  border-bottom-color: rgba(255,90,31,0.35);
+}
+body.cf-gameday .card.game-card,
+body.cf-gameday .next-opp-card,
+body.cf-gameday .week-clock-phase.is-active {
+  box-shadow: var(--shadow-lift), var(--rim-glow), inset 0 1px 0 rgba(255,200,160,0.12);
+  border-color: rgba(255,90,31,0.55);
+}
+body.cf-gameday .hero::before {
+  opacity: 1;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,110,40,0.38), transparent 68%);
+}
+body.cf-gameday .weather-strip {
+  border-bottom-color: rgba(255,90,31,0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  body.cf-gameday #snow { opacity: 0; }
+}
+
+/* Hamburger / snow stay rock-solid after craft pass */
+@media (max-width: 960px) {
+  .nav-toggle { position: relative; z-index: 70; }
+  body.nav-open #snow { pointer-events: none; }
+}

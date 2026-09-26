@@ -13,3 +13,10 @@ Wired in v1.6.0: chicago-grant-park-night.webp + chicago-river-skyline-night.web
 Wikimedia Commons (v1.6.0):
 - File:Chicago_Lakefront_Night_Skyline.jpg (CC BY-SA 3.0) → chicago-lakefront-night.webp
 - File:Chicago_from_North_Avenue_Beach_June_2015_panorama_2.jpg (CC BY-SA 3.0) → chicago-north-ave-skyline.webp
+
+Unsplash (v1.7.0):
+- photo-1643146674758 / Oz3tnZzNqzg → chicago-navy-pier-night.webp (Navy Pier Ferris wheel + skyline)
+- photo-1601569561022 / s2etvGYObTI → chicago-lincoln-park-night.webp (Lincoln Park / skyline over water at night)
+
+Wikimedia Commons (v1.7.0):
+- File:Chicago_in_2022_Marina_City_at_night_(52053164103).jpg (CC BY 2.0, Chris Rycroft) → chicago-marina-city-night.webp
