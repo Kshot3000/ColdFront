@@ -8,6 +8,7 @@
     const pill = CF.$("#roster-pill");
     const body = CF.$("#roster-table tbody");
     pill.textContent = "loading…";
+    if (body) body.innerHTML = CF.skelRows(8, 4);
     try {
       const r = await CF.API.getRoster();
       all = CF.API.rosterPlayers(r.data);
@@ -26,7 +27,13 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      body.innerHTML = '<tr><td colspan="8" class="dim">Roster unreachable from this network, and no snapshot is saved on this device yet. <a href="https://www.chicagobears.com/roster" target="_blank" rel="noopener">Official roster ↗</a> · <a href="https://www.espn.com/nfl/team/_/name/chi/roster" target="_blank" rel="noopener">ESPN roster ↗</a></td></tr>';
+      body.innerHTML = '<tr><td colspan="8">' + CF.emptyHTML({
+        icon: "🐻",
+        title: "Roster unreachable",
+        sub: "This network and this device have no snapshot yet.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/roster" target="_blank" rel="noopener">Official roster ↗</a> '
+          + '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/team/_/name/chi/roster" target="_blank" rel="noopener">ESPN roster ↗</a>',
+      }) + '</td></tr>';
     }
   }
 
@@ -56,7 +63,11 @@
           '<td class="dim">' + CF.esc(p.nation || "") + "</td>" +
           "</tr>"
         ).join("")
-      : '<tr><td colspan="8" class="dim">Nobody matches that search — the wind must have taken their names.</td></tr>';
+      : '<tr><td colspan="8">' + CF.emptyHTML({
+          icon: "🌬",
+          title: "Nobody matches",
+          sub: "Nobody matches that search — the wind must have taken their names.",
+        }) + '</td></tr>';
   }
 
   document.addEventListener("DOMContentLoaded", () => {

@@ -29,6 +29,7 @@
     const body = CF.$("#report-table tbody");
     const pill = CF.$("#rep-pill");
     const note = CF.$("#rep-note");
+    if (body) body.innerHTML = CF.skelRows(5, 3);
 
     // 1) API-Sports (BYO key) — structured injury rows with ETAs.
     if (CF.API.apisportsKey()) {
@@ -87,10 +88,18 @@
             '<td><span class="st ' + CF.esc(row.statusCls || statusCls(row.status)) + '">' + CF.esc(row.status || "—") + "</span></td>" +
             "<td class=\"dim\">" + CF.esc(row.eta || "") + "</td></tr>"
           ).join("")
-        : '<tr><td colspan="5" class="dim">No rows in the report right now — either everyone is healthy (suspicious) or the table is waiting for its first update. The wire on the right has the live picture.</td></tr>';
+        : '<tr><td colspan="5">' + CF.emptyHTML({
+            icon: "🩹",
+            title: "Report is empty",
+            sub: "Either everyone is healthy (suspicious) or the table is waiting for its first update. The wire on the right has the live picture.",
+          }) + "</td></tr>";
     } catch (e3) {
       pill.className = "pill sample";
-      body.innerHTML = '<tr><td colspan="5" class="dim">Report unavailable.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({
+        icon: "🌫",
+        title: "Report unavailable",
+        sub: "Could not load the community report from this network.",
+      }) + "</td></tr>";
     }
   }
 
@@ -102,6 +111,15 @@
 
   async function loadWire() {
     const box = CF.$("#wire-list");
+    if (box) {
+      box.innerHTML = CF.emptyHTML({
+        icon: "🩹",
+        title: "Tuning injury wire",
+        sub: "Flagging headlines that smell like a report change.",
+        loading: true,
+        style: "padding:18px 14px",
+      });
+    }
     const parts = [];
 
     // 1) The league report's editorial notes — the story behind each row.
@@ -142,7 +160,13 @@
       box.innerHTML = parts.slice(0, 12).join("");
       return;
     }
-    box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">The wires are answering, but nothing on them mentions a body part right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';
+    box.innerHTML = CF.emptyHTML({
+      icon: "🩹",
+      title: "Quiet on the injury wire",
+      sub: "The wires are answering, but nothing on them mentions a body part right now.",
+      action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a>',
+      style: "padding:18px 14px",
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {

@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.4.0",
+    version: "1.5.0",
   },
 
   author: {
@@ -907,6 +907,7 @@ CF.initChrome = () => {
     if (!nav.id) nav.id = "site-nav";
     toggle.setAttribute("type", "button");
     toggle.setAttribute("aria-controls", nav.id);
+    toggle.setAttribute("aria-haspopup", "true");
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-label", "Open menu");
     toggle.addEventListener("click", (e) => {
@@ -958,6 +959,18 @@ CF.initChrome = () => {
       '<a href="' + CF.esc(s.url) + '" target="_blank" rel="noopener"><span class="ico">' + CF.esc(s.icon) + '</span>' +
       '<span>' + CF.esc(s.name) + ' <span class="dim">' + CF.esc(s.handle) + '</span></span></a>'
     ).join("");
+  }
+
+  // Deep-link targets (week clock → page sections) land under the sticky header.
+  if (location.hash) {
+    const id = decodeURIComponent(location.hash.slice(1));
+    const el = id ? document.getElementById(id) : null;
+    if (el) {
+      requestAnimationFrame(() => {
+        try { el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        catch (e) { el.scrollIntoView(true); }
+      });
+    }
   }
 
   CF.renderWeatherStrip();

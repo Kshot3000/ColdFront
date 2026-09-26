@@ -34,6 +34,10 @@
     const pill = CF.$("#feed-pill");
     const updated = CF.$("#feed-updated");
     pill.textContent = "connecting…";
+    const newsList = CF.$("#news-list");
+    const injBox = CF.$("#injury-news");
+    if (newsList) newsList.innerHTML = CF.emptyHTML({ icon: "📡", title: "Tuning in", sub: "League wire first — then we keep the rail warm.", loading: true });
+    if (injBox) injBox.innerHTML = CF.emptyHTML({ icon: "🩹", title: "Scanning the rail", sub: "Flagging report-shaped headlines.", loading: true, style: "padding:18px 14px" });
     let listHTML = "", injHTML = "", count = 0, src = "";
 
     // 1) ESPN league wire.
@@ -80,23 +84,34 @@
 
     if (listHTML) {
       CF.$("#news-list").innerHTML = listHTML;
-      CF.$("#injury-news").innerHTML = injHTML ||
-        '<div class="empty" style="padding:18px 14px;font-size:12.5px">Nothing flagged on the wire right now — the <a href="injuries.html">report page</a> has the full list.</div>';
+      CF.$("#injury-news").innerHTML = injHTML || CF.emptyHTML({
+        icon: "🩹",
+        title: "Nothing flagged",
+        sub: "Nothing flagged on the wire right now — the report page has the full list.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="injuries.html">Injury report →</a>',
+        style: "padding:18px 14px",
+      });
       pill.className = "pill ok";
       pill.textContent = src + " · " + count + " stories";
       updated.textContent = "updated " + new Date().toLocaleTimeString();
     } else {
       pill.className = "pill sample";
       pill.textContent = "offline — snapshot unavailable";
-      CF.$("#news-list").innerHTML =
-        '<div class="empty"><div class="big">📡</div>' +
-        "Both wires are unreachable from this network and no snapshot is saved on this device yet.<br>" +
-        "Visit while online once and the feeds will cache themselves for offline reading.<br><br>" +
-        '<a class="btn primary small" href="https://www.espn.com/nfl/team/_/name/chi/news/" target="_blank" rel="noopener">ESPN Bears news ↗</a> ' +
-        '<a class="btn small" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Google News ↗</a> ' +
-        '<a class="btn small" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Bears.com ↗</a></div>';
-      CF.$("#injury-news").innerHTML =
-        '<div class="empty" style="padding:18px 14px;font-size:12.5px">Injury wire offline. The <a href="injuries.html">report page</a> still works.</div>';
+      CF.$("#news-list").innerHTML = CF.emptyHTML({
+        icon: "📡",
+        title: "Both wires are dark",
+        sub: "Unreachable from this network and no snapshot is saved on this device yet. Visit while online once and the feeds cache themselves for offline reading.",
+        action: '<a class="btn primary small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/team/_/name/chi/news/" target="_blank" rel="noopener">ESPN Bears news ↗</a> '
+          + '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Google News ↗</a> '
+          + '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Bears.com ↗</a>',
+      });
+      CF.$("#injury-news").innerHTML = CF.emptyHTML({
+        icon: "🩹",
+        title: "Injury wire offline",
+        sub: "The report page still works.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="injuries.html">Injury report →</a>',
+        style: "padding:18px 14px",
+      });
     }
   }
 
@@ -105,8 +120,10 @@
     const pill = CF.$("#gn-pill");
     const list = CF.$("#gn-list");
     if (!pill || !list) return;
+    list.innerHTML = CF.emptyHTML({ icon: "📰", title: "Tuning the shortwave", sub: "Wide wire across outlets — same story, every angle.", loading: true });
     try {
       const items = await CF.API.getGoogleNews('Chicago Bears', 10);
+      if (!items.length) throw new Error("empty wide wire");
       list.innerHTML = items.map((it) =>
         '<div class="news-item"><div>' +
         '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
@@ -118,10 +135,12 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      list.innerHTML =
-        '<div class="empty"><div class="big">📰</div>' +
-        "The wide wire is unreachable from this network right now.<br>" +
-        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Read it on Google News ↗</a></div>';
+      list.innerHTML = CF.emptyHTML({
+        icon: "📰",
+        title: "Wide wire unreachable",
+        sub: "The wide wire is unreachable from this network right now.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Read it on Google News ↗</a>',
+      });
     }
   }
 

@@ -140,22 +140,22 @@
         <span class="rule"></span>
       </div>
       <div class="week-clock" id="week-clock" role="list" aria-live="polite">
-        <a class="week-clock-phase" role="listitem" data-phase="practice" href="practice.html">
+        <a class="week-clock-phase" role="listitem" data-phase="practice" href="practice.html#tracker">
           <span class="phase-label">Practice</span>
           <span class="phase-hint">Facility &amp; availability</span>
           <span class="phase-meta">Wed–Thu</span>
         </a>
-        <a class="week-clock-phase" role="listitem" data-phase="media" href="news.html">
+        <a class="week-clock-phase" role="listitem" data-phase="media" href="news.html#news-list">
           <span class="phase-label">Media</span>
           <span class="phase-hint">Wire &amp; pressers</span>
           <span class="phase-meta">Fri–Sat</span>
         </a>
-        <a class="week-clock-phase" role="listitem" data-phase="gameday" href="games.html">
+        <a class="week-clock-phase" role="listitem" data-phase="gameday" href="games.html#board">
           <span class="phase-label">Gameday</span>
           <span class="phase-hint">Board &amp; kickoff</span>
           <span class="phase-meta">Sun / Mon</span>
         </a>
-        <a class="week-clock-phase" role="listitem" data-phase="film" href="stats.html">
+        <a class="week-clock-phase" role="listitem" data-phase="film" href="stats.html#lastbox">
           <span class="phase-label">Film</span>
           <span class="phase-hint">Box &amp; leaders</span>
           <span class="phase-meta">Mon–Tue</span>
@@ -216,11 +216,41 @@
         <span class="rule"></span>
       </div>
       <div class="city-strip city-strip-5" aria-label="Chicago photography">
-        <div class="city-tile t-river"><div class="city-tile-bg"></div><span class="city-tile-label">River night</span></div>
-        <div class="city-tile t-soldier"><div class="city-tile-bg"></div><span class="city-tile-label">Soldier Field</span></div>
-        <div class="city-tile t-winter"><div class="city-tile-bg"></div><span class="city-tile-label">Lakefront winter</span></div>
-        <div class="city-tile t-bean-dusk"><div class="city-tile-bg"></div><span class="city-tile-label">Cloud Gate</span></div>
-        <div class="city-tile t-cta"><div class="city-tile-bg"></div><span class="city-tile-label">The L at night</span></div>
+        <div class="city-tile t-river">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/chicago-river-night-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/chicago-river-night.webp" alt="" width="1280" height="816" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">River night</span>
+        </div>
+        <div class="city-tile t-soldier">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/soldier-field-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/soldier-field.webp" alt="" width="1100" height="1467" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">Soldier Field</span>
+        </div>
+        <div class="city-tile t-winter">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/chicago-winter-lakefront-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/chicago-winter-lakefront.webp" alt="" width="1280" height="960" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">Lakefront winter</span>
+        </div>
+        <div class="city-tile t-bean-dusk">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/chicago-bean-dusk-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/chicago-bean-dusk.webp" alt="" width="1400" height="933" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">Cloud Gate</span>
+        </div>
+        <div class="city-tile t-cta">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/chicago-cta-night-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/chicago-cta-night.webp" alt="" width="1400" height="925" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">The L at night</span>
+        </div>
       </div>
       <div class="photo-band soldier" style="margin-top:18px">
         <div class="photo-band-bg" aria-hidden="true"></div>

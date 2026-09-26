@@ -1994,3 +1994,92 @@ body:not(.prefers-reduced-motion) #snow {
 @media (max-width: 900px) {
   .city-strip.city-strip-4 { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* ============================================================
+   v1.5.0 — picture/srcset city tiles · deep-link scroll · empty polish
+   ============================================================ */
+
+/* Sticky-header offset for week-clock deep links */
+#tracker,
+#news-list,
+#board,
+#lastbox,
+#leaders,
+#why-cold-front,
+#gn-section,
+#wire-list,
+#report-table {
+  scroll-margin-top: calc(var(--cf-head-h, 72px) + 12px);
+}
+
+/* City tiles: <picture>/<img> srcset (mobile -sm) — keep old bg as fallback */
+.city-tile .city-tile-pic {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+}
+.city-tile .city-tile-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: brightness(0.7) saturate(0.95);
+  transition: transform 0.4s var(--ease-out), filter 0.3s ease;
+  max-width: none;
+}
+.city-tile:hover .city-tile-img {
+  transform: scale(1.06);
+  filter: brightness(0.78) saturate(1.05);
+}
+.city-tile.t-soldier .city-tile-img { object-position: center 30%; }
+.city-tile.t-bean-dusk .city-tile-img { object-position: center 40%; }
+.city-tile.t-cta .city-tile-img { object-position: center 35%; }
+.city-tile.t-buckingham .city-tile-img { object-position: center 45%; }
+
+/* Prefer picture when present — hide legacy bg layer */
+.city-tile:has(.city-tile-pic) .city-tile-bg { display: none; }
+
+/* Empty states nested in table cells stay tidy */
+.tbl td > .empty {
+  margin: 4px 0;
+  padding: 16px 12px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.tbl td > .empty .big { font-size: 28px; }
+
+/* Keep hamburger rock-solid: toggle stays above drawer + snow */
+@media (max-width: 960px) {
+  .nav-toggle {
+    position: relative;
+    z-index: 70;
+  }
+  body.nav-open #snow {
+    /* snow stays visible under the drawer; never steal taps */
+    pointer-events: none;
+  }
+}
+
+/* Mobile CSS fallbacks for any remaining bg-based tiles */
+@media (max-width: 700px) {
+  .city-tile.t-river .city-tile-bg {
+    background-image: url("../img/chicago-river-night-sm.webp");
+  }
+  .city-tile.t-winter .city-tile-bg {
+    background-image: url("../img/chicago-winter-lakefront-sm.webp");
+  }
+  .city-tile.t-bean-dusk .city-tile-bg {
+    background-image: url("../img/chicago-bean-dusk-sm.webp");
+  }
+  .city-tile.t-bean .city-tile-bg {
+    background-image: url("../img/chicago-downtown-night-sm.webp");
+  }
+  .city-tile.t-buckingham .city-tile-bg {
+    background-image: url("../img/chicago-buckingham-fountain-sm.webp");
+  }
+}

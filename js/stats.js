@@ -52,6 +52,7 @@
   async function loadLeaders() {
     const pill = CF.$("#leaders-pill");
     const box = CF.$("#leaders");
+    if (box) box.innerHTML = CF.emptyHTML({ icon: "📊", title: "Working the numbers", sub: "Season leaders when the wire has completed games.", loading: true });
 
     // 1) API-Sports (BYO key) — real season player stats.
     if (CF.API.apisportsKey()) {
@@ -115,7 +116,11 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      box.innerHTML = '<div class="empty"><div class="big">📊</div>Leaders unavailable — no completed games on the wire yet, and no snapshot on this device.</div>';
+      box.innerHTML = CF.emptyHTML({
+        icon: "📊",
+        title: "Leaders unavailable",
+        sub: "No completed games on the wire yet, and no snapshot on this device.",
+      });
     }
   }
 
@@ -126,6 +131,7 @@
   async function loadLastBox() {
     const pill = CF.$("#lastbox-pill");
     const box = CF.$("#lastbox");
+    if (box) box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Finding the last game", sub: "Pulling the most recent completed Bears box.", loading: true });
     let last = null;
     try {
       const r = await CF.API.getSchedule();
@@ -138,7 +144,11 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      box.innerHTML = '<div class="empty"><div class="big">📋</div>Can\'t find the last completed game right now.</div>';
+      box.innerHTML = CF.emptyHTML({
+        icon: "📋",
+        title: "No completed game yet",
+        sub: "Can't find the last completed game right now.",
+      });
       return;
     }
     try {
@@ -175,7 +185,11 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "feed quiet";
-      box.innerHTML = '<div class="empty"><div class="big">📋</div>Box score for the last game didn\'t answer this time.</div>';
+      box.innerHTML = CF.emptyHTML({
+        icon: "📋",
+        title: "Box score quiet",
+        sub: "Box score for the last game didn't answer this time.",
+      });
     }
   }
 

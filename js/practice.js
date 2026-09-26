@@ -5,6 +5,7 @@
   async function loadTracker() {
     const body = CF.$("#tracker tbody");
     const note = CF.$("#track-note");
+    if (body) body.innerHTML = CF.skelRows(5, 2);
     try {
       const r = await fetch("data/practice.json", { cache: "no-cache" });
       const data = await r.json();
@@ -17,10 +18,18 @@
             '<td><span class="st ' + (/availability|presser/i.test(row.media || "") ? "active" : "day-to-day") + '">' + CF.esc(row.media || "—") + "</span></td>" +
             '<td class="dim">' + CF.esc(row.notes || "") + "</td></tr>"
           ).join("")
-        : '<tr><td colspan="5" class="dim">Tracker is empty.</td></tr>';
+        : '<tr><td colspan="5">' + CF.emptyHTML({
+            icon: "❄️",
+            title: "Tracker is empty",
+            sub: "Edit data/practice.json and push to keep the week current.",
+          }) + '</td></tr>';
       if (data.updated) note.textContent = "Tracker last updated in the repo: " + data.updated + " — edit data/practice.json and push to keep it current.";
     } catch (e) {
-      body.innerHTML = '<tr><td colspan="5" class="dim">Tracker unavailable.</td></tr>';
+      body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({
+        icon: "🌫",
+        title: "Tracker unavailable",
+        sub: "Could not load data/practice.json from this network.",
+      }) + '</td></tr>';
     }
   }
 

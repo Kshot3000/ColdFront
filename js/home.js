@@ -299,10 +299,18 @@
     const note = CF.$("#week-clock-note");
     const pill = CF.$("#week-clock-pill");
     if (!root) return;
+    const deep = {
+      practice: "practice.html#tracker",
+      media: "news.html#news-list",
+      gameday: "games.html#board",
+      film: "stats.html#lastbox",
+    };
     CF.$$(".week-clock-phase", root).forEach((el) => {
-      const on = el.getAttribute("data-phase") === phase.active;
+      const key = el.getAttribute("data-phase");
+      const on = key === phase.active;
       el.classList.toggle("is-active", on);
       el.setAttribute("aria-current", on ? "step" : "false");
+      if (deep[key]) el.setAttribute("href", deep[key]);
     });
     if (note) note.innerHTML = phase.note;
     if (pill) {

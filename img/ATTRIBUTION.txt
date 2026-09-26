@@ -5,3 +5,5 @@ Chicago photography (free licenses):
 - Wikimedia Commons (new): File:CTA_Night.jpg → chicago-cta-night.webp (looking north from Adams/Wabash 'L'); File:Buckingham_Fountain_Chicago.jpg → chicago-buckingham-fountain.webp
 
 Bears/team art: original Cold Front SVGs (paw-mark.svg, football-silhouette.svg, jersey-54.svg) — not NFL trademarks.
+
+Mobile -sm.webp variants: same sources, resized (~720px wide) for lighter city-tile <picture> srcset on narrow viewports.

@@ -62,6 +62,10 @@
       <p><b>THE COLD FRONT</b> is an independent Chicago Bears fan hub — news, injuries, betting odds, game stats &amp; schedule, roster, and practice intel in one place. Built for Midwest football energy (Soldier Field cold, lake wind, orange &amp; blue grit) without the fluff. No ads, no accounts, no backend — it runs in your browser and degrades gracefully when the network goes whiteout. Unofficial. Not NFL- or Bears-affiliated.</p>
     </div>
 
+    <div class="callout info" id="why-cold-front" style="margin-top:8px">
+      <b>Why Cold Front?</b> One tab for the whole Bears week — practice whispers on Wednesday, the wire on Friday, kickoff wind on Sunday, film on Monday. Built because the feeds we love live in six different apps, and lake-effect football deserves a home that feels like Chicago: navy, orange, steel, and snow that never quite stops.
+    </div>
+
     <div class="photo-band river" aria-label="Chicago River at night">
       <div class="photo-band-bg" aria-hidden="true"></div>
       <div class="photo-band-inner">
@@ -78,12 +82,36 @@
     </div>
 
     <div class="city-strip city-strip-4" aria-label="Chicago city photography">
-      <div class="city-tile t-skyline"><div class="city-tile-bg"></div><span class="city-tile-label">Skyline</span></div>
-      <div class="city-tile t-bean"><div class="city-tile-bg"></div><span class="city-tile-label">Millennium Park</span></div>
-      <div class="city-tile t-theatre"><div class="city-tile-bg"></div><span class="city-tile-label">Chicago Theatre</span></div>
-      <div class="city-tile t-buckingham"><div class="city-tile-bg"></div><span class="city-tile-label">Buckingham Fountain</span></div>
+      <div class="city-tile t-skyline">
+        <picture class="city-tile-pic">
+          <source media="(max-width: 700px)" srcset="img/chicago-skyline-night-sm.webp" type="image/webp">
+          <img class="city-tile-img" src="img/chicago-skyline-night.webp" alt="" width="1600" height="984" loading="lazy" decoding="async">
+        </picture>
+        <span class="city-tile-label">Skyline</span>
+      </div>
+      <div class="city-tile t-bean">
+        <picture class="city-tile-pic">
+          <source media="(max-width: 700px)" srcset="img/chicago-downtown-night-sm.webp" type="image/webp">
+          <img class="city-tile-img" src="img/chicago-downtown-night.webp" alt="" width="1600" height="1068" loading="lazy" decoding="async">
+        </picture>
+        <span class="city-tile-label">Millennium Park</span>
+      </div>
+      <div class="city-tile t-theatre">
+        <picture class="city-tile-pic">
+          <source media="(max-width: 700px)" srcset="img/chicago-night-alt-sm.webp" type="image/webp">
+          <img class="city-tile-img" src="img/chicago-night-alt.webp" alt="" width="1600" height="1068" loading="lazy" decoding="async">
+        </picture>
+        <span class="city-tile-label">Chicago Theatre</span>
+      </div>
+      <div class="city-tile t-buckingham">
+        <picture class="city-tile-pic">
+          <source media="(max-width: 700px)" srcset="img/chicago-buckingham-fountain-sm.webp" type="image/webp">
+          <img class="city-tile-img" src="img/chicago-buckingham-fountain.webp" alt="" width="1280" height="852" loading="lazy" decoding="async">
+        </picture>
+        <span class="city-tile-label">Buckingham Fountain</span>
+      </div>
     </div>
-    <p class="photo-credit">Photo credits: Unsplash (skyline, Cloud Gate, Chicago Theatre) · Wikimedia Commons (Soldier Field, Chicago River night, lakefront winter). See <a href="img/ATTRIBUTION.txt">img/ATTRIBUTION.txt</a>.</p>
+    <p class="photo-credit">Photo credits: Unsplash (skyline, Cloud Gate / Bean dusk, Chicago Theatre, downtown night) · Wikimedia Commons (Soldier Field, Chicago River night, lakefront winter, CTA L, Buckingham Fountain). Mobile loads lighter <code>-sm</code> webps via <code>&lt;picture&gt;</code>. Marks are original Cold Front SVGs — never NFL logos. See <a href="img/ATTRIBUTION.txt">img/ATTRIBUTION.txt</a>.</p>
 
     <!-- Builder -->
     <div class="section-head">
