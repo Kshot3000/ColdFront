@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.11.0",
+    version: "1.12.0",
   },
 
   author: {
@@ -110,7 +110,7 @@ CF.CONFIG = {
     // forecast service, CORS-open, no key. Used automatically when Open-Meteo
     // can't be reached.
     nws: "https://api.weather.gov",
-    nwsPoint: "41.8781,-87.6298", // Soldier Field
+    nwsPoint: "41.8623,-87.6167", // Soldier Field
     // Second news source: wide-wire RSS ("Chicago Bears") — no CORS
     // headers, so it always rides the proxy chain (local proxy first).
     // Google News first; Bing News is the second upstream — public CORS
@@ -118,7 +118,7 @@ CF.CONFIG = {
     googleNews: "https://news.google.com/rss/search",
     bingNews: "https://www.bing.com/news/search",
     weatherParams: {
-      latitude: 41.8781, longitude: -87.6298,
+      latitude: 41.8623, longitude: -87.6167,
       current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code",
       daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,snowfall_sum,wind_speed_10m_max",
       forecast_days: 3, timezone: "America/Chicago",
@@ -126,17 +126,13 @@ CF.CONFIG = {
     polymarket: "https://gamma-api.polymarket.com/events",
 
     // Optional BYO-key source (About page, free tier 100 req/day). NFL =
-    // league 39. The key lives only in the browser's localStorage.
-    apisports: "https://v3.football.api-sports.io",
-    apisportsLeague: 39,
+    // league 1. The key lives only in the browser's localStorage.
+    apisports: "https://v1.american-football.api-sports.io",
+    apisportsLeague: 1,
 
-    // Local loopback feed proxy (proxy/cf-proxy.ps1, started via
-    // Start-Local-Proxy.bat). Tried FIRST by every feed: on networks where
-    // ESPN's CDN 403s browser traffic (residential lines, VPNs), the proxy
-    // fetches with a tool-style client and the feed goes live anyway. If the
-    // proxy isn't running, this attempt fails in a few milliseconds and the
-    // chain moves on. Loopback-only — unreachable from the internet.
-    localProxy: "http://127.0.0.1:8799",
+    // Public pages never probe the visitor's local network or request location.
+    // Chicago weather uses the fixed Soldier Field coordinates above.
+    localProxy: "",
     // Optional always-on remote proxy for phones / other machines: deploy
     // proxy/cf-proxy-worker.js (see proxy/DEPLOY.md) and put its URL here,
     // e.g. "https://cf-proxy.<you>.workers.dev". Leave "" to skip — the
@@ -184,13 +180,13 @@ CF.timeAgo = (iso) => {
 
 CF.fmtDate = (iso, opts) => {
   if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString(undefined, opts || { weekday: "short", month: "short", day: "numeric" }); }
+  try { return new Date(iso).toLocaleDateString(undefined, Object.assign({ timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric" }, opts || {})); }
   catch (e) { return String(iso).slice(0, 10); }
 };
 
 CF.fmtTime = (iso) => {
   if (!iso) return "";
-  try { return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); }
+  try { return new Date(iso).toLocaleTimeString(undefined, { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit", timeZoneName: "short" }); }
   catch (e) { return ""; }
 };
 
@@ -222,7 +218,7 @@ CF.copyText = (text, msg) => {
     ta.style.opacity = "0";
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand("copy"); done(); } catch (e) { CF.toast("Copy failed — select it manually"); }
+    try { if (!document.execCommand("copy")) throw new Error("copy failed"); done(); } catch (e) { CF.toast("Copy failed — select it manually"); }
     document.body.removeChild(ta);
   }
 };
@@ -359,6 +355,7 @@ CF.snapshotGet = async (cacheKey) => {
   const base = (CF.CONFIG.endpoints.snapshotBase || "data/snapshots").replace(/\/$/, "");
   // Map dotted keys (scoreboard.20260925) → generic stem when needed.
   const stem = String(cacheKey || "").split(".")[0];
+  if (cacheKey === "injuries") cacheKey = "injuries-bears";
   const rels = [];
   if (cacheKey) rels.push(base + "/" + cacheKey + ".json");
   if (stem && stem !== cacheKey) rels.push(base + "/" + stem + ".json");
@@ -376,7 +373,15 @@ CF.snapshotGet = async (cacheKey) => {
       try {
         const r = await fetch(url, { cache: "no-cache" });
         if (!r.ok) continue;
-        return await r.json();
+        const data = await r.json();
+        // A weekly snapshot must never fill a different selected date.
+        const day = /^scoreboard\.(\d{8})$/.exec(String(cacheKey));
+        if (day) {
+          const events = (data.events || []).filter((event) => CF.todayParam(new Date(event.date)) === day[1]);
+          if (!events.length) continue;
+          return Object.assign({}, data, { events });
+        }
+        return data;
       } catch (e) { /* try next */ }
     }
   }
@@ -460,7 +465,7 @@ CF.fetchText = async (url, opts) => {
    Data that arrives via any path in stages 1–2 is LIVE data, so it is
    reported as source "live"; only stage 3 (stale snapshot) reports
    "cache". */
-CF.getSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
+CF.readSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
   const ttl = (CF.CONFIG.ttl[name] != null) ? CF.CONFIG.ttl[name] : 3600e3;
   const direct = directUrl || urlFor(name);
   const local = CF.usableLocalProxy ? CF.usableLocalProxy() : CF.CONFIG.endpoints.localProxy;
@@ -522,14 +527,31 @@ CF.getSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
   throw firstErr || new Error("offline:" + name);
 };
 
+// Share simultaneous panel requests without marking cached responses as live.
+CF.inflight = new Map();
+CF.getSource = (name, fetcher, cacheKey, directUrl, altFetchers) => {
+  const key = name + ":" + cacheKey;
+  if (!CF.inflight.has(key)) {
+    const request = CF.readSource(name, fetcher, cacheKey, directUrl, altFetchers)
+      .finally(() => CF.inflight.delete(key));
+    CF.inflight.set(key, request);
+  }
+  return CF.inflight.get(key);
+};
+CF.sourceLabel = (source) => { const value = typeof source === "string" ? source : source?.source; return value === "live" ? "live" : value === "snapshot" ? "saved snapshot" : "cached"; };
+CF.safeURL = (value, fallback = "#") => {
+  try { const url = new URL(value); return ["https:", "http:"].includes(url.protocol) ? url.href : fallback; }
+  catch (_) { return fallback; }
+};
+
 function urlFor(n) {
-  if (n === "scoreboard") return CF.CONFIG.endpoints.espnBase + "/scoreboard";
-  if (n === "news") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/news";
+  if (n === "scoreboard") return CF.CONFIG.endpoints.espnBase + "/scoreboard?dates=" + CF.todayParam();
+  if (n === "news") return CF.CONFIG.endpoints.espnBase + "/news?team=chi&limit=12";
   if (n === "schedule") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/schedule";
-  if (n === "standings") return CF.CONFIG.endpoints.espnBase + "/standings";
+  if (n === "standings") return "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings";
   if (n === "roster") return CF.CONFIG.endpoints.espnBase + "/teams/chicago/roster";
   if (n === "team") return CF.CONFIG.endpoints.espnBase + "/teams/chicago";
-  if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/odds";
+  if (n === "odds") return CF.CONFIG.endpoints.espnBase + "/scoreboard";
   if (n === "injuries") return CF.CONFIG.endpoints.espnBase + "/injuries";
   return null;
 }
@@ -545,18 +567,19 @@ CF.PROXIES = [
 ];
 CF._unwrapProxyJSON = (data) => data;
 
-CF.todayParam = (d) => {
-  const dt = d || new Date();
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  const dd = String(dt.getDate()).padStart(2, "0");
-  return "" + y + m + dd;
-};
+CF.todayParam = (date) => CF.dateInput(date).replace(/-/g, "");
 
+CF.dateInput = (value) => {
+  const date = value ? new Date(value) : new Date();
+  if (!Number.isFinite(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const part = (name) => parts.find((p) => p.type === name).value;
+  return part("year") + "-" + part("month") + "-" + part("day");
+};
 CF.dayParam = (offset) => {
-  const dt = new Date();
-  dt.setDate(dt.getDate() + offset);
-  return CF.todayParam(dt);
+  const date = new Date(CF.dateInput() + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() + offset);
+  return CF.todayParam(date);
 };
 
 /* ---------------- auto-refresh registry ----------------
@@ -631,10 +654,10 @@ const WMO = {
 
 CF.weatherCode = (c) => WMO[c] || "—";
 
-CF.windChill = (tC, kmh) => {
-  if (tC > 10 || kmh < 5) return tC;
-  const t = 9 + (3.7 * Math.min(kmh, 20) * Math.pow(Math.abs(tC), 0.4));
-  return t;
+CF.windChill = (tempC, kmh) => {
+  if (tempC > 10 || kmh < 4.8) return tempC;
+  const wind = Math.pow(kmh, 0.16);
+  return 13.12 + 0.6215 * tempC - 11.37 * wind + 0.3965 * tempC * wind;
 };
 
 CF.coldFrontGauge = (w) => {
@@ -651,7 +674,7 @@ CF.coldFrontGauge = (w) => {
   if (snow >= 5) score += 25; else if (snow >= 1) score += 12;
   score = Math.min(100, score);
   let label = "Mild for the Midwest", cls = "mild";
-  if (score >= 70) { label = "Blizzard watch — bring the beanie"; cls = "blizzard"; }
+  if (score >= 70) { label = "Deep freeze — bring the beanie"; cls = "blizzard"; }
   else if (score >= 40) { label = "Cruncher conditions — the front is in"; cls = "cruncher"; }
   return { score, label, cls };
 };
@@ -756,6 +779,7 @@ CF.loadWeather = async () => {
   try {
     const d = await CF.fetchVia(base + "?" + qs, { timeout: 8000 });
     const cur = d.current || {};
+    if (!Number.isFinite(cur.temperature_2m)) throw new Error("Weather reading missing");
     // precipProb = chance of ANY precipitation today (rain in summer).
     // snowCm     = actual snowfall today in cm (the only real "snow" signal).
     let precipProb = null, snowCm = null;
@@ -800,27 +824,19 @@ CF.loadWeatherNWS = async () => {
   const points = await CF.fetchVia(base + "/points/" + pt, { timeout: 8000 });
   const grid = points.properties && points.properties.forecast;
   if (!grid) throw new Error("no NWS gridpoint");
-  let obs = null, fc = null;
-  try { obs = (await CF.fetchVia(grid + "/observations/latest", { timeout: 8000 })).properties; } catch (e) { obs = null; }
-  try { fc = (await CF.fetchVia(grid, { timeout: 8000 })).properties; } catch (e) { fc = null; }
-  const p0 = fc && fc.periods && fc.periods[0] ? fc.periods[0] : null;
-  if (!obs && !p0) throw new Error("no NWS data");
-  const num = (s) => { const m = String(s == null ? "" : s).match(/-?\d+\.?\d*/); return m ? parseFloat(m[0]) : null; };
+  // NWS forecast is a forecast, not a fabricated observation endpoint.
+  const fc = (await CF.fetchVia(grid, { timeout: 8000 })).properties;
+  const period = fc?.periods?.[0];
+  if (!period || !Number.isFinite(period.temperature)) throw new Error("No NWS forecast");
+  const tempC = period.temperatureUnit === "C" ? period.temperature : (period.temperature - 32) * 5 / 9;
+  const speeds = String(period.windSpeed || "").match(/\d+(?:\.\d+)?/g);
+  const wind = speeds ? Math.max(...speeds.map(Number)) * 1.609344 : 0;
   const wx = {
-    tempC: obs ? obs.tempC : (p0 ? p0.temperature * 5 / 9 - 160 / 9 : null),
-    feelsC: obs ? obs.tempC : (p0 ? p0.temperature * 5 / 9 - 160 / 9 : null),
-    wind: obs ? obs.windSpeedKmH : (p0 ? num(p0.windSpeed) * 1.609 : null),
-    gusts: obs ? num(obs.windGust) * 1.609 : null,
-    humidity: obs && obs.relativeHumidity != null ? parseFloat(obs.relativeHumidity) : null,
-    code: null,
-    phrase: (obs && obs.textDescription) || (p0 && p0.shortForecast) || "NOAA/NWS",
-    time: obs ? obs.timestamp : (p0 ? p0.endTime : null),
-    snowProb: p0 && p0.probabilityOfPrecipitation && p0.probabilityOfPrecipitation.value != null ? p0.probabilityOfPrecipitation.value : null,
-    snowCm: null,
-    // NWS gives no snowfall total here; the forecast wording is the signal.
-    snowWord: /\b(snow|snowshowers?)\b/i.test(((obs && obs.textDescription) || (p0 && p0.shortForecast) || "")),
-    daily: null,
-    source: "nws",
+    tempC, feelsC: CF.windChill(tempC, wind), wind, gusts: null, humidity: null,
+    code: null, phrase: period.shortForecast || "NWS forecast", time: period.startTime,
+    snowProb: period.probabilityOfPrecipitation?.value ?? null,
+    snowCm: null, snowWord: /snow/i.test(period.shortForecast || ""),
+    daily: null, source: "nws",
   };
   wx.gauge = CF.coldFrontGauge(wx);
   CF.cacheSet("weather", wx, CF.CONFIG.ttl.weather);
@@ -833,15 +849,12 @@ CF.renderWeatherStrip = (root) => {
   el.innerHTML =
     '<span class="wx-brand">⛈ Chicago Field Conditions</span>' +
     '<span class="wx-item" id="wx-now">warming up…</span>' +
-    '<span class="wx-item"><span class="wx-dot"></span><b>41.88°N 87.63°W</b></span>' +
+    '<span class="wx-item"><span class="wx-dot"></span><b>Soldier Field · Chicago</b></span>' +
     '<span class="wx-cfi" id="wx-cfi">' +
       '<span class="wx-gauge" id="wx-gauge">reading the front…</span>' +
       '<span class="cfi-spark-wrap" id="cfi-spark" hidden></span>' +
     "</span>";
   const update = () => CF.loadWeather().then((wx) => {
-    CF.setSnow(true); // theme snow stays on; weather only boosts density
-    if (CF._syncGamedaySnow) CF._syncGamedaySnow();
-    else if (CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(wx));
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
     if (!wx) {
@@ -856,12 +869,12 @@ CF.renderWeatherStrip = (root) => {
     now.innerHTML =
       "<b>" + f(wx.tempC) + "°F</b> " + desc +
       " · feels <b>" + f(wx.feelsC) + "°F</b>" +
-      " · wind <b>" + Math.round(wx.wind) + " km/h</b>" +
-      (wx.gusts ? " (gusts " + Math.round(wx.gusts) + ")" : "") +
+      " · wind <b>" + Math.round(wx.wind / 1.609344) + " mph</b>" +
+      (wx.gusts ? " (gusts " + Math.round(wx.gusts / 1.609344) + " mph)" : "") +
       (wx.snowCm != null && Number(wx.snowCm) > 0 ? " · snow " + (Math.round(Number(wx.snowCm) * 10) / 10) + " cm" : "") +
       (wx.snowWord ? " · snow in the forecast" : "") +
-      (wx.snowProb != null && !wx.snowWord ? " · rain " + Math.round(wx.snowProb) + "%" : "") +
-      (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NOAA/NWS</span>' : "") +
+      (wx.snowProb != null && !wx.snowWord ? " · precip. " + Math.round(wx.snowProb) + "%" : "") +
+      (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NWS forecast</span>' : "") +
       (wx.offline ? ' · <span class="wx-offline">cached</span>' : "");
     if (wx.gauge) {
       gauge.textContent = wx.gauge.label + " · " + wx.gauge.score + "/100";
@@ -873,143 +886,6 @@ CF.renderWeatherStrip = (root) => {
   update();
   CF.refresh.register(update, CF.CONFIG.ttl.weather || 60e4); // re-read the front every 10 min while the page is open
 };
-
-/* ---------------- snow canvas (theme snow — always on) ----------------
-   THE COLD FRONT is a winter-football theme: decorative snow runs year-round
-   unless the visitor has prefers-reduced-motion. Weather can still *boost*
-   intensity (blizzard / lake-effect), but it never turns the flakes off.
-   Real snow signals from Open-Meteo / NWS bump density; calm days stay light. */
-CF.snowShouldFall = (wx) => {
-  // Theme default: snow is part of the brand. Only reduced-motion kills it.
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-  return true;
-};
-
-/* Returns 1 (base) or higher when real winter weather is in. */
-CF.snowIntensity = (wx) => {
-  let n = 1;
-  if (!wx || typeof wx !== "object") return n;
-  const code = Number(wx.code) || 0;
-  const SNOW_CODES = [56, 57, 66, 67, 71, 73, 75, 77, 85, 86];
-  if (SNOW_CODES.indexOf(code) >= 0) n = 1.55;
-  if (wx.snowCm != null && Number(wx.snowCm) >= 0.2) n = Math.max(n, 1.45);
-  if (wx.snowWord) n = Math.max(n, 1.35);
-  const t = (wx.feelsC != null) ? wx.feelsC : wx.tempC;
-  if (t != null && Number(t) <= 2) n = Math.max(n, 1.25);
-  return n;
-};
-
-CF.setSnow = (on) => {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) on = false;
-  if (CF._snowOn === on) {
-    if (on && CF._snow && CF._snow.ensureRunning) CF._snow.ensureRunning();
-    return;
-  }
-  CF._snowOn = on;
-  if (on) CF._snow.start(); else CF._snow.stop();
-};
-
-CF._snow = (function () {
-  /* Depth layers: near (large/fast), mid, far (small/slow). Counts bumped so
-     flakes read clearly on mobile and desktop without washing out type. */
-  const LAYERS = [
-    { n: 70, rMin: 1.8, rMax: 4.2, vyMin: 0.75, vyMax: 1.7, vxAmp: 0.6, sway: 0.018, aMin: 0.55, aMax: 0.95 },
-    { n: 90, rMin: 1.0, rMax: 2.4, vyMin: 0.45, vyMax: 1.05, vxAmp: 0.4, sway: 0.014, aMin: 0.4, aMax: 0.75 },
-    { n: 70, rMin: 0.55, rMax: 1.4, vyMin: 0.25, vyMax: 0.65, vxAmp: 0.25, sway: 0.01, aMin: 0.28, aMax: 0.55 },
-  ];
-  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false, wind = 0, windT = 0, intensity = 1;
-  const mk = (init, L) => ({
-    x: Math.random() * W,
-    y: init ? Math.random() * H : -8,
-    r: L.rMin + Math.random() * (L.rMax - L.rMin),
-    vy: L.vyMin + Math.random() * (L.vyMax - L.vyMin),
-    vx: (Math.random() - 0.5) * L.vxAmp,
-    a: L.aMin + Math.random() * (L.aMax - L.aMin),
-    sway: Math.random() * Math.PI * 2,
-    swaySp: L.sway * (0.7 + Math.random() * 0.6),
-    L: L,
-  });
-  function resize() {
-    if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = Math.floor(W * dpr);
-    canvas.height = Math.floor(H * dpr);
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  function onVis() {
-    if (document.hidden) { running = false; cancelAnimationFrame(raf); }
-    else if (CF._snowOn) { running = true; loop(); }
-  }
-  function loop() {
-    if (!running || !ctx) return;
-    windT += 0.004;
-    wind = Math.sin(windT) * 0.4 + Math.sin(windT * 0.37) * 0.2;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#eef5fc";
-    for (const f of flakes) {
-      f.sway += f.swaySp;
-      f.x += f.vx + wind * (0.4 + f.r * 0.15) + Math.sin(f.sway) * 0.22;
-      f.y += f.vy + Math.abs(wind) * 0.08;
-      if (f.y > H + 8) { Object.assign(f, mk(false, f.L)); }
-      if (f.x > W + 10) f.x = -8;
-      if (f.x < -10) f.x = W + 6;
-      ctx.globalAlpha = f.a;
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    raf = requestAnimationFrame(loop);
-  }
-  function rebuildFlakes() {
-    flakes = [];
-    // Keep flakes visible on phones — only a light trim, never half.
-    const narrow = window.matchMedia("(max-width: 700px)").matches;
-    const scale = (narrow ? 0.88 : 1) * intensity;
-    for (const L of LAYERS) {
-      const n = Math.max(18, Math.round(L.n * scale));
-      for (let i = 0; i < n; i++) flakes.push(mk(true, L));
-    }
-  }
-  function start() {
-    canvas = CF.$("#snow");
-    if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
-    resize();
-    window.removeEventListener("resize", resize);
-    window.addEventListener("resize", resize);
-    document.removeEventListener("visibilitychange", onVis);
-    document.addEventListener("visibilitychange", onVis);
-    rebuildFlakes();
-    if (!running) {
-      running = true;
-      loop();
-    }
-  }
-  function stop() {
-    running = false;
-    cancelAnimationFrame(raf);
-    window.removeEventListener("resize", resize);
-    document.removeEventListener("visibilitychange", onVis);
-    if (ctx && canvas) ctx.clearRect(0, 0, W, H);
-  }
-  function ensureRunning() {
-    if (CF._snowOn && !running) start();
-  }
-  function setIntensity(n) {
-    const next = Math.max(0.8, Math.min(2.15, Number(n) || 1));
-    if (Math.abs(next - intensity) < 0.05) return;
-    intensity = next;
-    if (running) rebuildFlakes();
-  }
-  function getIntensity() { return intensity; }
-  return { start, stop, ensureRunning, setIntensity, getIntensity };
-})();
 
 /* Gameday mode: denser snow + hotter orange rim when kickoff window / live. */
 CF._gamedayOn = false;
@@ -1154,10 +1030,10 @@ CF.kickoffWeatherHTML = async (isHome) => {
     }
     const f = Math.round(Number(wx.tempC) * 9 / 5 + 32);
     const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
-    const wind = wx.wind != null ? " · wind " + Math.round(wx.wind) + " km/h" : "";
+    const wind = wx.wind != null ? " · wind " + Math.round(wx.wind) + " mph" : "";
     const gauge = wx.gauge ? (' · CFI <b>' + wx.gauge.score + "</b>") : "";
-    return '<div class="kickoff-wx" title="Kickoff conditions at Soldier Field">' +
-      '<span class="k">Kickoff wx</span>' +
+    return '<div class="kickoff-wx" title="Latest weather at Soldier Field; not a kickoff forecast">' +
+      '<span class="k">Chicago now</span>' +
       '<span class="kickoff-wx-body">❄ Chicago · <b>' + f + "°F</b> " + desc + wind + gauge + "</span></div>";
   } catch (e) {
     return '<div class="kickoff-wx dim">❄ Soldier Field · weather unavailable</div>';
@@ -1184,7 +1060,7 @@ CF.injectAtmosphere = () => {
 CF.ensureSkipLink = () => {
   if (CF.$(".skip-link")) return;
   const main = CF.$("main");
-  if (main && !main.id) main.id = "main";
+  if (main) { if (!main.id) main.id = "main"; main.tabIndex = -1; }
   const a = document.createElement("a");
   a.className = "skip-link";
   a.href = "#" + ((main && main.id) || "main");
@@ -1241,7 +1117,7 @@ CF.initChrome = () => {
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   CF.$$(".nav a").forEach((a) => {
     const href = (a.getAttribute("href") || "").replace(/\.html$/, "");
-    if (href === page || (page === "index" && href === "")) a.classList.add("active");
+    if (href === page || (page === "index" && href === "")) { a.classList.add("active"); a.setAttribute("aria-current", "page"); }
     if (/x\.com\/kshot/i.test(a.getAttribute("href") || "")) a.classList.add("nav-x");
   });
 
@@ -1260,6 +1136,7 @@ CF.initChrome = () => {
       if (nav.classList.contains("open")) CF.closeNav(nav, toggle);
       else CF.openNav(nav, toggle);
     });
+    window.matchMedia("(min-width: 961px)").addEventListener("change", () => CF.closeNav(nav, toggle));
     // Close drawer after a tap so mobile chrome doesn't stay open over the next page paint.
     nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => CF.closeNav(nav, toggle)));
     document.addEventListener("keydown", (e) => {
@@ -1311,18 +1188,14 @@ CF.initChrome = () => {
     const el = id ? document.getElementById(id) : null;
     if (el) {
       requestAnimationFrame(() => {
-        try { el.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        try { el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }
         catch (e) { el.scrollIntoView(true); }
       });
     }
   }
 
   CF.renderWeatherStrip();
-  // Theme snow: always on (unless reduced-motion). Weather only boosts intensity.
-  CF.setSnow(true);
-  const cachedWx = CF.cacheGet("weather");
-  if (CF._syncGamedaySnow) CF._syncGamedaySnow();
-  else if (cachedWx && CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(cachedWx));
+  if (CF.initSnow) CF.initSnow();
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
@@ -1366,6 +1239,7 @@ CF.initHeroRotator = () => {
 
   let idx = 0;
   const tick = () => {
+    if (document.hidden || document.documentElement.classList.contains("motion-paused") || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const live = layers.map((el, i) => ({ el, i })).filter((x) => !x.el.classList.contains("is-failed"));
     if (live.length < 2) return;
     idx = (idx + 1) % live.length;

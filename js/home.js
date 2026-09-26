@@ -1,188 +1,147 @@
-/* THE COLD FRONT — home page */
+/* The Cold Front — live fan headquarters. */
 "use strict";
-
 (function () {
-  let countdownTimer = null;
+  let countdown = 0, predictionGame = null;
+  const show = (selector, text) => { CF.$(selector).textContent = text; };
 
-  /* ---------- next game card ---------- */
-  async function loadNextGame() {
-    const pill = CF.$("#ng-pill");
-    const title = CF.$("#ng-title");
-    try {
-      // 1) Is there a Bears game today (pre / live / final)?
-      let game = null, src = "live";
-      try {
-        const sb = await CF.API.getScoreboard();
-        src = sb.source;
-        game = CF.API.bearsGameFromScoreboard(sb.data);
-      } catch (e) { /* fall through to schedule */ }
-
-      // 2) Otherwise the next scheduled game.
-      let schedGame = null;
-      try {
-        const sc = await CF.API.getSchedule();
-        schedGame = CF.API.nextBearsGameFromSchedule(sc.data);
-      } catch (e) { /* no schedule either */ }
-
-      if (!game && !schedGame) throw new Error("no data");
-
-      renderGame(game, schedGame, src);
-    } catch (e) {
-      title.textContent = "Board is dark";
-      pill.className = "pill sample";
-      pill.textContent = "offline";
-      CF.$("#ng-meta").innerHTML =
-        'No live feed and no saved snapshot yet. Open the site once on a connected network and it will cache the board for offline use. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears →</a>';
-      CF.$("#ng-countdown").innerHTML = "";
-      CF.$("#ng-mid").innerHTML = "Soldier Field<br>Uptown, Chicago";
+  async function loadMatchup() {
+    const [board, schedule] = await Promise.allSettled([CF.API.getScoreboard(), CF.API.getSchedule()]);
+    let game = board.status === "fulfilled" ? CF.API.bearsGameFromScoreboard(board.value.data) : null;
+    let source = game ? board.value.source : null;
+    if (schedule.status === "fulfilled") {
+      renderSeason(schedule.value);
+      if (!game) {
+        const next = CF.API.nextBearsGameFromSchedule(schedule.value.data);
+        game = next?.game;
+        source = schedule.value.source;
+      }
     }
-  }
-
-  function renderGame(game, schedGame, src) {
-    const title = CF.$("#ng-title");
-    const pill = CF.$("#ng-pill");
-    const meta = CF.$("#ng-meta");
-    const cd = CF.$("#ng-countdown");
-    const mid = CF.$("#ng-mid");
-
-    const isBearsGame = game && (
-      game.home.abbr === "CHI" || game.away.abbr === "CHI");
-
-    if (game && isBearsGame) {
-      // Game day (or final) — show the scoreboard.
-      title.textContent = game.season ? game.season + " · " + game.name : game.name;
-      if (game.state === "in") { pill.className = "pill live"; pill.innerHTML = '<span class="dot"></span>live'; }
-      else if (game.state === "post") { pill.className = "pill final"; pill.textContent = game.display || "final"; }
-      else { pill.className = "pill"; pill.textContent = game.display || "scheduled"; }
-      if (src !== "live") {
-        const extra = document.createElement("span");
-        extra.className = "pill " + (src === "proxy" ? "cache" : "sample");
-        extra.textContent = src === "proxy" ? "via proxy" : "snapshot";
-        pill.parentNode.insertBefore(extra, pill.nextSibling);
-      }
-      CF.$("#ng-away-abbr").textContent = game.away.abbr;
-      CF.$("#ng-home-abbr").textContent = game.home.abbr;
-      CF.$("#ng-away-score").textContent = game.away.score && game.away.score !== "–" ? game.away.score : "";
-      CF.$("#ng-home-score").textContent = game.home.score && game.home.score !== "–" ? game.home.score : "";
-      mid.innerHTML = "at " + CF.esc(game.venue || "Soldier Field");
-      const bits = [];
-      bits.push("<b>" + CF.fmtDate(game.date) + "</b> · " + (CF.fmtTime(game.date) || "TBD"));
-      if (game.city) bits.push(CF.esc(game.city));
-      if (game.tv) bits.push("TV: <b>" + CF.esc(game.tv) + "</b>");
-      if (game.watch) bits.push('<a href="' + CF.esc(game.watch) + '" target="_blank" rel="noopener">Watch ↗</a>');
-      if (game.clock) bits.push("Clock: " + CF.esc(game.clock));
-      meta.innerHTML = bits.join(" · ");
-      cd.innerHTML = "";
-      if (CF.applyGamedayMode) {
-        CF.applyGamedayMode(game.state === "in" || game.state === "pre", game.state === "in" ? "live" : "gameday");
-      }
-      if (CF.paintKickoffBanner) {
-        CF.paintKickoffBanner({
-          id: game.id, date: game.date,
-          opp: (game.home && game.home.abbr === "CHI") ? (game.away && game.away.name) : (game.home && game.home.name),
-          oppAbbr: (game.home && game.home.abbr === "CHI") ? (game.away && game.away.abbr) : (game.home && game.home.abbr),
-          home: !!(game.home && game.home.abbr === "CHI"),
-        });
-      }
-      // Live-clock refresh comes from the shared CF.refresh job registered
-      // below (30 s, whether the game is scheduled, live, or just final).
+    clearInterval(countdown);
+    if (!game) {
+      show("#ng-title", "Waiting for the next Bears matchup");
+      show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");
+      show("#ng-meta", "The official schedule is one click away in the game center.");
+      show("#ng-countdown", "");
+      CF.$("#prediction-toggle").disabled = true;
       return;
     }
-
-    // Upcoming game from the schedule.
-    const g = (game && isBearsGame) ? game : schedGame;
-    if (!g) {
-      title.textContent = game ? (game.name || "No Bears game on the board") : "Board is quiet";
-      pill.className = "pill";
-      pill.textContent = "no next game found";
-      meta.innerHTML = (game ? 'Today: ' + CF.esc(game.name) + '. ' : '') + 'The next Bears game will appear here the moment it hits the schedule.';
-      cd.innerHTML = "";
-      return;
+    if (CF.paintKickoffBanner) CF.paintKickoffBanner({ id: game.id, date: game.date,
+      home: game.home.abbr === "CHI", oppAbbr: game.home.abbr === "CHI" ? game.away.abbr : game.home.abbr });
+    const status = game.state === "in" ? "Live now" : game.state === "post" ? "Final" : "Next kickoff";
+    show("#ng-pill", status + (source !== "live" ? " · cached" : ""));
+    CF.$("#ng-pill").className = "pill " + (game.state === "in" ? "live" : "");
+    show("#ng-title", game.name);
+    show("#ng-away-abbr", game.away.abbr);
+    show("#ng-home-abbr", game.home.abbr);
+    for (const side of ["home", "away"]) show("#ng-" + side + "-score", game.state === "pre" ? "" : (game[side].score ?? "—"));
+    show("#ng-mid", game.venue);
+    show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD") + (game.tv ? " · " + game.tv : ""));
+    CF.$("#game-detail-link").href = "games.html?date=" + CF.dateInput(game.date) + "&game=" + encodeURIComponent(game.id) + "#boxscore";
+    CF.$("#prediction-toggle").disabled = game.state !== "pre";
+    if (predictionGame?.id !== game.id) {
+      predictionGame = game;
+      const opponent = game.home.abbr === "CHI" ? game.away.abbr : game.home.abbr;
+      show("#prediction-opponent", opponent + " score");
+      let saved;
+      try { saved = JSON.parse(localStorage.getItem("cf.pick." + game.id) || "null"); } catch (_) { /* optional preference */ }
+      if (saved) {
+        CF.$("#prediction-bears").value = saved.bears;
+        CF.$("#prediction-other").value = saved.other;
+        show("#prediction-status", "Your pick: CHI " + saved.bears + " · " + opponent + " " + saved.other + ". Saved on this device.");
+      }
     }
-    const date = new Date(g.date).getTime();
-    title.textContent = (g.season ? g.season + " · " : "") + (g.home ? "Bears @ " + g.opp : "Bears vs " + g.opp);
-    pill.className = "pill";
-    pill.textContent = src === "live" ? "scheduled" : "snapshot";
-    CF.$("#ng-away-abbr").textContent = g.home ? g.oppAbbr || g.opp.slice(0, 3) : "—";
-    CF.$("#ng-away-score").textContent = "";
-    CF.$("#ng-home-score").textContent = "";
-    mid.innerHTML = (g.home ? "at " + CF.esc(g.opp) : "vs " + CF.esc(g.opp)) + "<br>" + CF.esc(g.venue || "Soldier Field");
-    const bits = ["<b>" + CF.fmtDate(g.date) + "</b>", (CF.fmtTime(g.date) || "TBD")];
-    if (g.tv) bits.push("TV: <b>" + CF.esc(g.tv) + "</b>");
-    meta.innerHTML = bits.join(" · ");
-
-    if (CF.applyGamedayMode && g.date) {
-      const hours = (new Date(g.date).getTime() - Date.now()) / 3600e3;
-      CF.applyGamedayMode(hours <= 30 && hours > -6, hours <= 0 ? "live" : "gameday");
-    }
-    if (CF.paintKickoffBanner) CF.paintKickoffBanner(g);
-
-    // Countdown.
-    const render = () => {
-      const diff = Math.max(0, date - Date.now());
-      const d = Math.floor(diff / 86400e3);
-      const h = Math.floor((diff % 86400e3) / 3600e3);
-      const m = Math.floor((diff % 3600e3) / 60e3);
-      const s = Math.floor((diff % 60e3) / 1e3);
-      cd.innerHTML =
-        unit(d, "days") + unit(h, "hours") + unit(m, "min") + unit(s, "sec");
+    const renderCountdown = () => {
+      const remaining = Math.max(0, Date.parse(game.date) - Date.now());
+      if (!remaining) { show("#ng-countdown", "Kickoff time — waiting for the live board"); clearInterval(countdown); return; }
+      const values = [Math.floor(remaining / 86400000), Math.floor(remaining / 3600000) % 24, Math.floor(remaining / 60000) % 60, Math.floor(remaining / 1000) % 60];
+      CF.$("#ng-countdown").innerHTML = values.map((n, i) => '<div class="unit"><b>' + String(n).padStart(2, "0") + '</b><span>' + ["days", "hours", "min", "sec"][i] + '</span></div>').join("");
     };
-    render();
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(render, 1000);
-    function unit(v, lbl) {
-      return '<div class="unit"><b>' + v + "</b><span>" + lbl + "</span></div>";
-    }
+    if (game.state === "pre" && game.timeValid) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
+    else show("#ng-countdown", game.state === "in" ? game.display : "");
   }
 
-  /* ---------- division standings ----------
-     ESPN standings → (preseason: the endpoint is an empty stub) a table
-     derived from completed games in the season window, clearly labeled. */
+  function renderSeason(result) {
+    const games = CF.API.scheduleList(result.data).filter((game) => game.completed && game.scoreMe != null && game.scoreOpp != null);
+    let wins = 0, losses = 0, ties = 0, points = 0, allowed = 0;
+    for (const game of games) {
+      const a = Number(game.scoreMe), b = Number(game.scoreOpp);
+      points += a; allowed += b;
+      if (a > b) wins++; else if (a < b) losses++; else ties++;
+    }
+    show("#season-record", wins + "–" + losses + (ties ? "–" + ties : ""));
+    show("#season-points", games.length ? (points / games.length).toFixed(1) : "—");
+    show("#season-diff", games.length ? (points >= allowed ? "+" : "") + (points - allowed) : "—");
+    show("#season-name", (result.data.season?.displayName || "Current season") + " · " + CF.sourceLabel(result.source));
+  }
+
   async function loadStandings() {
-    const pill = CF.$("#div-pill");
-    const body = CF.$("#div-table tbody");
-    let div = null, label = "";
     try {
-      const r = await CF.API.getStandings();
-      const d = CF.API.divisionTable(r.data);
-      if (d && d.rows.length) {
-        div = d;
-        label = r.source === "live" ? "live" : "snapshot";
-      }
-    } catch (e) { /* standings stub or feed down — try the derived table */ }
-    if (!div) {
-      try {
-        div = await CF.API.preseasonStandingsAuto();
-        if (div && div.rows.length) label = "preseason · from games played";
-      } catch (e2) { /* try the independent wire */ }
+      const result = await CF.API.getStandings();
+      const division = CF.API.divisionTable(result.data);
+      if (!division?.rows.length) throw new Error("No division data");
+      show("#div-pill", CF.sourceLabel(result.source));
+      paintRaceBars(division.rows, CF.$("#div-race"));
+      CF.$("#div-table tbody").innerHTML = division.rows.map((row) => '<tr class="' + (row.isMe ? "me" : "") + '"><td class="strong">' + CF.esc(row.name) + '</td><td class="num">' + row.w + '</td><td class="num">' + row.l + '</td><td class="num">' + Number(row.pct).toFixed(3).replace(/^0/, "") + '</td></tr>').join("");
+    } catch (_) {
+      show("#div-pill", "Unavailable");
+      CF.$("#div-table tbody").innerHTML = '<tr><td colspan="4" class="dim">Standings are temporarily unavailable. <a href="https://www.espn.com/nfl/standings" target="_blank" rel="noopener">ESPN standings ↗</a></td></tr>';
     }
-    if (!div && CF.API.tsdbKey()) {
-      try {
-        div = await CF.API.tsdbStandings();
-        if (div && div.rows.length) label = "preseason · TheSportsDB wire";
-      } catch (e3) { /* fall through to offline */ }
-    }
-    if (!div || !div.rows.length) {
-      pill.className = "pill sample";
-      pill.textContent = "offline";
-      body.innerHTML = '<tr><td colspan="4" class="dim">Standings unavailable — check back when the feed answers. NFC North will refill from the live table or completed games.</td></tr>';
-      paintRaceBars([], CF.$("#div-race"));
-      return;
-    }
-    pill.className = "pill ok";
-    pill.textContent = label;
-    body.innerHTML = div.rows.map((row) =>
-      '<tr class="' + (row.isMe ? "me" : "") + '">' +
-      '<td class="strong">' + CF.esc(row.abbr) + " · " + CF.esc(row.name.replace(row.abbr + " ", "")) + "</td>" +
-      '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
-      '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
-      '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
-      "</tr>"
-    ).join("");
-    paintRaceBars(div.rows, CF.$("#div-race"));
   }
 
-  /* Win-bar race from the same standings rows — no invented numbers. */
+  async function loadNorth() {
+    try {
+      const result = await CF.API.getWeekScoreboard();
+      const games = (result.data.events || []).map(CF.API.gameFromEvent).filter((game) => [game.home.abbr, game.away.abbr].some((team) => ["CHI", "DET", "GB", "MIN"].includes(team)));
+      show("#north-pill", CF.sourceLabel(result.source));
+      CF.$("#north-games").innerHTML = games.length ? games.map((game) => {
+        const ours = [game.home.abbr, game.away.abbr].includes("CHI");
+        return '<a class="mini-game ' + (ours ? 'our-game' : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD")) + '</span></div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
+      }).join("") : '<div class="empty">No NFC North games in this week’s feed. <a href="games.html">Explore the schedule ↗</a></div>';
+    } catch (_) {
+      show("#north-pill", "Unavailable");
+      CF.$("#north-games").innerHTML = '<div class="empty">The weekly slate is temporarily unavailable. <a href="games.html">Open the game center ↗</a></div>';
+    }
+  }
+
+  function story(item) {
+    const title = item.heading || item.title || "Bears news";
+    const url = CF.safeURL(item.links?.web?.href || item.link, "https://www.chicagobears.com/news");
+    const photo = CF.safeURL(item.images?.[0]?.url, "img/soldier-field.webp");
+    return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener"><img class="story-image" loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.onerror=null;this.src=\'img/soldier-field.webp\'"><div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
+  }
+  async function loadNews() {
+    try {
+      const items = await CF.API.getNews();
+      if (!items.length) throw new Error("No news");
+      CF.$("#home-news").innerHTML = items.slice(0, 4).map(story).join("");
+      show("#wire-pill", CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN");
+    } catch (_) {
+      try {
+        const items = await CF.API.getGoogleNews("Chicago Bears", 4);
+        CF.$("#home-news").innerHTML = items.map(story).join("");
+        show("#wire-pill", CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire");
+      } catch (_) {
+        show("#wire-pill", "Feed unavailable");
+        CF.$("#home-news").innerHTML = '<div class="empty">The wire is temporarily quiet. <a href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Read the latest on Bears.com ↗</a></div>';
+      }
+    }
+  }
+
+  async function loadInjuries() {
+    try {
+      const result = await CF.API.getLeagueInjuries();
+      const report = CF.API.bearsInjuryRows(result.data);
+      if (!report.found) throw new Error("No Bears report");
+      const rows = report.rows.filter((row) => row.status?.toLowerCase() !== "active");
+      show("#inj-home-pill", CF.sourceLabel(result.source) + " · league report");
+      if (result.source === "live") await paintHomeInjuryMove(rows);
+      CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => '<tr><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.comment || "No additional detail") + '</td><td><span class="st ' + CF.injStatusCls(row.status) + '">' + CF.esc(row.status) + '</span></td></tr>').join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
+    } catch (_) {
+      show("#inj-home-pill", "Report unavailable");
+      CF.$("#home-injuries tbody").innerHTML = '<tr><td colspan="4" class="dim">The league report did not answer. <a href="injuries.html">Check roster flags and the full report ↗</a></td></tr>';
+    }
+  }
+
   function paintRaceBars(rows, root) {
     if (!root) return;
     if (!rows || !rows.length) {
@@ -205,67 +164,6 @@
   }
 
   /* ---------- news (top 4) ---------- */
-  function newsItemHTML(n) {
-    const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
-    const img = n.images && n.images[0] ? n.images[0].url : null;
-    const thumb = img
-      ? '<img class="thumb" loading="lazy" src="' + CF.esc(img) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'thumb-fallback\',textContent:\'❄\'}))">'
-      : '<div class="thumb-fallback">❄</div>';
-    return '<div class="news-item"><div>' +
-      '<a class="headline" href="' + CF.esc(href) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "Bears wire") + "</a>" +
-      '<div class="meta"><span>' + CF.esc((n.authors && n.authors[0] && n.authors[0].name) || "The Wire") + "</span><span>" + CF.timeAgo(n.published) + "</span></div>" +
-      "</div>" + thumb + "</div>";
-  }
-
-  function wideItemHTML(it) {
-    return '<div class="news-item"><div>' +
-      '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
-      '<div class="meta"><span>' + CF.esc(it.source || "the wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
-      '</div><div class="thumb-fallback">❄</div></div>';
-  }
-
-  async function loadNews() {
-    const box = CF.$("#home-news");
-    const pill = CF.$("#wire-pill");
-    // 1) ESPN league wire first (it's quiet in the offseason, though…).
-    try {
-      const news = await CF.API.getNews();
-      const items = (news || []).slice(0, 4);
-      if (items.length) {
-        box.innerHTML = items.map(newsItemHTML).join("");
-        box.setAttribute("aria-busy", "false");
-        pill.textContent = "live feed";
-        return;
-      }
-    } catch (e) { /* wire silent or unreachable */ }
-    // 2) The wide wire: RSS across 100+ outlets (Google News, then Bing News).
-    try {
-      const items = await CF.API.getGoogleNews("Chicago Bears", 4);
-      box.innerHTML = items.map(wideItemHTML).join("");
-      box.setAttribute("aria-busy", "false");
-      pill.textContent = "wide wire";
-    } catch (e2) {
-      pill.textContent = "offline";
-      box.innerHTML = CF.emptyHTML({
-        icon: "📡",
-        title: "Wire is dark",
-        sub: "Both feeds are down on this network and no snapshot is saved yet. Visit once while online and headlines cache locally.",
-        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a>',
-      });
-      box.setAttribute("aria-busy", "false");
-    }
-  }
-
-  /* ---------- injury snapshot ----------
-     Live league report (per-player status) → roster flags → community
-     JSON as the last resort. */
-  function injRowHTML(row) {
-    return '<tr><td class="strong">' + CF.esc(row.name) +
-      (row.url ? ' <a href="' + CF.esc(row.url) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
-      "</td><td>" + CF.esc(row.pos || "—") + "</td><td>" + CF.esc(row.comment || row.injury || "—") +
-      "</td><td><span class=\"st " + CF.esc(CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>";
-  }
-
   async function paintHomeInjuryMove(rows) {
     const host = CF.$("#home-inj-movement");
     if (!host || !CF.diffInjuryMovement) return;
@@ -278,45 +176,6 @@
     if (rows && rows.length) CF.injSnapSet(rows);
   }
 
-  async function loadInjuries() {
-    const body = CF.$("#home-injuries tbody");
-    let rows = [];
-    try {
-      const r = await CF.API.getLeagueInjuries();
-      const x = CF.API.bearsInjuryRows(r.data);
-      rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active");
-    } catch (e) { /* league feed silent */ }
-    if (!rows.length) {
-      try {
-        const r2 = await CF.API.getRoster();
-        rows = CF.API.rosterInjuryRows(r2.data);
-      } catch (e2) { /* roster silent too */ }
-    }
-    if (rows.length) {
-      body.innerHTML = rows.slice(0, 3).map(injRowHTML).join("");
-      await paintHomeInjuryMove(rows);
-      return;
-    }
-    // Community-maintained JSON, last resort.
-    try {
-      const r = await fetch("data/injuries.json", { cache: "no-cache" });
-      const data = await r.json();
-      const local = (data.rows || []).slice(0, 3);
-      body.innerHTML = local.length ? local.map((row) =>
-        "<tr><td class=\"strong\">" + CF.esc(row.name) + "</td><td>" + CF.esc(row.pos) + "</td><td>" + CF.esc(row.injury) + "</td><td><span class=\"st " + CF.esc(row.statusCls || CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>"
-      ).join("") : '<tr><td colspan="4" class="dim">Report is empty right now — all clear? Suspicious. Check back.</td></tr>';
-      await paintHomeInjuryMove(data.rows || []);
-    } catch (e3) {
-      body.innerHTML = '<tr><td colspan="4" class="dim">Report unavailable.</td></tr>';
-      const host = CF.$("#home-inj-movement");
-      if (host) host.innerHTML = "";
-    }
-  }
-
-
-
-
-  /* ---------- Sunday desk (next opp + rest + last meetings + wire/poly) ---------- */
   function formatDeskLineBits(line) {
     if (!line || !line.lines || !line.lines.length) return null;
     const l = line.lines[0];
@@ -421,9 +280,9 @@
         polyOk = true;
         polyHTML =
           '<div class="desk-poly-row">' +
-          '<span class="desk-chip yes"><span class="k">YES</span><b>' + Math.round(top.yes * 100) + "¢</b></span>" +
+          '<span class="desk-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + '</span><b>' + Math.round(top.yes * 100) + "¢</b></span>" +
           (top.no != null
-            ? '<span class="desk-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
+            ? '<span class="desk-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
             : "") +
           '<a class="dim" href="' + CF.esc(top.url) + '" target="_blank" rel="noopener" title="' +
           CF.esc(top.question) + '">Polymarket ↗</a></div>';
@@ -550,8 +409,8 @@
           '<div class="pulse-label">Polymarket pulse</div>' +
           '<div class="pulse-q">' + CF.esc(top.question) + "</div>" +
           '<div class="pulse-chips">' +
-          '<span class="pulse-chip yes"><span class="k">YES</span><b>' + yes + "¢</b></span>" +
-          (top.no != null ? '<span class="pulse-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>" : "") +
+          '<span class="pulse-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + '</span><b>' + yes + "¢</b></span>" +
+          (top.no != null ? '<span class="pulse-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + Math.round(top.no * 100) + "¢</b></span>" : "") +
           "</div>" +
           '<div class="pulse-sub"><a href="' + CF.esc(top.url) + '" target="_blank" rel="noopener">market ↗</a> · <a href="odds.html">more →</a></div>' +
           "</div>";
@@ -695,10 +554,10 @@
     try {
       const ev = await CF.API.bearsGameEvent(last.id);
       const c = (ev.competitions || [])[0] || {};
-      const leaders = (CF.API.eventLeaders(ev) || []).slice(0, 4);
+      const leaders = (CF.API.eventLeaders(ev) || []).filter((leader) => leader.teamAbbr === "CHI").slice(0, 4);
       const site = last.home ? "vs" : "@";
       const score = String(last.scoreMe) + "–" + String(last.scoreOpp);
-      const result = last.result || ((Number(last.scoreMe) > Number(last.scoreOpp)) ? "W" : "L");
+      const result = CF.API.meetingResult(last) || "Final";
       if (section) section.hidden = false;
       if (pill) {
         pill.textContent = "last final";
@@ -735,22 +594,23 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    loadNextGame();
-    loadStandings();
-    loadNews();
-    loadInjuries();
-    loadWeekClock();
-    loadOddsPulse();
-    loadSundayDesk();
-    loadFilmRoom();
-    // Keep the home page moving for as long as the tab is open (CF.refresh in common.js):
-    CF.refresh.register(loadNextGame, 30e3);              // next game + live clock: 30 s
-    CF.refresh.register(loadStandings, 60e3);            // NFC North: 60 s
-    CF.refresh.register(loadNews, 60e3);                 // headlines: 60 s
-    CF.refresh.register(loadInjuries, 5 * 60e3, { name: "injuries" }); // local report (repo JSON): 5 min
-    CF.refresh.register(loadWeekClock, 60e3, { name: "week-clock" });
-    CF.refresh.register(loadOddsPulse, 60e3, { name: "odds-pulse" });
-    CF.refresh.register(loadSundayDesk, 60e3, { name: "sunday-desk" });
-    CF.refresh.register(loadFilmRoom, 2 * 60e3, { name: "film-room" });
+    for (const [fn, interval] of [[loadMatchup,30000],[loadStandings,300000],[loadNorth,60000],[loadNews,300000],[loadInjuries,300000],[loadWeekClock,60000],[loadOddsPulse,60000],[loadSundayDesk,60000],[loadFilmRoom,120000]]) {
+      fn(); CF.refresh.register(fn, interval);
+    }
+    CF.$("#prediction-toggle").addEventListener("click", () => {
+      const form = CF.$("#prediction-form");
+      form.hidden = !form.hidden;
+      CF.$("#prediction-toggle").setAttribute("aria-expanded", String(!form.hidden));
+      if (!form.hidden) CF.$("#prediction-bears").focus();
+    });
+    CF.$("#prediction-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!predictionGame || !event.target.reportValidity()) return;
+      const bears = Number(CF.$("#prediction-bears").value), other = Number(CF.$("#prediction-other").value);
+      const opponent = predictionGame.home.abbr === "CHI" ? predictionGame.away.abbr : predictionGame.home.abbr;
+      let stored = false;
+      try { localStorage.setItem("cf.pick." + predictionGame.id, JSON.stringify({ bears, other })); stored = true; } catch (_) { /* storage unavailable */ }
+      show("#prediction-status", "Your pick: CHI " + bears + " · " + opponent + " " + other + (stored ? ". Saved on this device." : ". Storage is unavailable; your pick lasts for this visit."));
+    });
   });
 })();

@@ -2,7 +2,7 @@
 "use strict";
 
 (function () {
-  const INJURY_RE = /\b(injur|injuried|out\b|questionable|doubtful|day-to-day|ripgate|concussion|fracture|sprain|torn|surgery|sideline|report)\b/i;
+  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report)\b/i;
 
   function itemHTML(n) {
     const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
@@ -11,7 +11,7 @@
       ? '<img class="thumb" loading="lazy" src="' + CF.esc(img) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'thumb-fallback\',textContent:\'❄\'}))">'
       : '<div class="thumb-fallback">❄</div>';
     return '<div class="news-item"><div>' +
-      '<a class="headline" href="' + CF.esc(href) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "Bears wire") + "</a>" +
+      '<a class="headline" href="' + CF.esc(CF.safeURL(href)) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "Bears wire") + "</a>" +
       (n.description ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(n.description) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc((n.authors && n.authors[0] && n.authors[0].name) || "The Wire") + "</span><span>" + CF.timeAgo(n.published) + "</span></div>" +
       "</div>" + thumb + "</div>";
@@ -20,7 +20,7 @@
   /* Wide-wire (Google News RSS) item, same card shape as the ESPN wire. */
   function wideHTML(it) {
     return '<div class="news-item"><div>' +
-      '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+      '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
       (it.desc ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(it.desc) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc(it.source || "the wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
       '</div><div class="thumb-fallback">❄</div></div>';
@@ -47,7 +47,7 @@
       if (items.length) {
         listHTML = items.map(itemHTML).join("");
         count = items.length;
-        src = "live wire";
+        src = CF.sourceLabel(CF.API.newsSource);
         const inj = items.filter((n) => INJURY_RE.test(n.heading || "") || INJURY_RE.test(n.description || ""));
         injHTML = inj.map(itemHTML).join("");
       }
@@ -75,7 +75,7 @@
         if (rows.length) {
           injHTML = rows.slice(0, 8).map((row) =>
             '<div class="news-item"><div>' +
-            '<a class="headline" href="' + (row.url ? CF.esc(row.url) : "injuries.html") + '" target="_blank" rel="noopener">' + CF.esc(row.name + " — " + (row.comment || row.status)) + "</a>" +
+            '<a class="headline" href="' + (row.url ? CF.esc(CF.safeURL(row.url)) : "injuries.html") + '" target="_blank" rel="noopener">' + CF.esc(row.name + " — " + (row.comment || row.status)) + "</a>" +
             '<div class="meta"><span>' + CF.esc(row.status) + "</span><span>" + CF.timeAgo(row.date) + "</span></div></div>"
           ).join("");
         }
@@ -93,7 +93,7 @@
       });
       pill.className = "pill ok";
       pill.textContent = src + " · " + count + " stories";
-      updated.textContent = "updated " + new Date().toLocaleTimeString();
+      updated.textContent = "Checked " + new Date().toLocaleTimeString();
     } else {
       pill.className = "pill sample";
       pill.textContent = "offline — snapshot unavailable";
@@ -126,7 +126,7 @@
       if (!items.length) throw new Error("empty wide wire");
       list.innerHTML = items.map((it) =>
         '<div class="news-item"><div>' +
-        '<a class="headline" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+        '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
         '<div class="meta"><span>' + CF.esc(it.source || "the wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
         "</div></div>"
       ).join("");

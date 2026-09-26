@@ -72,6 +72,11 @@
     const pill = CF.$("#heat-pill");
     if (!root) return;
     const cells = buildHeatCells(data);
+    if (!(data.participation?.length || data.rows?.length)) {
+      if (pill) pill.textContent = "Awaiting confirmed updates";
+      root.innerHTML = CF.emptyHTML({ icon: "❄", title: "The practice week is taking shape", sub: "Confirmed participation updates will appear here. Follow the official Bears report for current availability." });
+      return;
+    }
     const fromPart = Array.isArray(data.participation) && data.participation.length;
     if (pill) {
       pill.textContent = fromPart ? "participation" : "from tracker";
@@ -168,7 +173,7 @@
           CF.emptyHTML({
             icon: "❄️",
             title: "Tracker is empty",
-            sub: "Edit data/practice.json and push to keep the week current.",
+            sub: "Confirmed sessions will appear here when announced.",
           }) +
           "</td></tr>";
       if (trackPill) {
@@ -178,9 +183,9 @@
       if (note) {
         note.innerHTML =
           (data.updated
-            ? "Tracker last updated in the repo: <b>" + CF.esc(data.updated) + "</b>. "
+            ? "Tracker updated: <b>" + CF.esc(data.updated) + "</b>. "
             : "") +
-          "Edit <code>data/practice.json</code> (rows + optional <code>participation[]</code>) and push to keep it current.";
+          "Practice schedules may change. Check official Bears announcements before making plans.";
       }
     } catch (e) {
       paintHeat({});
@@ -193,7 +198,7 @@
         CF.emptyHTML({
           icon: "🌫",
           title: "Tracker unavailable",
-          sub: "Could not load data/practice.json from this network.",
+          sub: "The practice tracker could not be reached. Please try again later.",
         }) +
         "</td></tr>";
     }

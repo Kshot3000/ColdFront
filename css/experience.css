@@ -1,0 +1,154 @@
+/* The Cold Front: Chicago nights, lake-effect snow, and a usable fan hub. */
+:root { --ice-bright: #bcdff5; }
+body { overflow-x: clip; }
+.cf-atmosphere::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(4,12,24,.9), rgba(4,12,24,.77) 50%, rgba(4,12,24,.95)), url("../img/chicago-winter-lakefront.webp") center / cover;
+}
+.cf-atmosphere .cf-bands { opacity: .28; }
+.cf-atmosphere .cf-aurora { background: radial-gradient(ellipse at 18% 25%, #85ccff24, transparent 52%), radial-gradient(ellipse at 85% 65%, #ff642329, transparent 54%); }
+.weather-strip { padding: 7px 4%; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 11px; }
+.wx-brand { letter-spacing: .1em; }
+.wx-item + .wx-item { margin-left: auto; }
+.wx-gauge { font-size: 10px; }
+.site-head { border-bottom-color: #ffffff12; }
+.nav { gap: 2px; }
+.nav a { padding: 12px 10px; }
+.nav a.active { box-shadow: inset 0 -2px var(--orange-hot); border-color: transparent; background: #ff652014; }
+.nav a.active::after { display: none; }
+.nav a.nav-x { margin-left: 8px; }
+.snow-toggle {
+  position: fixed; right: max(18px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); z-index: 60;
+  display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 10px 15px;
+  border-radius: 30px; border: 1px solid #c9eaff44; color: #eaf6ff; background: #0b1a2cef;
+  backdrop-filter: blur(12px); box-shadow: 0 6px 30px #0007; cursor: pointer; font: 600 12px var(--body);
+}
+.snow-toggle span { color: #acdfff; font-size: 19px; }
+.snow-toggle:hover { border-color: #c9eaff; }
+.snow-toggle:disabled { cursor: default; opacity: .75; }
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+.motion-paused .reveal { opacity: 1; transform: none; }
+.skip-link { position: fixed; left: 16px; top: -70px; padding: 12px 18px; background: #fff; color: #071426; z-index: 200; border-radius: 8px; }
+.skip-link:focus { top: 12px; color: #071426; }
+:focus-visible { outline: 3px solid var(--ice-bright); outline-offset: 4px; }
+main:focus { outline: none; }
+[hidden] { display: none !important; }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.is-visible { opacity: 1; transform: none; }
+.hero { padding: 76px 0 36px; }
+.hero-photo { background-image: linear-gradient(90deg, #030d1bed 2%, #030d1b84 55%, #030d1ba3), linear-gradient(0deg, #030d1b 0%, transparent 70%), url("../img/hero-chicago-night.webp"); background-position: center, center, center 43%; }
+.hero::before { background: radial-gradient(ellipse, #8bd7ff14, transparent 65%); }
+.hero-layout { display: grid; grid-template-columns: 1.08fr 1fr; gap: 58px; align-items: center; }
+.hero-copy .eyebrow { color: #c1d8e8; font-size: 11px; letter-spacing: .22em; }
+.hero h1 { font-size: clamp(65px, 7vw, 106px); max-width: none; line-height: .96; letter-spacing: -.025em; margin: 24px 0; }
+.hero h1 .hot { filter: none; animation: none; text-shadow: 0 0 55px #fc5c2036; }
+.hero .sub { font-size: 16px; max-width: 440px; line-height: 1.75; color: #c7d5e1; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.btn { min-height: 44px; }
+.hero-actions .primary { background: #ef571c; box-shadow: 0 6px 30px #ee551a27; border-color: #ef571c; padding: 13px 22px; }
+.hero-actions .primary:hover { background: #ff723b; transform: translateY(-2px); }
+.hero-note { display: flex; align-items: center; gap: 9px; color: #86a4bb; font-size: 11px; margin-top: 20px; letter-spacing: .05em; }
+.hero-note::before { content: ""; width: 6px; height: 6px; background: #88bddf; border-radius: 50%; box-shadow: 0 0 12px #88bddf; }
+.match-card { padding: 27px; background: linear-gradient(145deg,#182b40e8,#071323f5); border: 1px solid #aecfe82e; border-top: 3px solid #f56c30; box-shadow: 0 18px 80px #0007, inset 0 1px #ffffff09; }
+.match-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #a6bed1; font: 500 11px var(--body); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 22px; }
+.match-card h3 { font-size: 17px; letter-spacing: .035em; line-height: 1.5; }
+.match-card .vs { margin: 24px 0 16px; grid-template-columns: 1fr 1.1fr 1fr; }
+.match-card .abbr { font-size: 49px; line-height: 1; }
+.match-card .side:first-child .abbr { color: #f1f7fb; }
+.match-card .side:last-child .abbr { color: #ff7941; }
+.team-side-label { font: 500 10px var(--body); color: #7f9bb1; letter-spacing: .17em; text-transform: uppercase; margin-top: 7px; }
+.match-card .mid { font-size: 10px; line-height: 1.6; color: #9ab5c8; }
+.match-card .game-meta { font-size: 12px; line-height: 1.8; padding: 14px 0; border-top: 1px solid #ffffff10; }
+.match-card .countdown { gap: 8px; margin-top: 8px; }
+.match-card .countdown .unit { min-width: 0; flex: 1; padding: 12px 8px; background: #030b176e; border-color: #d6ecff13; }
+.match-card .countdown b { font-size: 27px; }
+.match-card .countdown span { font-size: 9px; letter-spacing: .14em; }
+.match-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffffff12; font-size: 12px; }
+.text-button { background: none; color: #bcdff5; border: 0; cursor: pointer; padding: 9px 0; font: inherit; }
+.prediction { margin-top: 12px; padding-top: 14px; border-top: 1px solid #ffffff12; }
+.prediction-fields { display: flex; align-items: end; gap: 10px; }
+.prediction label { display: grid; gap: 7px; flex: 1; color: #a6bed1; font-size: 11px; }
+.prediction input { width: 100%; }
+.prediction .src-note { font-size: 11px; margin: 10px 0 0; }
+.season-strip { display: grid; grid-template-columns: 1.4fr repeat(3,1fr); margin-top: 52px; padding: 22px 0 0; border-top: 1px solid #d5eaff24; align-items: center; gap: 22px; }
+.season-strip > div + div { border-left: 1px solid #d5eaff1f; padding-left: 24px; }
+.season-strip .season-brand { display: flex; align-items: center; gap: 12px; }
+.season-strip img { width: 38px; height: 38px; }
+.season-strip b { display: block; color: #edf4fa; font: 600 26px var(--display); }
+.season-strip span { display: block; color: #95adbf; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
+.season-brand b { font-size: 14px; letter-spacing: .1em; }
+.north-layout { display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start; }
+.north-layout .card { background: #0d1d2edd; }
+.section-head h2 { font-size: clamp(23px,3vw,32px); letter-spacing: .02em; }
+.section-head .tag { font-size: 10px; }
+.section-head a { margin-left: auto; font-size: 12px; }
+.north-games { display: grid; gap: 10px; }
+.mini-game { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; padding: 16px 18px; border: 1px solid #d4eaff19; border-radius: 10px; background: #0a192acc; transition: border-color .2s, background .2s; }
+.mini-game:hover { border-color: #ff79417a; background: #132840; }
+.mini-game.our-game { border-left: 3px solid #ff7941; }
+.mini-game strong { display: block; font: 500 18px var(--display); color: #f1f6fb; letter-spacing: .04em; }
+.mini-game span { display: block; font-size: 11px; color: #90aabd; margin-top: 4px; }
+.mini-game .mini-status { text-align: right; }
+.front-news { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
+.story-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e3f2ff18; border-radius: 13px; background: #0c1b2df2; transition: transform .25s,border-color .25s; }
+.story-card:hover { transform: translateY(-5px); border-color: #e76c3680; }
+.story-image { width: 100%; height: 164px; object-fit: cover; background: #152638; }
+.story-copy { padding: 18px; display: flex; flex-direction: column; flex: 1; }
+.story-copy .story-source { color: #ff945f; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+.story-copy h3 { font: 600 16px/1.5 var(--body); text-transform: none; letter-spacing: -.015em; margin: 9px 0 20px; }
+.story-copy .story-end { margin-top: auto; display: flex; justify-content: space-between; color: #8aa5ba; font-size: 11px; }
+.front-news > .empty { grid-column: 1 / -1; }
+.quick a { background: #0a1b2bed; border-color: #d4eaff1b; min-height: 145px; padding: 23px; }
+.quick a .ico { font-size: 23px; }
+.quick a .desc { line-height: 1.6; }
+.city-tile { min-height: 190px; }
+.city-tile-label strong { display: block; font-size: 21px; letter-spacing: .025em; margin-top: 5px; }
+.page-intro h1 { font-size: clamp(34px,5vw,60px); letter-spacing: -.025em; }
+.page-intro { padding-top: 48px; }
+.site-foot { margin-top: 50px; padding-bottom: 78px; }
+.tbl-wrap { max-width: 100%; }
+.tbl th { white-space: nowrap; }
+.filter-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.filter-chip { border: 1px solid #d2eaff2e; border-radius: 25px; min-height: 40px; padding: 9px 16px; background: #0b1d2d; color: #b9cddd; font: 500 12px var(--body); cursor: pointer; }
+.filter-chip[aria-pressed="true"] { background: #f36a25; color: #071423; border-color: #f36a25; }
+.filter-chip:hover { border-color: #f36a25; }
+.roster-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.player-card { position: relative; overflow: hidden; border: 1px solid #d6eaff22; border-radius: 13px; background: linear-gradient(140deg,#192e44,#0a1729); }
+.player-portrait { height: 170px; overflow: hidden; background: radial-gradient(ellipse at bottom,#52758c66,transparent 72%); position: relative; display: flex; justify-content: center; }
+.player-portrait img { position: relative; height: 100%; max-width: 100%; object-fit: contain; z-index: 1; }
+.player-number { position: absolute; top: 10px; left: 16px; color: #bcd7e821; font: 700 92px/1 var(--display); }
+.player-info { position: relative; padding: 18px; border-top: 1px solid #d2eaff15; }
+.player-info h3 { font: 600 17px var(--body); text-transform: none; letter-spacing: -.02em; margin: 7px 0; }
+.player-info p { font-size: 11px; color: #8ca7bd; line-height: 1.7; margin: 8px 0; }
+.player-info .player-link { font-size: 11px; }
+.favorite-button { position: absolute; right: 10px; top: 10px; z-index: 2; border-radius: 50%; width: 40px; height: 40px; border: 1px solid #d4eaff38; color: #bdd4e6; background: #081724d9; cursor: pointer; font-size: 21px; }
+.favorite-button[aria-pressed="true"] { color: #ff975a; border-color: #ff975a; }
+.roster-grid .empty { grid-column: 1/-1; }
+@media (max-width:1100px) { .hero-layout { gap: 28px; } .front-news { grid-template-columns: repeat(2,1fr); } .roster-grid { grid-template-columns: repeat(3,1fr); } }
+@media (max-width:960px) { .nav { max-height: calc(100dvh - 120px); overflow-y: auto; } .nav a { padding: 13px 16px; } .nav a.nav-x { margin-left: 0; } .weather-strip { gap: 5px 12px; } .wx-gauge { display: none; } }
+@media (max-width:760px) {
+  .hero { padding: 44px 0 28px; } .hero-layout,.north-layout { grid-template-columns: 1fr; gap: 30px; }
+  .hero h1 { font-size: clamp(65px,12vw,94px); } .hero .sub { max-width: 530px; font-size: 15px; }
+  .hero-photo { background-position: center,center,62% top; }
+  .season-strip { margin-top: 28px; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .season-strip .season-brand { display: none; } .season-strip > div + div { padding-left: 15px; } .season-strip > div:nth-child(2) { border-left: 0; padding-left: 0; }
+  .roster-grid { grid-template-columns: repeat(2,1fr); } .city-strip { grid-template-columns: 1fr; }
+  .city-tile { min-height: 170px; } .section-head { gap: 10px; flex-wrap: wrap; } .section-head .rule { display: none; }
+  .section-head .tag { display: none; } .wx-item + .wx-item { display: none; }
+  .snow-toggle { padding: 9px 12px; font-size: 11px; right: 12px; bottom: 12px; }
+}
+@media (max-width:440px) {
+  .wrap { width: 92%; } .match-card { padding: 21px; } .match-card .abbr { font-size: 41px; }
+  .front-news { grid-template-columns: 1fr; } .story-image { height: 200px; }
+  .hero-actions .btn { flex: 1; justify-content: center; padding: 12px 10px; }
+  .player-portrait { height: 136px; } .player-info { padding: 13px; } .player-info h3 { font-size: 14px; }
+  .roster-grid { gap: 10px; } .roster-grid .st { font-size: 9px; } .match-footer { font-size: 11px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .reveal { opacity: 1; transform: none; } #snow { display: none; }
+  *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Snow floats over the stadium imagery without intercepting controls. */
+#snow { z-index: 4; }
+.hero-photo[data-cf-hero-rotator] { background-image: none; }

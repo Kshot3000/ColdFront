@@ -76,14 +76,15 @@
       const key = CF.API.apisportsKey();
       if (key) {
         state.textContent = "Key on this device: " + key.slice(0, 3) + "…" + key.slice(-2) +
-          "  — the stats and injury panels are reading API-Sports. The site itself never stores or shares it.";
+          "  — the stats and injury panels can try API-NFL. Coverage and access depend on your provider plan.";
       } else {
         state.textContent = "No key set on this device yet. Stats and injuries use the league wire + derived numbers until one is added.";
       }
     };
     showState();
     CF.$("#apisports-save").addEventListener("click", () => {
-      CF.API.setAPISportsKey(input.value);
+      if (!input.value.trim()) { CF.toast("Paste a key first"); return; }
+      if (!CF.API.setAPISportsKey(input.value)) { CF.toast("Device storage is unavailable"); return; }
       input.value = "";
       CF.toast("API-Sports key saved to this device ✓");
       showState();
@@ -107,14 +108,15 @@
       const key = CF.API.tsdbKey();
       if (key) {
         state.textContent = "Key on this device: " + key.slice(0, 3) + "\u2026" + key.slice(-2) +
-          "  \u2014 standings, roster, and schedule can now read the TheSportsDB wire as a second source. The site itself never stores or shares it.";
+          "  \u2014 standings, roster, and schedule can now read the TheSportsDB wire as a second source. Requests go directly to your provider.";
       } else {
         state.textContent = "No key set on this device yet. Standings, roster, and schedule ride the league wire until one is added.";
       }
     };
     showState();
     CF.$("#tsdb-save").addEventListener("click", () => {
-      CF.API.setTSDBKey(input.value);
+      if (!input.value.trim()) { CF.toast("Paste a key first"); return; }
+      if (!CF.API.setTSDBKey(input.value)) { CF.toast("Device storage is unavailable"); return; }
       input.value = "";
       CF.toast("TheSportsDB key saved to this device \u2713");
       showState();

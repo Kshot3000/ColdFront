@@ -14,7 +14,7 @@
       const sc = await CF.API.getSchedule();
       nextGame = CF.API.nextBearsGameFromSchedule(sc.data);
       if (!nextGame) throw new Error("no next game in log");
-      gameName = (nextGame.home ? "@" : "vs ") + nextGame.opp + " · " + CF.fmtDate(nextGame.date);
+      gameName = (nextGame.home ? "vs " : "@ ") + nextGame.opp + " · " + CF.fmtDate(nextGame.date);
       gameId = nextGame.id;
     } catch (e) {
       // try today's scoreboard for a live game id
@@ -30,7 +30,7 @@
     }
 
     try {
-      const r = await CF.API.getOdds();
+      const r = await CF.API.getOdds(nextGame?.date ? CF.dateInput(nextGame.date) : null);
       const line = CF.API.oddsForGame(r.data, gameId);
       if (!line || !line.lines.length) throw new Error("no lines");
       pill.className = "pill ok";
@@ -41,7 +41,7 @@
         (l.spread && l.spread.home != null ? spreadRow(l) : "") +
         (l.total != null ? '<div class="odds-row"><span>Total (O/U)</span><b>' + CF.esc(l.total) + "</b></div>" : "") +
         (l.ml ? mlRow(l) : "") +
-        (l.url ? '<a href="' + CF.esc(l.url) + '" target="_blank" rel="noopener" style="font-size:12px">details ↗</a>' : "") +
+        (l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener" style="font-size:12px">details ↗</a>' : "") +
         "</div>"
       ).join("");
     } catch (e) {
@@ -71,7 +71,7 @@
       const events = await CF.API.getPolymarket(100);
       const bears = CF.API.polymarketBears(events);
       if (!bears.length) {
-        box.innerHTML = '<div class="empty"><div class="big">🔮</div>No active Bears markets on Polymarket right now — the NFL tag is live, but nothing matches "Bears" at this moment. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">Browse all NFL markets ↗</a></div>';
+        box.innerHTML = '<div class="empty"><div class="big">🔮</div>No Bears markets found in the current feed. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">Browse all NFL markets ↗</a></div>';
         return;
       }
       box.innerHTML = bears.slice(0, 8).map((ev) =>
@@ -79,13 +79,13 @@
           '<div class="poly-card">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +
           '<span class="pr">' +
-          (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">YES ' + Math.round(m.yes * 100) + "¢</span>" : "") +
-          (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">NO ' + Math.round(m.no * 100) + "¢</span>" : "") +
+          (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢</span>" : "") +
+          (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">' + CF.esc(m.noLabel) + ' ' + Math.round(m.no * 100) + "¢</span>" : "") +
           "</span>" +
           '<span class="sub">' +
           (m.volume != null ? "Vol " + CF.fmt(m.volume) : "") +
           (m.endDate ? " · ends " + CF.fmtDate(m.endDate) : "") +
-          ' · <a href="' + CF.esc(m.url) + '" target="_blank" rel="noopener">market ↗</a>' +
+          ' · <a href="' + CF.esc(CF.safeURL(m.url)) + '" target="_blank" rel="noopener">market ↗</a>' +
           "</span></div>"
         ).join("")
       ).join("");
@@ -102,10 +102,14 @@
     } catch (e) { /* private mode */ }
   }
 
+  let loadingFullBoard = false;
   async function loadFullBoard() {
+    if(loadingFullBoard) return;
     const key = (CF.$("#odds-key").value || "").trim();
     const box = CF.$("#oddsapi-board");
     if (!key) { CF.toast("Paste a key first — free at the-odds-api.com"); return; }
+    loadingFullBoard = true;
+    CF.$("#odds-key-go").disabled = true;
     try { localStorage.setItem(KEY_LS, key); } catch (e) { /* ignore */ }
     box.innerHTML = CF.emptyHTML({ icon: "🎲", title: "Summoning the books…", loading: true });
     try {
@@ -117,25 +121,22 @@
       }
       const g = bears[0];
       const rows = (g.bookmakers || []).map((b) => {
-        const ps = b.point_spread || {};
-        const ou = b.over_under || {};
-        const ml = b.moneyline || {};
-        return "<tr><td class=\"strong\">" + CF.esc(b.title || b.key) + "</td>" +
-          "<td class=\"num\">" + (ps.spread != null ? CF.esc(ps.spread) : "—") + (ps.point != null ? " (" + CF.esc(ps.point) + ")" : "") + "</td>" +
-          "<td class=\"num\">" + (ou.total != null ? CF.esc(ou.total) : "—") + "</td>" +
-          "<td class=\"num\">" + (ml.home != null ? CF.esc(ml.home) : "—") + " / " + (ml.away != null ? CF.esc(ml.away) : "—") + "</td>" +
-          (b.last_update ? '<td class="dim">' + new Date(b.last_update).toLocaleTimeString() + "</td>" : "<td></td>") +
-          "</tr>";
+        const market=(key)=>(b.markets || []).find((m)=>m.key===key)?.outcomes || [];
+        const spread=market("spreads").find((o)=>o.name===g.home_team);
+        const total=market("totals").find((o)=>o.name==="Over");
+        const ml=market("h2h"),home=ml.find((o)=>o.name===g.home_team),away=ml.find((o)=>o.name===g.away_team);
+        const price=(n)=>n==null ? "—" : (Number(n)>0 ? "+" : "") + n;
+        return '<tr><td class="strong">'+CF.esc(b.title || b.key)+'</td><td class="num">'+CF.esc(spread ? price(spread.point)+" ("+price(spread.price)+")" : "—")+'</td><td class="num">'+CF.esc(total?.point ?? "—")+'</td><td class="num">'+CF.esc(price(home?.price)+" / "+price(away?.price))+'</td><td class="dim">'+CF.esc(b.last_update ? CF.fmtTime(b.last_update) : "—")+'</td></tr>';
       });
       box.innerHTML =
         '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><thead><tr>' +
         "<th>Book</th><th class=\"num\">Spread</th><th class=\"num\">O/U</th><th class=\"num\">ML home/away</th><th>Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
-        '<p class="src-note">' + CF.esc(g.displayName || "") + " · " + new Date(g.commence_time).toLocaleString() +
-        " · source: The Odds API (your key) · free tier 500 req/mo</p>";
+        '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
+        " · source: The Odds API (your key) · usage depends on your plan</p>";
     } catch (e) {
-      box.innerHTML = '<div class="empty" style="padding:18px">The Odds API said no (' + CF.esc(e.message || "error") + '). Check the key, or the free-tier quota.</div>';
-    }
+      box.innerHTML = '<div class="empty" style="padding:18px">The Odds API said no (' + "request unavailable" + '). Check the key, or the free-tier quota.</div>';
+    } finally { loadingFullBoard = false; CF.$("#odds-key-go").disabled = false; }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -144,6 +145,7 @@
     loadPoly();
     CF.$("#odds-refresh").addEventListener("click", () => { loadWireOdds(); loadPoly(); });
     CF.$("#odds-key-go").addEventListener("click", loadFullBoard);
+    CF.$("#odds-key").addEventListener("keydown", (event) => { if (event.key === "Enter") loadFullBoard(); });
     CF.$("#odds-key-clear").addEventListener("click", () => {
       CF.$("#odds-key").value = "";
       try { localStorage.removeItem(KEY_LS); } catch (e) { /* ignore */ }

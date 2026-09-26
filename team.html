@@ -12,7 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/main.css?v=1.12.0">
+  <link rel="stylesheet" href="css/experience.css?v=1.12.0">
 </head>
 <body>
 <canvas id="snow" aria-hidden="true"></canvas>
@@ -58,8 +59,6 @@
   <div class="wrap">
     <div class="page-intro">
       <div class="eyebrow">Hub · Roster</div>
-
-
     <div class="photo-band grant-park" aria-label="Grant Park at night" style="margin:8px 0 22px">
       <div class="photo-band-bg" aria-hidden="true"></div>
       <div class="photo-band-inner">
@@ -74,8 +73,8 @@
         </div>
       </div>
     </div>
-      <h1>Who's on the Board</h1>
-      <p>Every player on the roster, straight from the league wire — search by name, filter by position, and follow each one to their profile.</p>
+      <h1>Know your Bears</h1>
+      <p>Find your favorites. Follow the next breakout. Explore every Bear by name, number, or position, and build your own favorites list on this device.</p>
     </div>
 
     <div class="section-head">
@@ -90,10 +89,19 @@
       <select id="roster-pos" aria-label="Filter by position">
         <option value="">All positions</option>
       </select>
-      <span class="dim" id="roster-count" style="align-self:center;font-size:13px"></span>
+      <span class="dim" id="roster-count" role="status" style="align-self:center;font-size:13px"></span>
     </div>
 
-    <div class="tbl-wrap">
+    <div class="filter-bar" role="group" aria-label="Roster group">
+      <button type="button" class="filter-chip" data-roster-group="all" aria-pressed="true">All Bears</button>
+      <button type="button" class="filter-chip" data-roster-group="offense" aria-pressed="false">Offense</button>
+      <button type="button" class="filter-chip" data-roster-group="defense" aria-pressed="false">Defense</button>
+      <button type="button" class="filter-chip" data-roster-group="special" aria-pressed="false">Special teams</button>
+      <button type="button" class="filter-chip" data-roster-group="favorites" aria-pressed="false">★ My favorites</button>
+      <button type="button" class="filter-chip" id="roster-view" aria-pressed="false">Table view</button>
+    </div>
+    <div class="roster-grid" id="roster-cards"><div class="empty">Finding your Bears…</div></div>
+    <div class="tbl-wrap" id="roster-table-wrap" hidden>
       <table class="tbl" id="roster-table">
         <thead><tr><th>#</th><th>Player</th><th>Pos</th><th class="num">Age</th><th class="num">Exp</th><th class="num">Ht</th><th class="num">Wt</th><th>From</th></tr></thead>
         <tbody class="skel-table">
@@ -156,8 +164,9 @@
   </div>
 </footer>
 
-<script src="js/common.js"></script>
-<script src="js/api.js"></script>
-<script src="js/team.js"></script>
+<script src="js/common.js?v=1.12.0"></script>
+<script src="js/snow.js?v=1.12.0"></script>
+<script src="js/api.js?v=1.12.0"></script>
+<script src="js/team.js?v=1.12.0"></script>
 </body>
 </html>

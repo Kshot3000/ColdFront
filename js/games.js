@@ -3,30 +3,34 @@
 
 (function () {
   let dayOffset = 0;
+  let boxRequest = 0, selectedGame = null;
+  const query = new URLSearchParams(location.search);
+  let boardRequest = 0;
   let lastEvents = [];
   let lastPastGame = null; // most recent completed Bears game (season log)
 
   const isoDate = (offset) => {
-    const d = new Date();
-    d.setDate(d.getDate() + offset);
-    return d.toISOString().slice(0, 10);
+    const value=CF.dayParam(offset);
+    return value.slice(0,4)+"-"+value.slice(4,6)+"-"+value.slice(6,8);
   };
 
   /* ---------- board ---------- */
   async function loadBoard() {
+    const request = ++boardRequest;
+    const selectedDay = isoDate(dayOffset);
     const pill = CF.$("#board-pill");
     const box = CF.$("#board");
     pill.textContent = "reading…";
     try {
       const dp = CF.dayParam(dayOffset);
       const r = await CF.API.getScoreboard(dp);
-      const events = (r.data.events || []);
+      if(request !== boardRequest) return;
+      const events = (r.data.events || []).slice();
       lastEvents = events;
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + new Date().toLocaleDateString();
+      pill.textContent = CF.sourceLabel(r) + " · " + selectedDay;
       if (!events.length) {
-        box.innerHTML = CF.emptyHTML({ icon: "🌫", title: "Whiteout on the board", sub: "No games that day — try another date, or check back after kickoff." });
-        box.setAttribute("aria-busy", "false");
+        box.innerHTML = '<div class="empty"><div class="big">🌫</div>No NFL games scheduled for this date.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
         return;
       }
       // Bears game first.
@@ -38,6 +42,7 @@
       // The board keeps refreshing on the shared CF.refresh job below (30 s),
       // so scheduled → live → final transitions pick themselves up.
     } catch (e) {
+      if(request !== boardRequest) return;
       pill.className = "pill sample";
       pill.textContent = "offline";
       box.innerHTML = CF.emptyHTML({
@@ -56,7 +61,7 @@
     if (!c) return "";
     const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
     const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-    const st = (e.status && e.status.type) || {};
+    const st = (e.status?.type || c.status?.type) || {};
     let pill = '<span class="pill">' + CF.esc(st.shortDetail || "scheduled") + "</span>";
     if (st.state === "in") pill = '<span class="pill live"><span class="dot"></span>' + CF.esc(st.detail || "live") + (e.status && e.status.displayClock ? " · " + CF.esc(e.status.displayClock) : "") + "</span>";
     if (st.state === "post") pill = '<span class="pill final">' + CF.esc(st.shortDetail || "final") + "</span>";
@@ -64,27 +69,27 @@
     const watch = (c.broadcasts && c.broadcasts[0] && c.broadcasts[0].links && c.broadcasts[0].links.web) ? c.broadcasts[0].links.web.href : null;
     const espn = "https://www.espn.com/nfl/game/_/gameId/" + e.id;
     const score = (t) => (t.score && t.score !== "–" ? t.score : "");
-    return '<div class="card' + (bears ? " game-card" : "") + '" style="margin-bottom:12px">' +
+    return '<div class="card game-card' + (bears ? " bears-game" : "") + '" style="margin-bottom:12px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
       "<div style=\"font-size:13.5px\" class=\"dim\">" + CF.esc(e.name || "") + " · " + CF.esc(e.season ? e.season.displayName : "") + "</div>" +
       pill + "</div>" +
       '<div class="vs" style="margin:12px 0">' +
-      side(away, false) +
-      '<div class="mid">at ' + CF.esc((c.venue && c.venue.displayName) || "field") + "</div>" +
-      side(home, true) +
+      side(away, false, st.state) +
+      '<div class="mid">at ' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "field") + "</div>" +
+      side(home, true, st.state) +
       "</div>" +
       '<div class="game-meta">' +
       (CF.fmtDate(e.date) + " · " + (CF.fmtTime(e.date) || "TBD")) +
       (tv ? " · TV: <b>" + CF.esc(tv) + "</b>" : "") +
-      (watch ? ' · <a href="' + CF.esc(watch) + '" target="_blank" rel="noopener">Watch ↗</a>' : "") +
+      (watch ? ' · <a href="' + CF.esc(CF.safeURL(watch)) + '" target="_blank" rel="noopener">Watch ↗</a>' : "") +
       ' · <a href="' + espn + '" target="_blank" rel="noopener">ESPN game ↗</a>' +
-      (bears ? ' · <a href="#log-table" data-boxgame="' + CF.esc(e.id) + '" class="boxlink">Box score ↓</a>' : "") +
+      (bears ? ' · <a href="#boxscore" data-boxgame="' + CF.esc(e.id) + '" class="boxlink">Box score ↓</a>' : "") +
       "</div></div>";
   }
-  function side(comp, isHome) {
+  function side(comp, isHome, state) {
     const abbr = (comp.team || {}).abbreviation || "?";
     const name = (comp.team || {}).displayName || "";
-    const sc = CF.API.score(comp.score);
+    const sc = state === "pre" ? null : CF.API.score(comp.score);
     return '<div class="side"><div class="abbr">' + CF.esc(abbr) + '</div><div class="score">' + CF.esc(sc != null ? sc : "") + '</div><div class="dim" style="font-size:12px">' + CF.esc(name) + (isHome ? " (home)" : "") + "</div></div>";
   }
 
@@ -102,16 +107,12 @@
       const now = Date.now();
       const upcoming = rows.filter((g) => new Date(g.date).getTime() >= now - 6 * 3600e3).sort((a, b) => new Date(a.date) - new Date(b.date));
       const past = rows.filter((g) => new Date(g.date).getTime() < now - 6 * 3600e3).sort((a, b) => new Date(b.date) - new Date(a.date));
-      if (past.length) lastPastGame = past[0];
+      lastPastGame = past.find((g) => g.completed) || null;
       body.innerHTML = [
         ...upcoming.map(logRow),
         ...(upcoming.length && past.length ? '<tr><td colspan="7" style="border:none;height:6px;background:rgba(200,56,3,.12)"></td></tr>' : ""),
         ...past.map(logRow),
       ].join("");
-      CF.$$("#log-table .boxlink").forEach((a) => a.addEventListener("click", () => {
-        loadBoxscore(a.dataset.boxgame);
-        CF.$("#boxscore").scrollIntoView({ behavior: "smooth", block: "start" });
-      }));
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
@@ -120,7 +121,7 @@
   }
 
   function logRow(g) {
-    const played = g.scoreMe != null;
+    const played = g.completed && g.scoreMe != null && g.scoreOpp != null;
     let result = "—";
     if (played) {
       const a = parseInt(g.scoreMe, 10), b = parseInt(g.scoreOpp, 10);
@@ -131,12 +132,12 @@
     const scoreTxt = played ? (g.scoreMe + "–" + g.scoreOpp) : "";
     return '<tr' + (played ? ' class="boxrow" style="cursor:pointer" data-boxgame="' + g.id + '"' : "") + ">" +
       "<td>" + CF.fmtDate(g.date) + " <span class=\"dim\">" + (CF.fmtTime(g.date) || "") + "</span></td>" +
-      '<td class="strong">' + (g.home ? "@" : "vs ") + CF.esc(g.opp) + "</td>" +
-      '<td class="num dim">' + (g.home ? "A" : "H") + "</td>" +
+      '<td class="strong">' + (g.home ? "vs " : "@ ") + CF.esc(g.opp) + "</td>" +
+      '<td class="num dim">' + (g.home ? "H" : "A") + "</td>" +
       '<td class="num">' + CF.esc(scoreTxt) + "</td>" +
       '<td><span class="st ' + cls + '">' + CF.esc(played ? (result || g.result) : (g.result || "UPCOMING")) + "</span></td>" +
       '<td class="dim">' + CF.esc(g.tv || "") + "</td>" +
-      "<td>" + (played ? '<a href="#boxscore" class="boxlink" data-boxgame="' + g.id + '" onclick="event.stopPropagation()">box ↗</a>' : "") + "</td>" +
+      "<td>" + (played ? '<a href="#boxscore" class="boxlink" data-boxgame="' + g.id + '">box ↗</a>' : "") + "</td>" +
       "</tr>";
   }
 
@@ -151,21 +152,24 @@
   const statLabel = (n) => STAT_LABELS[n] || n.replace(/([A-Z])/g, " $1").trim();
 
   async function loadBoxscore(gameId) {
+    const request = ++boxRequest;
     const box = CF.$("#boxscore");
     box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Pulling the box score…", loading: true });
     try {
       const ev = await CF.API.bearsGameEvent(gameId);
+      if (request !== boxRequest) return;
       const c = (ev.competitions || [])[0] || {};
       const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
       const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-      const hs = CF.API.score(home.score), as_ = CF.API.score(away.score);
+      const state = (ev.status?.type || c.status?.type)?.state;
+      const hs = state === "pre" ? null : CF.API.score(home.score), as_ = state === "pre" ? null : CF.API.score(away.score);
       const leaders = CF.API.eventLeaders(ev);
       const espn = "https://www.espn.com/nfl/game/_/gameId/" + ev.id;
       const st = (ev.status && ev.status.type) || {};
       const scoreBit = (hs != null || as_ != null)
         ? '<span style="font-size:15px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
           " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
-          ' <span class="dim">(' + CF.esc((c.venue && c.venue.displayName) || "field") + ")</span></span>"
+          ' <span class="dim">(' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "field") + ")</span></span>"
         : "";
       let html =
         '<div class="card pad-lg"><div class="badge-row" style="justify-content:space-between">' +
@@ -174,23 +178,29 @@
         '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + scoreBit + '</div>' +
         '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
         leaders.map((l) => {
-          const nm = l.url ? '<a href="' + CF.esc(l.url) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
+          const nm = l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
           return '<tr><td class="strong">' + CF.esc(l.label) + "</td>" +
             "<td>" + nm + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span></td>" +
             '<td class="num">' + CF.esc(l.display) + "</td></tr>";
         }).join("") +
         "</tbody></table></div>" +
-        '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="stats.html">Season stats →</a></p></div>';
+        (leaders.length ? '' : '<p class="dim">Player stats will appear here when the game feed is available.</p>') +
+        '<p class="src-note">Game details + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="stats.html">Season stats →</a></p></div>';
       box.innerHTML = html;
     } catch (e) {
-      box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Box score unavailable", sub: "The feed for that game didn\'t answer." });
+      if (request !== boxRequest) return;
+      box.innerHTML = '<div class="empty"><div class="big">📋</div>Box score unavailable right now — the feed for that game didn\'t answer.</div>';
     }
   }
 
-  // Click anywhere on a played row.
+  // The explicit link makes each box score keyboard accessible too.
   document.addEventListener("click", (ev) => {
-    const row = ev.target.closest(".boxrow");
-    if (row && row.dataset.boxgame) loadBoxscore(row.dataset.boxgame);
+    const target = ev.target.closest("[data-boxgame]");
+    if(!target) return;
+    ev.preventDefault();
+    selectedGame = target.dataset.boxgame;
+    loadBoxscore(selectedGame);
+    CF.$("#boxscore").scrollIntoView({behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",block:"start"});
   });
 
 
@@ -443,13 +453,13 @@
     if (!div) {
       try {
         div = await CF.API.preseasonStandingsAuto();
-        if (div && div.rows.length) label = "preseason · from games played";
+        if (div && div.rows.length) label = "from completed games";
       } catch (e2) { /* try the independent wire */ }
     }
     if (!div && CF.API.tsdbKey()) {
       try {
         div = await CF.API.tsdbStandings();
-        if (div && div.rows.length) label = "preseason · TheSportsDB wire";
+        if (div && div.rows.length) label = "TheSportsDB wire";
       } catch (e3) { /* fall through to offline */ }
     }
     if (!div || !div.rows.length) {
@@ -504,7 +514,11 @@
       pick.value = isoDate(offset);
       loadBoard();
     };
-    pick.value = isoDate(0);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(query.get("date") || "")) {
+      const date = Date.parse(query.get("date") + "T12:00:00Z");
+      if (Number.isFinite(date)) dayOffset = Math.round((date - Date.parse(isoDate(0) + "T12:00:00Z")) / 86400000);
+    }
+    pick.value = isoDate(dayOffset);
     CF.$("#day-today").addEventListener("click", () => set(0));
     CF.$("#day-prev").addEventListener("click", () => {
       const d = new Date(pick.value || isoDate(dayOffset));
@@ -541,6 +555,8 @@
     // Bears game on the board, else the most recent completed game from
     // the season log (waits briefly for the log on slower networks).
     setTimeout(async () => {
+      if (selectedGame) return;
+      if (/^\d+$/.test(query.get("game") || "")) { selectedGame = query.get("game"); loadBoxscore(selectedGame); return; }
       const isBears = (e) => ((e.competitions && e.competitions[0] && e.competitions[0].competitors) || [])
         .some((c) => (c.team || {}).abbreviation === "CHI");
       const state = (e) => ((e.status && e.status.type) || {}).state || "";
@@ -551,7 +567,7 @@
       while (!lastPastGame && Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 400));
       }
-      if (lastPastGame && lastPastGame.id) loadBoxscore(lastPastGame.id);
+      if (!selectedGame && lastPastGame && lastPastGame.id) loadBoxscore(lastPastGame.id);
     }, 2000);
   });
 })();

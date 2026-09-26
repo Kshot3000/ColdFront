@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>THE COLD FRONT — Chicago Bears × Midwest Winter Football</title>
   <meta name="description" content="THE COLD FRONT — the all-in-one Chicago Bears fan hub. Live news, injury report, betting odds, game stats & schedule, roster, practice intel. Independent. Unofficial. Built for Da Bears.">
-  <meta name="theme-color" content="#060d18">
   <meta property="og:title" content="THE COLD FRONT — Chicago Bears × Midwest Winter Football">
   <meta property="og:description" content="News, injuries, odds, stats, schedule, roster & practice — everything a Bears fan wants in one place.">
   <meta property="og:type" content="website">
@@ -16,7 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/main.css?v=1.12.0">
+  <link rel="stylesheet" href="css/experience.css?v=1.12.0">
 </head>
 <body>
 <canvas id="snow" aria-hidden="true"></canvas>
@@ -84,77 +84,46 @@
       </picture>
     </div>
     <div class="wrap">
-      <div class="kicker-line">
-        <svg class="front-mark" viewBox="0 0 46 14" aria-hidden="true">
-          <line x1="0" y1="10" x2="46" y2="10" stroke="#E8541E" stroke-width="2.4" stroke-linecap="round"/>
-          <path d="M5 10 h7 l-3.5 -8 z" fill="#E8541E"/>
-          <path d="M16 10 h7 l-3.5 -8 z" fill="#E8541E"/>
-          <path d="M27 10 h7 l-3.5 -8 z" fill="#E8541E"/>
-          <path d="M38 10 h6 l-3 -7 z" fill="#E8541E"/>
-        </svg>
-        <span class="eyebrow" style="margin:0">Independent Bears fan hub · Unofficial</span>
-      </div>
-      <h1>One Hub. Every <span class="hot">Bears</span> Beat <span class="hot">Covered</span>.</h1>
-      <p class="sub">Built for the week that never really ends — Friday injury whispers, Sunday kickoff wind off the lake, Monday film, Wednesday practice notes. News wire, injury report, Vegas &amp; prediction odds, live scores &amp; schedule, player stats, roster search, and practice intel. Independent. Unofficial. Loud for Da Bears.</p>
-
-      <div class="hub-pitch" aria-label="What you get">
-        <span><b>News</b> wire</span>
-        <span><b>Games</b> &amp; scores</span>
-        <span><b>Stats</b></span>
-        <span><b>Odds</b></span>
-        <span><b>Injuries</b></span>
-        <span><b>Practice</b></span>
-        <span><b>Roster</b></span>
-      </div>
-
-      <div class="hero-grid">
-        <div class="card game-card" id="next-game" aria-live="polite" aria-atomic="false" aria-relevant="additions text">
-          <div class="badge-row" style="justify-content:space-between">
-            <h3 style="margin:0" id="ng-title">Next on the board…</h3>
-            <span class="pill is-loading" id="ng-pill">loading</span>
+      <div class="hero-layout">
+        <div class="hero-copy">
+          <div class="eyebrow">Chicago Bears · Independent fan headquarters</div>
+          <h1>Cold city.<br><span class="hot">Hot blood.</span></h1>
+          <p class="sub">The lake wind never quits. Neither do we. Your front-row seat to every Bears score, story, and Sunday that matters.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="games.html">Enter game center ↗</a>
+            <a class="btn" href="#latest">Catch the latest ↓</a>
           </div>
+          <p class="hero-note">Lakefront made. Orange &amp; blue. All season long.</p>
+        </div>
+        <div class="card match-card" id="next-game">
+          <div class="match-kicker"><span>Next up · Chicago Bears</span><span class="pill" id="ng-pill">connecting</span></div>
+          <h3 id="ng-title">Finding the next kickoff…</h3>
           <div class="vs">
-            <div class="side">
-              <div class="abbr" id="ng-away-abbr">—</div>
-              <div class="score" id="ng-away-score"></div>
-            </div>
-            <div class="mid" id="ng-mid">at<br>Soldier Field</div>
-            <div class="side">
-              <div class="abbr" id="ng-home-abbr">CHI</div>
-              <div class="score" id="ng-home-score"></div>
-            </div>
+            <div class="side"><div class="abbr" id="ng-away-abbr">—</div><div class="score" id="ng-away-score"></div><div class="team-side-label">Away</div></div>
+            <div class="mid" id="ng-mid">The next chapter<br>starts here</div>
+            <div class="side"><div class="abbr" id="ng-home-abbr">CHI</div><div class="score" id="ng-home-score"></div><div class="team-side-label">Home</div></div>
           </div>
           <div class="game-meta" id="ng-meta"></div>
-          <div class="countdown" id="ng-countdown"></div>
+          <div class="countdown" id="ng-countdown" aria-label="Time until kickoff"></div>
+          <div class="match-footer"><a href="games.html" id="game-detail-link">Matchup &amp; schedule ↗</a><button class="text-button" id="prediction-toggle" type="button" aria-expanded="false" aria-controls="prediction-form" disabled>Make your call ＋</button></div>
+          <form class="prediction" id="prediction-form" hidden>
+            <div class="prediction-fields">
+              <label>Bears score<input id="prediction-bears" type="number" min="0" max="99" value="24" required></label>
+              <label><span id="prediction-opponent">Opponent score</span><input id="prediction-other" type="number" min="0" max="99" value="17" required></label>
+              <button class="btn small primary" type="submit">Save pick</button>
+            </div>
+            <p class="src-note" id="prediction-status" role="status">Your prediction, saved only on this device.</p>
+          </form>
         </div>
-
-        <div class="card" id="division">
-          <div class="badge-row" style="justify-content:space-between;margin-bottom:12px">
-            <h3 style="margin:0">NFC North watch</h3>
-            <span class="pill cache is-loading" id="div-pill">loading</span>
-          </div>
-          <div class="tbl-wrap" style="border:none">
-            <table class="tbl" style="min-width:0" id="div-table">
-              <thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead>
-              <tbody class="skel-table">
-                <tr><td colspan="4"><span class="skel lg" style="width:72%"></span></td></tr>
-                <tr><td colspan="4"><span class="skel" style="width:64%"></span></td></tr>
-                <tr><td colspan="4"><span class="skel" style="width:68%"></span></td></tr>
-                <tr><td colspan="4"><span class="skel" style="width:60%"></span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="race-bars" id="div-race" hidden aria-label="NFC North win race"></div>
-          <p class="src-note">Live from ESPN when the feed answers; otherwise your last saved snapshot.</p>
-          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
-            <a class="btn small" href="games.html">Full game log →</a>
-            <a class="btn small" href="odds.html">Odds board →</a>
-          </div>
-        </div>
+      </div>
+      <div class="season-strip" aria-label="Bears season at a glance">
+        <div class="season-brand"><img src="img/paw-mark.svg" alt="" width="38" height="38"><div><b>Bear down. Always.</b><span id="season-name">This season · from ESPN</span></div></div>
+        <div><b id="season-record">—</b><span>Season record</span></div>
+        <div><b id="season-points">—</b><span>Points per game</span></div>
+        <div><b id="season-diff">—</b><span>Point differential</span></div>
       </div>
     </div>
   </section>
-
   <section aria-label="Sunday desk">
     <div class="wrap">
       <div class="section-head">
@@ -222,223 +191,54 @@
     </div>
   </section>
 
+  <section id="latest">
+    <div class="wrap">
+      <div class="section-head"><h2>Fresh off the wire</h2><span class="tag" id="wire-pill">connecting</span><span class="rule"></span><a href="news.html">All Bears stories ↗</a></div>
+      <div class="front-news" id="home-news"><div class="empty">Bringing you the latest from Chicago…</div></div>
+    </div>
+  </section>
   <section>
     <div class="wrap">
-      <div class="section-head">
-        <h2>The Bears Fan Toolkit</h2>
-        <span class="tag">all-in-one hub</span>
-        <span class="rule"></span>
+      <div class="section-head"><h2>Keep your rivals close</h2><span class="tag">Around the NFC North</span><span class="rule"></span><a href="games.html">Game center ↗</a></div>
+      <div class="north-layout">
+        <div><div class="badge-row" style="margin-bottom:14px"><h3 style="margin:0">This week's matchups</h3><span class="pill" id="north-pill">connecting</span></div><div id="north-games" class="north-games"><div class="empty">Checking the slate…</div></div></div>
+        <div class="card" id="division">
+          <div class="badge-row" style="justify-content:space-between;margin-bottom:16px"><h3 style="margin:0">The North standings</h3><span class="pill" id="div-pill">connecting</span></div>
+          <div class="tbl-wrap" style="border:0"><table class="tbl" style="min-width:0" id="div-table"><thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead><tbody><tr><td colspan="4" class="dim">Reading the division…</td></tr></tbody></table></div>
+          <div class="race-bars" id="div-race" hidden aria-label="NFC North win race"></div><p class="src-note">Four teams. One division. Every Sunday counts.</p>
+          <a class="btn small" href="odds.html" style="margin-top:14px">Explore the odds board ↗</a>
+        </div>
       </div>
+    </div>
+  </section>
+  <section>
+    <div class="wrap">
+      <div class="section-head"><h2>Your fan playbook</h2><span class="tag">Everything Bears. One front.</span><span class="rule"></span></div>
       <div class="grid grid-4 quick">
-        <a href="news.html"><span class="ico">📰</span>News Wire<span class="desc">Headlines & wire — refreshed on the clock</span></a>
-        <a href="games.html"><span class="ico">🏈</span>Games<span class="desc">Scoreboard, schedule & full season log</span></a>
-        <a href="stats.html"><span class="ico">📊</span>Stats<span class="desc">Player & team numbers — last game + season</span></a>
-        <a href="odds.html"><span class="ico">🎲</span>Odds<span class="desc">Vegas lines + prediction-market odds</span></a>
-        <a href="injuries.html"><span class="ico">🩹</span>Injuries<span class="desc">Injury report table + the wire</span></a>
-        <a href="practice.html"><span class="ico">❄️</span>Practice<span class="desc">Facility week, media & availability</span></a>
-        <a href="team.html"><span class="ico">🐻</span>Team<span class="desc">Full roster — searchable by position</span></a>
-        <a href="about.html"><span class="ico">⛺</span>About<span class="desc">About, donations & how the hub works</span></a>
+        <a href="news.html"><span class="ico">↗</span>News wire<span class="desc">The stories moving through Chicago.</span></a>
+        <a href="games.html"><span class="ico">◷</span>Game center<span class="desc">Kickoffs, scores, and the whole season.</span></a>
+        <a href="stats.html"><span class="ico">▥</span>By the numbers<span class="desc">The performances behind the result.</span></a>
+        <a href="odds.html"><span class="ico">±</span>Odds board<span class="desc">Game lines and prediction markets.</span></a>
+        <a href="injuries.html"><span class="ico">＋</span>Injury report<span class="desc">Who's in, who's out, and the latest.</span></a>
+        <a href="practice.html"><span class="ico">⌖</span>Inside Halas Hall<span class="desc">Practice updates and official camp info.</span></a>
+        <a href="team.html"><span class="ico">★</span>Know your Bears<span class="desc">Explore the roster. Save your favorites.</span></a>
+        <a href="about.html"><span class="ico">❄</span>Behind the front<span class="desc">Meet the builder. Keep the lights on.</span></a>
       </div>
     </div>
   </section>
-
   <section>
     <div class="wrap">
-      <div class="section-head">
-        <h2>How a Bears week feels</h2>
-        <span class="tag">story of the hub</span>
-        <span class="rule"></span>
-      </div>
-      <div class="story-beats" aria-label="Cold Front storytelling beats">
-        <article class="story-beat">
-          <div class="beat-num">01 · Midweek</div>
-          <h3>Practice fog &amp; the wire</h3>
-          <p>Facility notes, availability whispers, and the injury rail — so you know who&rsquo;s warming up before the lineup graphic drops.</p>
-        </article>
-        <article class="story-beat">
-          <div class="beat-num">02 · Gameday</div>
-          <h3>Kickoff in the wind</h3>
-          <p>Next-game countdown, NFC North watch, live board, and odds in one glance. Lake wind optional. Heart rate not.</p>
-        </article>
-        <article class="story-beat">
-          <div class="beat-num">03 · After</div>
-          <h3>Film, numbers, next</h3>
-          <p>Box scores, leaders, and the roster search stay hot long after the lights cut — ready for the next cold snap.</p>
-        </article>
-      </div>
-
-      <div class="photo-band grant-park" aria-label="Grant Park at night" style="margin-bottom:22px">
-        <div class="photo-band-bg" aria-hidden="true"></div>
-        <div class="photo-band-inner">
-          <div class="photo-band-copy">
-            <div class="eyebrow" style="margin:0 0 6px">Grant Park</div>
-            <h3>Lake wind. Downtown pulse. Kickoff energy.</h3>
-            <p>Grant Park after dark — the walk between the Loop and the field. Independent photography; Cold Front marks only. Never league logos.</p>
-          </div>
-          <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
-            <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
-          </div>
-        </div>
-      </div>
-
-      <div class="section-head">
-        <h2>Chicago after dark</h2>
-        <span class="tag">skyline · pier · marina · field</span>
-        <span class="rule"></span>
-      </div>
-      <div class="city-strip city-strip-6" aria-label="Chicago photography">
-        <div class="city-tile t-river">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/chicago-river-night-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/chicago-river-night.webp" alt="" width="1280" height="816" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">River night</span>
-        </div>
-        <div class="city-tile t-soldier">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/soldier-field-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/soldier-field.webp" alt="" width="1100" height="1467" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">Soldier Field</span>
-        </div>
-        <div class="city-tile t-navy-pier">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/chicago-navy-pier-night-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/chicago-navy-pier-night.webp" alt="" width="1600" height="2133" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">Navy Pier</span>
-        </div>
-        <div class="city-tile t-bean-dusk">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/chicago-bean-dusk-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/chicago-bean-dusk.webp" alt="" width="1400" height="933" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">Cloud Gate</span>
-        </div>
-        <div class="city-tile t-cta">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/chicago-cta-night-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/chicago-cta-night.webp" alt="" width="1400" height="925" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">The L at night</span>
-        </div>
-        <div class="city-tile t-marina-city">
-          <picture class="city-tile-pic">
-            <source media="(max-width: 700px)" srcset="img/chicago-marina-city-night-sm.webp" type="image/webp">
-            <img class="city-tile-img" src="img/chicago-marina-city-night.webp" alt="" width="1280" height="1920" loading="lazy" decoding="async">
-          </picture>
-          <span class="city-tile-label">Marina City</span>
-        </div>
-      </div>
-      <div class="photo-band soldier" style="margin-top:18px">
-        <div class="photo-band-bg" aria-hidden="true"></div>
-        <div class="photo-band-inner">
-          <div class="photo-band-copy">
-            <div class="eyebrow" style="margin:0 0 6px">Home turf</div>
-            <h3>Where the cold front hits the gridiron</h3>
-            <p>Soldier Field on the lakefront — neoclassical stone, modern bowl, lake wind. Independent photography; Cold Front marks only. No NFL trademarks.</p>
-          </div>
-          <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
-            <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
-          </div>
-        </div>
-      </div>
-      <div class="photo-band lincoln-park" style="margin-top:14px" aria-label="Lincoln Park night skyline">
-        <div class="photo-band-bg" aria-hidden="true"></div>
-        <div class="photo-band-inner">
-          <div class="photo-band-copy">
-            <div class="eyebrow" style="margin:0 0 6px">Lincoln Park</div>
-            <h3>Lake black. Skyline fire.</h3>
-            <p>Chicago from the north lakefront after dark — the same water that freezes the sidelines in December. Unsplash photography; Cold Front art only.</p>
-          </div>
-          <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark" src="img/jersey-54.svg" alt="" width="88" height="88" decoding="async">
-            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
-          </div>
-        </div>
-      </div>
-      <p class="photo-credit">Photos: Unsplash (incl. Navy Pier, Lincoln Park) &amp; Wikimedia Commons (incl. Marina City) · marks: original Cold Front SVGs · see <a href="img/ATTRIBUTION.txt">ATTRIBUTION</a></p>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>On the wire</h2>
-        <span class="tag" id="wire-pill">tuning…</span>
-        <span class="rule"></span>
-        <a class="btn small" href="news.html">Full feed →</a>
-      </div>
-      <div class="news-list" id="home-news" aria-live="polite" aria-busy="true">
-        <div class="empty is-loading" role="status" aria-live="polite">
-          <div class="big">📡</div>
-          <div class="empty-title">Pulling the wire</div>
-          <p class="empty-sub">League feed first, then the wide wire — headlines cache on this device when a feed answers.</p>
-          <div class="skel-row" style="border:none;justify-content:center;margin-top:14px">
-            <span class="skel thumb"></span>
-            <div class="skel-col" style="max-width:280px">
-              <span class="skel lg" style="width:90%"></span>
-              <span class="skel" style="width:55%"></span>
-            </div>
-          </div>
-        </div>
+      <div class="section-head"><h2>From the training room</h2><span class="tag" id="inj-home-pill">Checking report</span><span class="rule"></span><a href="injuries.html">Full injury report ↗</a></div>
+      <div id="home-inj-movement" class="inj-move-host" aria-live="polite"></div><div class="tbl-wrap"><table class="tbl" id="home-injuries"><thead><tr><th>Player</th><th>Pos</th><th>Latest update</th><th>Status</th></tr></thead><tbody><tr><td colspan="4" class="dim">Loading the report…</td></tr></tbody></table></div>
+      <p class="src-note">League report and roster flags. Check the official pregame report for final availability.</p>
+      <div class="city-strip" aria-label="Explore the Bears in Chicago">
+        <a class="city-tile t-river" href="news.html"><div class="city-tile-bg"></div><span class="city-tile-label">City lights. Bears nights.<strong>Follow the story ↗</strong></span></a>
+        <a class="city-tile t-soldier" href="games.html"><div class="city-tile-bg"></div><span class="city-tile-label">The roar by the lake<strong>Meet us at kickoff ↗</strong></span></a>
+        <a class="city-tile t-winter" href="team.html"><div class="city-tile-bg"></div><span class="city-tile-label">Built for this city<strong>Find your favorite Bears ↗</strong></span></a>
       </div>
     </div>
   </section>
-
-  <section>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Injury snapshot</h2>
-        <span class="tag">community-maintained</span>
-        <span class="rule"></span>
-        <a class="btn small" href="injuries.html">Full report →</a>
-      </div>
-      <div id="home-inj-movement" class="inj-move-host" aria-live="polite"></div>
-      <div class="tbl-wrap">
-        <table class="tbl" id="home-injuries">
-          <thead><tr><th>Player</th><th>Pos</th><th>Injury</th><th>Status</th></tr></thead>
-          <tbody class="skel-table">
-            <tr><td colspan="4"><span class="skel lg" style="width:78%"></span></td></tr>
-            <tr><td colspan="4"><span class="skel" style="width:70%"></span></td></tr>
-            <tr><td colspan="4"><span class="skel" style="width:74%"></span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="src-note">Heads up: the report table is community-maintained (see <a href="injuries.html">Injuries</a>) — always cross-check with the official pregame report.</p>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <div class="photo-band bean-dusk">
-        <div class="photo-band-bg" aria-hidden="true"></div>
-        <div class="photo-band-inner">
-          <div class="photo-band-copy">
-            <div class="eyebrow" style="margin:0 0 6px">Millennium Park</div>
-            <h3>Mirror steel. Skyline flex. Da city.</h3>
-            <p>Cloud Gate throwing the skyline back at you — same downtown pulse that feeds this hub. Unsplash photography; Cold Front marks only. Never league logos.</p>
-          </div>
-          <div class="photo-band-art" aria-hidden="true">
-            <img class="art-mark" src="img/jersey-54.svg" alt="" width="88" height="88" decoding="async">
-            <img class="art-mark" src="img/paw-mark.svg" alt="" width="88" height="88" decoding="async">
-          </div>
-        </div>
-      </div>
-
-      <div class="section-head">
-        <h2>Stay on the front</h2>
-        <span class="tag">official Bears + builder</span>
-        <span class="rule"></span>
-      </div>
-      <div class="social-grid" id="home-socials"></div>
-      <p class="src-note" style="margin-top:14px">
-        Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener"><span data-cf-x-handle>@kshot9000</span></a> — more projects and donation addresses on the <a href="about.html">About</a> page.
-      </p>
-    </div>
-  </section>
+  <section><div class="wrap"><div class="section-head"><h2>Stay on the front</h2><span class="rule"></span></div><div class="social-grid" id="home-socials"></div><p class="src-note">Independent. Unofficial. Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a> for fans who stay through the cold.</p></div></section>
 </main>
 
 <footer class="site-foot">
@@ -486,8 +286,9 @@
   </div>
 </footer>
 
-<script src="js/common.js"></script>
-<script src="js/api.js"></script>
-<script src="js/home.js"></script>
+<script src="js/common.js?v=1.12.0"></script>
+<script src="js/snow.js?v=1.12.0"></script>
+<script src="js/api.js?v=1.12.0"></script>
+<script src="js/home.js?v=1.12.0"></script>
 </body>
 </html>

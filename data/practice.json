@@ -1,22 +1,6 @@
 {
-  "updated": "2026-09-25",
-  "note": "Practice tracker — edit rows and optional participation[] for the week heat strip. Media availability follows the official Bears schedule. Levels: 0=off, 1=walkthrough/mental, 2=light/limited, 3=full, 4=game.",
-  "participation": [
-    { "day": "Mon", "label": "Full", "level": 3, "note": "Install / two-a-days early camp" },
-    { "day": "Tue", "label": "Full", "level": 3, "note": "Offense + special teams" },
-    { "day": "Wed", "label": "Full", "level": 3, "note": "Defense + situational" },
-    { "day": "Thu", "label": "Light", "level": 2, "note": "Film + individual" },
-    { "day": "Fri", "label": "Walk", "level": 1, "note": "Walkthrough / media" },
-    { "day": "Sat", "label": "Off", "level": 0, "note": "Travel / rest" },
-    { "day": "Sun", "label": "Game", "level": 4, "note": "Soldier Field" }
-  ],
-  "rows": [
-    { "date": "Mon", "session": "Full-team practice", "focus": "Install / two-a-days early camp", "media": "Availability after practice (check official schedule)", "notes": "Template row — replace with real sessions", "level": 3 },
-    { "date": "Tue", "session": "Full-team practice", "focus": "Offense + special teams", "media": "Media availability (usually)", "notes": "", "level": 3 },
-    { "date": "Wed", "session": "Full-team / walkthrough", "focus": "Defense + situational", "media": "Media availability (usually)", "notes": "", "level": 3 },
-    { "date": "Thu", "session": "Light / mental", "focus": "Film + individual work", "media": "—", "notes": "", "level": 2 },
-    { "date": "Fri", "session": "Walkthrough", "focus": "Situational + special teams polish", "media": "Availability / presser window", "notes": "", "level": 1 },
-    { "date": "Sat", "session": "Off / travel", "focus": "Rest · walkthrough on road weeks", "media": "—", "notes": "", "level": 0 },
-    { "date": "Sun", "session": "Game day", "focus": "Soldier Field", "media": "Postgame presser", "notes": "", "level": 4 }
-  ]
+  "updated": null,
+  "note": "Only confirmed sessions are listed. Use the official Bears camp page for public practice dates and tickets.",
+  "rows": [],
+  "participation": []
 }

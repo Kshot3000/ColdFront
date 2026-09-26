@@ -1,7 +1,7 @@
 /* ============================================================
    THE COLD FRONT — data layer
    ESPN site API (primary, CORS-open in browsers) → CORS proxies
-   → localStorage snapshot → (page-level sample data as last resort).
+   → localStorage snapshot → clear unavailable state.
    Polymarket Gamma API for prediction markets. Open-Meteo weather.
    ============================================================ */
 "use strict";
@@ -37,14 +37,15 @@ CF.API = {
   },
 
   getNews: async () => {
-    const r = await CF.getSource("news",
-      () => CF.fetchJSON(CF.base() + "/teams/chicago/news", { timeout: 9000 }), "news", null,
-      [CF.API.web("/teams/chicago/news")]);
-    const list = (r.data && (r.data.news || r.data.articles)) || [];
-    // ESPN often returns {} in the off-week — treat as empty (callers fall
-    // through to the wide wire / snapshot).
-    return Array.isArray(list) ? list : [];
+    const url = CF.API.base() + "/news?team=chi&limit=12";
+    const r = await CF.getSource("news", () => CF.fetchJSON(url), "news", url,
+      [() => CF.fetchJSON(CF.API.webBase() + "/news?team=chi&limit=12")]);
+    CF.API.newsSource = r;
+    return CF.API.normalizeNews(r.data);
   },
+
+  normalizeNews: (data) => ((data && (data.articles || data.news)) || [])
+    .map((n) => Object.assign({}, n, { heading: n.headline || n.heading || "Bears news" })),
 
   getScoreboard: async (dateParam) => {
     // Dated URL when the Games day-picker asks for a specific day.
@@ -62,6 +63,11 @@ CF.API = {
     return r;
   },
 
+  getWeekScoreboard: async () => {
+    const url = CF.API.base() + "/scoreboard?limit=100";
+    return CF.getSource("scoreboard", () => CF.fetchJSON(url), "scoreboard.week", url);
+  },
+
   getSchedule: async () => {
     const url = CF.base() + "/teams/chicago/schedule";
     const r = await CF.getSource("schedule",
@@ -69,25 +75,18 @@ CF.API = {
       [
         CF.API.web("/teams/chicago/schedule"),
         () => CF.fetchJSON(CF.API.cdnBase() + "/teams/chicago/schedule", { timeout: 9000 }),
-        CF.API.tsdbKey() ? () => CF.API.tsdbSchedule() : null,
-      ].filter(Boolean));
+
+      ].filter(Boolean)).catch(async (error) => {
+        if (!CF.API.tsdbKey()) throw error;
+        const data = await CF.API.tsdbSchedule();
+        return { data, source: "live", name: "schedule", provider: "TheSportsDB" };
+      });
     return r;
   },
 
   getStandings: async () => {
-    const r = await CF.getSource("standings",
-      () => CF.fetchJSON(CF.base() + "/standings", { timeout: 9000 }), "standings", null,
-      [CF.API.web("/standings")]);
-    // Preseason / early season: endpoint returns a stub with only
-    // fullViewLink — treat as empty so callers use derived standings.
-    // Drop the stub from localStorage so it can't poison later visits.
-    const d = r && r.data;
-    const stub = d && typeof d === "object" && d.fullViewLink && !d.children && !d.standings && !d.groups;
-    if (stub) {
-      try { localStorage.removeItem("cf.standings"); } catch (e) { /* ignore */ }
-      throw new Error("standings stub");
-    }
-    return r;
+    const url = "https://site.web.api.espn.com/apis/v2/sports/football/nfl/standings";
+    return CF.getSource("standings", () => CF.fetchJSON(url), "standings", url);
   },
 
   getRoster: async () => {
@@ -96,47 +95,25 @@ CF.API = {
       () => CF.fetchJSON(url, { timeout: 9000 }), "roster", url,
       [
         CF.API.web("/teams/chicago/roster"),
-        CF.API.tsdbKey() ? () => CF.API.tsdbRoster() : null,
-      ].filter(Boolean));
+
+      ].filter(Boolean)).catch(async (error) => {
+        if (!CF.API.tsdbKey()) throw error;
+        const data = await CF.API.tsdbRoster();
+        return { data, source: "live", name: "roster", provider: "TheSportsDB" };
+      });
     return r;
   },
 
   /* League-wide injury report. Heavy payload (~9 MB) but it carries the
      full Bears list: status per player + editorial notes on the wire. */
   getLeagueInjuries: async () => {
-    /* League injuries payload is ~9 MB. Give live hosts a short head start,
-       then race a delayed Bears-only same-origin snapshot so the panel
-       never hangs — and if the snap wins, keep live warming the cache. */
-    const ttl = (CF.CONFIG.ttl && CF.CONFIG.ttl.injuries) || 300e3;
-    const cached = CF.cacheGet("injuries");
-    const live = CF.raceJSON([
-      () => CF.fetchJSON(CF.API.base() + "/injuries", { timeout: 8000 }),
-      () => CF.fetchJSON(CF.API.webBase() + "/injuries", { timeout: 8000 }),
-    ]).then((data) => ({ data, source: "live" }));
-    const delayedSnap = (async () => {
-      await new Promise((r) => setTimeout(r, 1600));
-      const s = CF.snapshotGet ? await CF.snapshotGet("injuries-bears") : null;
-      if (!s) throw new Error("no injury snapshot");
-      return { data: s, source: "snapshot" };
-    })();
-    const delayedCache = cached
-      ? (async () => {
-          await new Promise((r) => setTimeout(r, 1200));
-          return { data: cached, source: "cache" };
-        })()
-      : Promise.reject(new Error("no cache"));
-    try {
-      const r = await Promise.any([live, delayedSnap, delayedCache]);
-      if (r.source === "live") CF.cacheSet("injuries", r.data, ttl);
-      else {
-        // Snap/cache painted first — keep live refreshing in the background.
-        live.then((L) => { if (L && L.data) CF.cacheSet("injuries", L.data, ttl); }).catch(function () {});
-      }
-      return { data: r.data, source: r.source, name: "injuries" };
-    } catch (e) {
-      if (cached) return { data: cached, source: "cache", name: "injuries" };
-      throw e;
-    }
+    const url = CF.API.base() + "/injuries";
+    const compact = (data) => ({ timestamp: data?.timestamp, injuries: (data?.injuries || []).filter((team) =>
+      team.displayName === "Chicago Bears" || team.team?.abbreviation === "CHI") });
+    const result = await CF.getSource("injuries", async () => compact(await CF.fetchJSON(url, { timeout: 15000 })), "injuries", url);
+    result.data = compact(result.data);
+    if (result.source === "live") CF.cacheSet("injuries", result.data, CF.CONFIG.ttl.injuries);
+    return result;
   },
 
   getEvent: async (id) => {
@@ -145,7 +122,7 @@ CF.API = {
     const cacheKey = "event." + id;
     const cached = CF.cacheGet(cacheKey);
     try {
-      const data = await CF.fetchVia(CF.base() + "/events/" + id, { timeout: 9000 });
+      const data = await CF.fetchVia(CF.base() + "/summary?event=" + encodeURIComponent(id), { timeout: 9000 });
       CF.cacheSet(cacheKey, data, 3600e3);
       return data;
     } catch (e) {
@@ -154,42 +131,22 @@ CF.API = {
     }
   },
 
-  getOdds: async () => {
-    /* ESPN /odds is a hard 404 (2025+). Harvest book lines from the
-       scoreboard competitions[].odds array instead, then fall back to a
-       same-origin snapshot. Never leave the odds panel on a spinner. */
-    try {
-      const sb = await CF.API.getScoreboard();
-      const games = ((sb.data && sb.data.events) || []).map((e) => {
-        const c = (e.competitions || [])[0] || {};
-        return {
-          id: e.id,
-          name: e.name || "",
-          date: e.date,
-          odds: c.odds || [],
-        };
-      }).filter((g) => g.odds && g.odds.length);
-      if (games.length) {
-        const data = { games };
-        CF.cacheSet("odds", data, (CF.CONFIG.ttl && CF.CONFIG.ttl.scoreboard) || 600e3);
-        return { data, source: sb.source || "live", name: "odds" };
-      }
-    } catch (e) { /* try snapshot */ }
-    try {
-      const snap = CF.snapshotGet ? await CF.snapshotGet("odds") : null;
-      if (snap && (snap.games || []).length) {
-        return { data: snap, source: "snapshot", name: "odds" };
-      }
-    } catch (e2) { /* fall through */ }
-    const cached = CF.cacheGet("odds");
-    if (cached) return { data: cached, source: "cache", name: "odds" };
-    throw new Error("odds unavailable");
+  getOdds: async (date) => {
+    const url=CF.API.base()+"/scoreboard" + (date ? "?dates=" + date.replace(/-/g, "") : "");
+    return CF.getSource("odds",()=>CF.fetchJSON(url),"odds." + (date || "week"),url);
   },
 
   /* ---------- Polymarket (prediction markets) ---------- */
   getPolymarket: async (limit) => {
-    const qs = "limit=" + (limit || 60) + "&active=true&closed=false&tag_slug=nfl";
-    const d = await CF.fetchVia(CF.CONFIG.endpoints.polymarket + "?" + qs, { timeout: 10000 });
+    const base = new URL(CF.CONFIG.endpoints.polymarket).origin;
+    let tag = CF.cacheGet("polymarket.nfl-tag");
+    if (!tag) {
+      tag = await CF.fetchVia(base + "/tags/slug/nfl", { timeout: 10000 });
+      if (!tag || !/^\d+$/.test(String(tag.id))) throw new Error("NFL tag unavailable");
+      CF.cacheSet("polymarket.nfl-tag", tag, 86400e3);
+    }
+    const qs = new URLSearchParams({ limit: String(limit || 100), closed: "false", tag_id: String(tag.id) });
+    const d = await CF.fetchVia(base + "/events/keyset?" + qs, { timeout: 10000 });
     const events = Array.isArray(d) ? d : (d.events || []);
     return events;
   },
@@ -221,7 +178,7 @@ CF.API = {
         link,
         source: srcEl ? srcEl.textContent.trim() : null,
         date: t("pubDate"),
-        desc: t("description"),
+        desc: new DOMParser().parseFromString(t("description") || "", "text/html").body.textContent || "",
       };
     }).filter((it) => it.title && it.link);
     return items;
@@ -263,29 +220,35 @@ CF.API = {
       } catch (e) { return []; }
     })();
     try {
-      items = await Promise.any([
-        live.then((list) => { if (!list.length) throw new Error("empty live"); return list; }),
+      const winner = await Promise.any([
+        live.then((list) => { if (!list.length) throw new Error("empty live"); return { items: list, source: "live" }; }),
         (async () => {
           await new Promise((r) => setTimeout(r, 1400));
           const list = await snapP;
           if (!list.length) throw new Error("empty snap");
-          return list;
+          return { items: list, source: "cache" };
         })(),
       ]);
+      items = winner.items;
+      CF.API.rssSource = winner.source;
     } catch (e) {
       items = [];
     }
-    if (!items.length && cached && cached.length) items = cached.slice(0, max || 12);
-    if (!items.length) throw new Error("empty news feed");
-    CF.cacheSet("gnews." + q, items, 5 * 60e4);
+    if (!items.length) {
+      const cached = CF.cacheGet("gnews." + q);
+      if (cached?.length) { CF.API.rssSource = "cache"; return cached.slice(0, max || 12); }
+      throw new Error("empty news feed");
+    }
+    if (CF.API.rssSource === "live") CF.cacheSet("gnews." + q, items, 30 * 60000);
     return items;
   },
 
   /* ---------- The Odds API (optional, user's own key) ---------- */
   getOddsApi: async (key) => {
-    const qs = "api_key=" + encodeURIComponent(key) + "&region=us&marketType=qlf&dateFormat=iso";
-    const d = await CF.fetchVia("https://api.the-odds-api.com/v4/sports/american_football_nfl/odds?" + qs, { timeout: 10000 });
-    return d || [];
+    // Credential-bearing requests go ONLY to the chosen provider.
+    const qs = new URLSearchParams({apiKey:key, regions:"us", markets:"h2h,spreads,totals", oddsFormat:"american", dateFormat:"iso"});
+    const d = await CF.fetchJSON("https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds?" + qs, {timeout:10000});
+    return Array.isArray(d) ? d : [];
   },
 
   /* ---------- extraction helpers (defensive across ESPN shapes) ---------- */
@@ -293,56 +256,43 @@ CF.API = {
   // Next (or most recent) Bears game from a scoreboard payload.
   bearsGameFromScoreboard: (sb) => {
     const events = (sb && sb.events) || [];
-    if (!events.length) return null;
-    const isBears = (comp) => (comp.competitors || []).some((c) => (c.team || {}).abbreviation === "CHI");
-    const bearsEvents = events.filter((e) => isBears(e.competitions && e.competitions[0]));
-    const e = bearsEvents[0] || events[0];
-    const c = e.competitions[0];
-    const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
-    const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-    return {
-      id: e.id,
-      name: e.name,
-      season: e.season ? e.season.displayName : "",
-      date: e.date,
-      state: e.status && e.status.type ? e.status.type.state : "pre",
-      display: e.status && e.status.type ? (e.status.type.detail || e.status.type.displayType || "") : "",
-      clock: e.status ? (e.status.displayClock || "") : "",
-      home: { abbr: home.team ? home.team.abbreviation : "?", name: home.team ? home.team.displayName : "?", score: CF.API.score(home.score) || "–" },
-      away: { abbr: away.team ? away.team.abbreviation : "?", name: away.team ? away.team.displayName : "?", score: CF.API.score(away.score) || "–" },
-      venue: c.venue ? c.venue.displayName : "",
-      city: c.geolocation ? c.geolocation.city + ", " + c.geolocation.state : "",
-      tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ") || (c.broadcasts[0].shortNames || []).join(" / ")) : "",
-      watch: (c.broadcasts && c.broadcasts[0] && c.broadcasts[0].links && c.broadcasts[0].links.web) ? c.broadcasts[0].links.web.href : null,
-      odds: c.odds || null,
-    };
+    const e = events.find((event) => ((event.competitions || [])[0]?.competitors || [])
+      .some((c) => (c.team || {}).abbreviation === "CHI"));
+    return e ? CF.API.gameFromEvent(e) : null;
   },
 
-  // Next scheduled Bears game from the schedule payload (future only).
+  gameFromEvent: (e) => {
+    if (!e) return null;
+    const c = (e.competitions || [e])[0] || {};
+    const teams = c.competitors || [];
+    const team = (side) => {
+      const x = teams.find((t) => t.homeAway === side) || {};
+      return {abbr:x.team?.abbreviation || "—", name:x.team?.displayName || "To be announced", score:CF.API.score(x.score)};
+    };
+    const status = e.status || c.status || {};
+    const broadcast = (c.broadcasts || [])[0] || {};
+    const venue = c.venue || {};
+    return {id:e.id, name:e.name || "Bears football", season:e.season?.displayName || "",
+      seasonType:e.seasonType?.name || "", week:e.week?.text || (e.week?.number ? "Week " + e.week.number : ""),
+      date:e.date || c.date, timeValid:e.timeValid !== false && c.timeValid !== false,
+      state:status.type?.state || "pre", display:status.type?.shortDetail || status.type?.detail || "Scheduled",
+      clock:status.displayClock || "", home:team("home"), away:team("away"),
+      venue:venue.fullName || venue.displayName || "Venue to be announced",
+      city:venue.address?.city || c.geolocation?.city || "",
+      tv:(broadcast.names || []).join(" / ") || broadcast.media?.shortName || broadcast.media?.name || "",
+      odds:c.odds || null};
+  },
+
   nextBearsGameFromSchedule: (sched) => {
-    const items = (sched && (sched.schedule || sched.events)) || [];
     const now = Date.now();
-    for (const it of items) {
-      const d = new Date(it.date || it.start).getTime();
-      if (isNaN(d) || d < now - 6 * 3600e3) continue;
-      const c = (it.competitions || [it])[0];
-      const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
-      const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-      const bearsHome = !!(home.team && home.team.abbreviation === "CHI");
-      const opp = bearsHome ? away : home;
-      const geo = c.geolocation || (c.venue && c.venue.address) || {};
-      const cityBits = [geo.city, geo.state || geo.stateProvince].filter(Boolean).join(", ");
-      return {
-        id: it.id,
-        date: it.date,
-        season: it.season ? it.season.displayName : (it.seasonType || ""),
-        home: bearsHome,
-        opp: opp.team ? opp.team.displayName : (it.name || "opponent"),
-        oppAbbr: opp.team ? (opp.team.abbreviation || "") : "",
-        tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "",
-        venue: c.venue ? c.venue.displayName : "",
-        city: cityBits || "",
-      };
+    const items = ((sched && (sched.schedule || sched.events)) || []).slice().sort((a,b) => new Date(a.date || a.start) - new Date(b.date || b.start));
+    for (const e of items) {
+      const g = CF.API.gameFromEvent(e);
+      if (!g || ![g.home.abbr,g.away.abbr].includes("CHI")) continue;
+      if (g.state === "post" || !Number.isFinite(Date.parse(g.date)) || Date.parse(g.date) < now - 6 * 3600e3) continue;
+      const home = g.home.abbr === "CHI", opponent = home ? g.away : g.home;
+      return {id:g.id,date:g.date,season:g.season || sched.season?.displayName || "",seasonType:g.seasonType,
+        home,opp:opponent.name,oppAbbr:opponent.abbr,tv:g.tv,venue:g.venue,week:g.week,timeValid:g.timeValid,game:g};
     }
     return null;
   },
@@ -370,27 +320,14 @@ CF.API = {
 
   // Flatten a schedule payload into a simple array.
   scheduleList: (sched) => {
-    const items = (sched && (sched.schedule || sched.events)) || [];
-    return items.map((it) => {
-      const c = (it.competitions || [it])[0];
-      const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
-      const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-      const iAmHome = !!(home.team && home.team.abbreviation === "CHI");
-      const opp = iAmHome ? away : home;
-      return {
-        id: it.id,
-        date: it.date,
-        seasonType: it.seasonType || (it.season && it.season.type) || "",
-        opp: opp.team ? opp.team.displayName : "—",
-        oppAbbr: opp.team ? opp.team.abbreviation : "—",
-        home: iAmHome,
-        scoreMe: iAmHome ? CF.API.score(home.score) : CF.API.score(away.score),
-        scoreOpp: iAmHome ? CF.API.score(away.score) : CF.API.score(home.score),
-        result: it.status && it.status.type ? (it.status.type.detail || it.status.type.shortDetail || "") : "",
-        tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "",
-        venue: c.venue ? c.venue.displayName : "",
-      };
-    });
+    return ((sched && (sched.schedule || sched.events)) || []).map((e) => {
+      const g = CF.API.gameFromEvent(e), home = g.home.abbr === "CHI";
+      const me = home ? g.home : g.away, opp = home ? g.away : g.home;
+      const played = g.state === "post";
+      return {id:g.id,date:g.date,seasonType:g.seasonType,opp:opp.name,oppAbbr:opp.abbr,home,
+        scoreMe:played ? me.score : null,scoreOpp:played ? opp.score : null,
+        state:g.state,completed:played,result:g.display,tv:g.tv,venue:g.venue};
+    }).sort((a,b) => new Date(a.date) - new Date(b.date));
   },
 
   /* Last completed meeting vs an opponent abbr (same season log), if any. */
@@ -475,42 +412,25 @@ CF.API = {
 
   // NFC North (or group containing CHI) from a standings payload.
   divisionTable: (stand) => {
-    const groups = [];
+    const entries = new Map(), north = ["CHI","DET","GB","MIN"];
     const walk = (node) => {
-      if (!node) return;
-      if (node.groups) node.groups.forEach(walk);
-      if (node.standings && node.standings.entries) {
-        groups.push({ name: node.name || "", entries: node.standings.entries });
-      }
-      if (node.children) node.children.forEach(walk);
-      if (node.standings && node.standings.groups) node.standings.groups.forEach(walk);
+      if (!node || typeof node !== "object") return;
+      (node.standings?.entries || node.entries || []).forEach((e) => {
+        if(north.includes(e.team?.abbreviation)) entries.set(e.team.abbreviation,e);
+      });
+      [node.groups,node.children,node.standings?.groups].forEach((nodes) => { if(Array.isArray(nodes)) nodes.forEach(walk); });
     };
     walk(stand);
-    const pick = groups.find((g) => /north/i.test(g.name)) ||
-      groups.find((g) => (g.entries || []).some((e) => {
-        const t = e.team || {};
-        return t.abbreviation === "CHI" || /bears/i.test(t.displayName || "");
-      })) || groups[0];
-    if (!pick) return null;
-    return {
-      name: pick.name || "Division",
-      rows: (pick.entries || []).map((e) => {
-        const st = {};
-        (e.stats || []).forEach((s) => { st[s.name] = s.value; });
-        const t = e.team || {};
-        return {
-          name: t.displayName || t.name || "—",
-          abbr: t.abbreviation || "—",
-          gp: st.gamesPlayed != null ? st.gamesPlayed : st.games,
-          w: st.wins != null ? st.wins : st.win,
-          l: st.losses != null ? st.losses : st.loss,
-          pct: st.pct != null ? st.pct : st.winPct,
-          div: st.divisionRank != null ? st.divisionRank : st.divRank,
-          streak: st.streak || "",
-          isMe: t.abbreviation === "CHI",
-        };
-      }).sort((a, b) => (Number(b.w) - Number(a.w)) || (Number(a.l) - Number(b.l))),
-    };
+    if (!entries.size) return null;
+    const rows = [...entries.values()].map((e) => {
+      const st = {}, display = {};
+      (e.stats || []).forEach((v) => { st[v.name]=v.value;display[v.name]=v.displayValue; });
+      const t=e.team || {}, w=st.wins ?? st.win ?? 0, l=st.losses ?? st.lose ?? 0;
+      return {name:t.displayName || t.name,abbr:t.abbreviation,gp:st.gamesPlayed ?? st.games ?? (w+l+(st.ties || 0)),
+        w,l,pct:st.winPercent ?? st.winPct ?? st.pct ?? 0,div:st.divisionRank ?? st.divRank,
+        streak:display.streak || "—",isMe:t.abbreviation === "CHI"};
+    }).sort((a,b) => (Number(b.pct)-Number(a.pct)) || (Number(a.div ?? 99)-Number(b.div ?? 99)) || north.indexOf(a.abbr)-north.indexOf(b.abbr));
+    return {name:"NFC North",season:stand.season?.displayName || "",rows};
   },
 
   // Roster flattened to players. Handles both ESPN shapes:
@@ -535,6 +455,7 @@ CF.API = {
       const link = (p.links && (p.links[0] && p.links[0].href)) || (p.links && p.links.web ? p.links.web.href : null);
       return {
         id: p.id,
+        headshot: p.headshot?.href || "",
         name: p.displayName || p.name || "—",
         pos: p.position ? (p.position.abbreviation || p.position) : (p.position || "—"),
         jersey: p.jersey || "",
@@ -590,7 +511,7 @@ CF.API = {
         url: a.links && a.links[0] ? a.links[0].href : null,
       });
     });
-    return { rows, notes };
+    return { rows, notes, found: Boolean(bears) };
   },
 
   /* ---------- derived standings (preseason / early season) ----------
@@ -656,9 +577,9 @@ CF.API = {
     const stats = {};
     const add = (abbr, name, d) => {
       if (!abbr) return;
-      const s = (stats[abbr] = stats[abbr] || { name: "", gp: 0, w: 0, l: 0, pf: 0, pa: 0 });
+      const s = (stats[abbr] = stats[abbr] || { name: "", gp: 0, w: 0, l: 0, t: 0, pf: 0, pa: 0 });
       if (name && !s.name) s.name = name;
-      s.gp += d.gp || 0; s.w += d.w || 0; s.l += d.l || 0; s.pf += d.pf || 0; s.pa += d.pa || 0;
+      s.gp += d.gp || 0; s.w += d.w || 0; s.l += d.l || 0; s.t += d.t || 0; s.pf += d.pf || 0; s.pa += d.pa || 0;
     };
     ((sb && sb.events) || []).forEach((e) => {
       const st = (e.status && e.status.type) || {};
@@ -674,19 +595,18 @@ CF.API = {
       add(aa, (away.team || {}).displayName, { gp: 1, pf: Number(as_) || 0, pa: Number(hs) || 0 });
       if (Number(hs) > Number(as_)) { add(ha, null, { w: 1 }); add(aa, null, { l: 1 }); }
       else if (Number(as_) > Number(hs)) { add(aa, null, { w: 1 }); add(ha, null, { l: 1 }); }
+      else { add(aa, null, { t: 1 }); add(ha, null, { t: 1 }); }
     });
     const pick = (abbr) => {
       const s = stats[abbr];
-      return { name: s.name, abbr, gp: s.gp, w: s.w, l: s.l, pct: s.gp ? s.w / s.gp : 0, div: null, streak: "", isMe: abbr === "CHI" };
+      return { name: s.name, abbr, gp: s.gp, w: s.w, l: s.l, pct: s.gp ? (s.w + s.t / 2) / s.gp : 0, div: null, streak: "", isMe: abbr === "CHI" };
     };
     const north = ["CHI", "DET", "GB", "MIN"].filter((a) => stats[a]);
     if (north.length >= 3) {
       const rows = north.map(pick).sort((a, b) => (b.w - a.w) || (a.l - b.l));
       return { name: north.length === 4 ? "NFC North" : "NFC North (partial)", rows };
     }
-    const all = Object.keys(stats).sort((a, b) => (stats[b].gp - stats[a].gp) || (stats[b].pf - stats[a].pf));
-    if (!all.length) return null;
-    return { name: "Most-played teams", rows: all.slice(0, 4).map(pick) };
+    return north.length ? { name: "NFC North (partial)", rows: north.map(pick) } : null;
   },
 
   // Sensible window for derived standings. It must open early enough to
@@ -716,7 +636,21 @@ CF.API = {
      the per-game leaders that stand in for box scores in the preseason.
      Date is resolved from the schedule first, then nearby days. */
   bearsGameEvent: async (id) => {
-    const dates = [];
+    try {
+      const summary = await CF.API.getEvent(id);
+      const event = summary.header;
+      const competition = event?.competitions?.[0];
+      if (competition) return Object.assign({}, event, {
+        name: event.name || [...(competition.competitors || [])]
+          .sort((a, b) => (a.homeAway === "home") - (b.homeAway === "home"))
+          .map((team) => team.team?.displayName || "Team").join(" at "),
+        date: event.date || competition.date,
+        status: event.status || competition.status,
+        competitions: [Object.assign({}, competition, { venue: competition.venue || summary.gameInfo?.venue })],
+        teamLeaders: summary.leaders || [],
+      });
+    } catch (_) { /* A dated scoreboard can still supply the game. */ }
+    let dates = [];
     try {
       const s = await CF.API.getSchedule();
       const items = (s.data && (s.data.schedule || s.data.events)) || [];
@@ -747,7 +681,10 @@ CF.API = {
       if (t.id != null && t.abbreviation) idToAbbr[String(t.id)] = t.abbreviation;
     });
     const rows = [];
-    (c.leaders || []).forEach((cat) => {
+    const categories = event?.teamLeaders?.length
+      ? event.teamLeaders.flatMap((group) => (group.leaders || []).map((cat) => Object.assign({}, cat, { team: group.team })))
+      : (c.leaders || []);
+    categories.forEach((cat) => {
       (cat.leaders || []).forEach((l) => {
         const a = l.athlete || {};
         rows.push({
@@ -758,7 +695,7 @@ CF.API = {
           jersey: a.jersey || "",
           value: l.value != null ? Number(l.value) : null,
           display: l.displayValue || (l.value != null ? String(l.value) : "—"),
-          teamAbbr: idToAbbr[String((l.team || {}).id)] || "",
+          teamAbbr: cat.team?.abbreviation || idToAbbr[String((l.team || cat.team || {}).id)] || "",
           url: a.links && a.links[0] ? a.links[0].href : null,
         });
       });
@@ -774,7 +711,7 @@ CF.API = {
      throw immediately and the ESPN chain carries on alone. The key lives
      only in this browser's localStorage. */
   tsdbKey: () => { try { return (localStorage.getItem("cf.tsdbkey") || "").trim(); } catch (e) { return ""; } },
-  setTSDBKey: (k) => { try { localStorage.setItem("cf.tsdbkey", (k || "").trim()); } catch (e) { /* private mode */ } },
+  setTSDBKey: (k) => { try { localStorage.setItem("cf.tsdbkey", (k || "").trim()); return true; } catch (e) { return false; } },
 
   getTSDB: async (path) => {
     const key = CF.API.tsdbKey();
@@ -787,7 +724,7 @@ CF.API = {
   // Resolves (and remembers) the Bears' team id via name search.
   tsdbTeamId: async () => {
     try { const c = localStorage.getItem("cf.tsdbteam"); if (c) return c; } catch (e) { /* look it up */ }
-    const d = await CF.API.getTSDB("/search_all_teams.php?n=Chicago");
+    const d = await CF.API.getTSDB("/searchteams.php?t=Chicago%20Bears");
     const list = (d && d.teams) || [];
     const bear = list.find((t) => /chicago bears/i.test(t.strTeam || "")) || list.find((t) => /bears/i.test(t.strTeam || ""));
     if (!bear) throw new Error("TheSportsDB: no Chicago Bears in search results");
@@ -798,14 +735,14 @@ CF.API = {
   /* Roster adapter — returns the same shape CF.API.rosterPlayers consumes,
      so the team page renders it with no changes. */
   tsdbRoster: async () => {
-    const id = await CF.API.tsdbTeamId();
-    const d = await CF.API.getTSDB("/lookupteam.php?i=" + id);
-    const t = ((d && d.teams) || [])[0];
-    if (!t) throw new Error("TheSportsDB: no team payload");
-    let names = [];
-    try { names = JSON.parse(t.strTeamLocked || "[]"); } catch (e) { names = []; }
-    if (!names.length) throw new Error("TheSportsDB: empty roster");
-    return [{ group: "Roster", players: names.map((n) => ({ displayName: n })) }];
+    const id=await CF.API.tsdbTeamId();
+    const d=await CF.API.getTSDB("/lookup_all_players.php?id="+encodeURIComponent(id));
+    const players=d?.player || d?.players || [];
+    if(!players.length)throw new Error("TheSportsDB: no player data");
+    return {provider:"TheSportsDB",athletes:[{position:"Roster",items:players.map((p)=>({
+      id:p.idPlayer,displayName:p.strPlayer,jersey:p.strNumber || "",position:{abbreviation:p.strPosition || "—"},
+      displayHeight:p.strHeight || "",displayWeight:p.strWeight || "",birthPlace:{country:p.strNationality || ""}
+    }))}]};
   },
 
   /* Schedule adapter — maps TheSportsDB events onto the ESPN schedule shape
@@ -820,11 +757,12 @@ CF.API = {
       const dateStr = e.dateEvent ? (e.dateEvent + "T" + (e.strTime || "17:30:00")) : null;
       const d0 = dateStr ? new Date(dateStr) : null;
       const preseason = d0 ? (d0.getMonth() < 8) : true; // before September = camp
-      const done = /final/i.test(e.strStatus || "") || e.intHomeScore != null;
+      const done = /^(?:final|ft|aot|match finished)$/i.test(e.strStatus || "");
       const team = (name) => ({ abbreviation: isMe(name) ? "CHI" : "?", displayName: name || "—" });
       return {
         id: e.idEvent,
-        date: dateStr,
+        date: dateStr ? dateStr.replace(/Z$/, "") + "Z" : null,
+        timeValid: Boolean(e.strTime),
         seasonType: preseason ? "pre" : "reg",
         status: { type: { state: done ? "post" : "pre" } },
         competitions: [{
@@ -856,9 +794,9 @@ CF.API = {
      Free tier: 100 requests/day. The key never leaves this browser
      (localStorage, set on the About page). When present, the stats and
      injuries panels prefer this feed; when absent or unreachable they
-     fall back to the ESPN-derived numbers. NFL = league 39. */
+     fall back to the ESPN-derived numbers. NFL = league 1. */
   apisportsKey: () => { try { return localStorage.getItem("cf.apisportskey") || ""; } catch (e) { return ""; } },
-  setAPISportsKey: (k) => { try { localStorage.setItem("cf.apisportskey", (k || "").trim()); } catch (e) { /* private mode */ } },
+  setAPISportsKey: (k) => { try { localStorage.setItem("cf.apisportskey", (k || "").trim()); return true; } catch (e) { return false; } },
 
   // NFL season year for API-Sports (Aug–Dec → that year, Jan–Jul → prior).
   nflSeasonYear: () => {
@@ -871,109 +809,70 @@ CF.API = {
     if (!key) return null;
     const url = CF.CONFIG.endpoints.apisports + path;
     const r = await CF.fetchJSON(url, { timeout: 10000, headers: { "x-apisports-key": key, Accept: "application/json" } });
-    return (r && r.response) || [];
+    if (r?.errors && Object.keys(r.errors).length) throw new Error("API-Sports: request unavailable for this key or plan");
+    return Array.isArray(r?.response) ? r.response : [];
   },
 
-  apisportsStandings: async () => {
-    const d = await CF.API.getAPISports("/standings?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
-    if (!d) return null;
-    const rows = (d || []).map((r) => ({
-      name: (r.team || {}).name, abbr: (r.team || {}).abbreviation,
-      gp: r.played != null ? r.played : null, w: r.win != null ? r.win : null, l: r.lose != null ? r.lose : null,
-      pct: (r.played && r.played > 0) ? (r.win || 0) / r.played : 0,
-      div: r.rank || null, streak: "",
-      isMe: (r.team || {}).abbreviation === "CHI",
-    }));
-    if (!rows.length) return null;
-    return { name: (d[0] && d[0].group ? String(d[0].group) : "Division") + " (API-Sports)", rows: rows.sort((a, b) => (b.w - a.w) || (a.l - b.l)) };
+  apisportsTeamId: async () => {
+    if (CF.API._apisportsTeam) return CF.API._apisportsTeam;
+    const teams = await CF.API.getAPISports("/teams?search=Chicago");
+    const match = (teams || []).find((row) => /chicago bears/i.test((row.team || row).name || ""));
+    const id = (match?.team || match)?.id;
+    if (!id) throw new Error("API-Sports: Bears team unavailable");
+    CF.API._apisportsTeam = id;
+    return id;
   },
 
   apisportsPlayerStats: async () => {
-    const d = await CF.API.getAPISports("/players/statistics?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
-    if (!d) return null;
-    const byPlayer = {};
-    (d || []).forEach((row) => {
-      const p = row.player || {};
-      const key = p.id != null ? "id" + p.id : (p.name || Math.random());
-      const rec = (byPlayer[key] = byPlayer[key] || { name: p.name || "—", pos: p.position || "", stats: {} });
-      (row.statistics || []).forEach((s) => {
-        const v = Number(s.value);
-        if (!isNaN(v) && v > 0 && (!rec.stats[s.name] || v > rec.stats[s.name])) rec.stats[s.name] = v;
-      });
-    });
-    const players = Object.values(byPlayer);
-    const colScore = {};
-    players.forEach((p) => Object.keys(p.stats).forEach((k) => { colScore[k] = (colScore[k] || 0) + 1; }));
-    const cols = Object.keys(colScore).sort((a, b) => colScore[b] - colScore[a]).slice(0, 5);
-    if (!cols.length) return null;
-    const top = [...players].sort((a, b) => ((b.stats[cols[0]] || 0) - (a.stats[cols[0]] || 0))).slice(0, 15);
-    return { cols, top };
+    const id = await CF.API.apisportsTeamId();
+    const data = await CF.API.getAPISports("/players/statistics?team=" + encodeURIComponent(id) + "&season=" + CF.API.nflSeasonYear());
+    const players = [];
+    for (const row of data || []) {
+      const player = row.player || {};
+      const stats = {};
+      const collect = (node, prefix = "") => {
+        if (Array.isArray(node)) { node.forEach((item) => collect(item, prefix)); return; }
+        if (!node || typeof node !== "object") return;
+        if (node.name && node.value != null && Number.isFinite(Number(node.value))) {
+          stats[(prefix ? prefix + " " : "") + node.name] = Number(node.value);
+        }
+        if (node.statistics) collect(node.statistics, node.group || node.name || prefix);
+        if (node.groups) collect(node.groups, prefix);
+      };
+      if (Array.isArray(row.teams)) row.teams.filter((team) => String((team.team || team).id) === String(id)).forEach((team) => collect(team));
+      else collect(row);
+      if (Object.keys(stats).length) players.push({ name: player.name || row.name || "Bears player", pos: player.position || "", stats });
+    }
+    if (!players.length) return null;
+    const cols = [...new Set(players.flatMap((p) => Object.keys(p.stats)))].slice(0, 5);
+    return { cols, top: players.sort((a,b) => (b.stats[cols[0]] || 0) - (a.stats[cols[0]] || 0)).slice(0, 15) };
   },
 
   apisportsInjuries: async () => {
-    const d = await CF.API.getAPISports("/injuries?league=" + CF.CONFIG.endpoints.apisportsLeague + "&season=" + CF.API.nflSeasonYear());
-    if (!d) return null;
-    return (d || [])
-      .filter((r) => (r.team || {}).abbreviation === "CHI")
-      .map((r) => ({
-        name: (r.player || {}).name,
-        pos: (r.player || {}).position || "",
-        status: r.status || (r.injured ? "Injured" : "Out"),
-        date: r.injured || "",
-        comment: r.description || "",
-        url: null,
-      }));
+    const id = await CF.API.apisportsTeamId();
+    const data = await CF.API.getAPISports("/injuries?team=" + encodeURIComponent(id));
+    return (data || []).map((row) => ({ name: row.player?.name || "Bears player", pos: row.player?.position || "",
+      status: row.status || "Listed", date: row.date || "", comment: row.description || "", url: null }));
   },
 
   // Odds for a single game from the ESPN /odds payload.
-  oddsForGame: (oddsPayload, gameId) => {
-    const games = (oddsPayload && (oddsPayload.games || oddsPayload)) || [];
-    const list = Array.isArray(games) ? games : [];
-    const g = list.find((x) => String(x.id) === String(gameId)) ||
-      list.find((x) => /bears/i.test(x.name || "")) ||
-      list[0];
-    if (!g) return null;
-    const arr = Array.isArray(g.odds) ? g.odds : (g.odds ? [g.odds] : []);
-    const closeLine = (side) => {
-      if (!side) return null;
-      const c = side.close || side.open || side;
-      if (c == null) return null;
-      if (typeof c !== "object") return c;
-      return c.line != null ? c.line : (c.odds != null ? c.odds : null);
-    };
-    const lines = arr.map((o) => {
-      const book = o.provider ? (o.provider.name || o.provider.displayName || "Book") : "Book";
-      let spread = null;
-      if (o.pointSpread && (o.pointSpread.home || o.pointSpread.away)) {
-        spread = { home: closeLine(o.pointSpread.home), away: closeLine(o.pointSpread.away) };
-      } else if (o.spread && typeof o.spread === "object") {
-        spread = o.spread;
-      } else if (typeof o.spread === "number" || (typeof o.spread === "string" && o.spread !== "" && !isNaN(Number(o.spread)))) {
-        const n = Number(o.spread);
-        spread = { home: n, away: -n };
-      }
-      let total = null;
-      if (o.overUnder != null) total = o.overUnder;
-      else if (o.total && o.total.over) total = closeLine(o.total.over);
-      else if (o.total != null && typeof o.total !== "object") total = o.total;
-      let ml = null;
-      if (o.moneyline && (o.moneyline.home || o.moneyline.away)) {
-        ml = { home: closeLine(o.moneyline.home), away: closeLine(o.moneyline.away) };
-      } else if (o.moneyLine && (o.moneyLine.home || o.moneyLine.away)) {
-        ml = { home: closeLine(o.moneyLine.home), away: closeLine(o.moneyLine.away) };
-      }
-      if (spread && spread.home == null && spread.away == null) spread = null;
-      if (ml && ml.home == null && ml.away == null) ml = null;
-      const url = (o.link && (o.link.web || o.link.href)) || (o.links && o.links.web && o.links.web.href) || null;
-      return { book: book, spread: spread, total: total, ml: ml, url: url };
-    }).filter((l) => l.spread || l.total != null || l.ml);
-    if (!lines.length) return null;
-    return { id: g.id, name: g.name || "", date: g.date, lines: lines };
+  oddsForGame: (payload,gameId) => {
+    const list=Array.isArray(payload) ? payload : (payload?.events || payload?.games || []);
+    const g=list.find((e)=>String(e.id)===String(gameId));
+    if(!g)return null;
+    const odds=g.competitions?.[0]?.odds || g.odds || [];
+    return {id:g.id,name:g.name,date:g.date,lines:(Array.isArray(odds) ? odds : [odds]).map((o)=>{
+      const point=o.pointSpread,ml=o.moneyline || o.moneyLine;
+      const value=(v)=>v && typeof v === "object" ? (v.close?.odds ?? v.odds ?? null) : (v ?? null);
+      return {book:o.provider?.name || "Book",spread:point ? {home:point.home?.close?.line,away:point.away?.close?.line} : (typeof o.spread === "object" ? o.spread : null),
+        total:o.overUnder ?? (typeof o.total === "number" ? o.total : null),
+        ml:ml ? {home:value(ml.home),away:value(ml.away)} : null,url:null};
+    }).filter((l)=>l.spread || l.total != null || l.ml)};
   },
 
   // Bears-relevant Polymarket events.
   polymarketBears: (events) => {
-    const hit = (s) => /bears|chicago/i.test(s || "");
+    const hit = (s) => /\bbears\b/i.test(s || "");
     return (events || []).filter((ev) =>
       hit(ev.title) || hit(ev.slug) ||
       (ev.markets || []).some((m) => hit(m.question))
@@ -981,21 +880,21 @@ CF.API = {
       title: ev.title,
       slug: ev.slug,
       url: "https://polymarket.com/event/" + (ev.slug || ev.id),
-      markets: (ev.markets || []).map((m) => {
-        let outcomes = [], prices = [];
-        try { outcomes = JSON.parse(m.outcomes || "[]"); } catch (e) { outcomes = (m.outcomes || "").split(","); }
-        try { prices = JSON.parse(m.outcomePrices || "[]").map(Number); } catch (e) { prices = (m.outcomePrices || "").split(",").map(Number); }
-        const yes = prices[0] != null ? prices[0] : null;
-        const no = prices[1] != null ? prices[1] : (yes != null ? Math.max(0, 1 - yes) : null);
+      markets: (ev.markets || []).filter((m) => m.closed !== true && m.active !== false &&
+        (hit(ev.title) || hit(ev.slug) || hit(m.question) || hit(m.groupItemTitle))).map((m) => {
+        const arr=(v)=>{if(Array.isArray(v))return v;try{const d=JSON.parse(v || "[]");return Array.isArray(d) ? d : [];}catch(e){return [];}};
+        const outcomes=arr(m.outcomes),prices=arr(m.outcomePrices).map((v)=>v == null || v === "" ? null : Number(v));
+        const valid=(n)=>Number.isFinite(n) && n>=0 && n<=1 ? n : null;
+        const yes=valid(prices[0]),no=valid(prices[1]);
         return {
           question: m.question || m.groupItemTitle || ev.title,
-          yes, no,
+          yes, no, yesLabel:outcomes[0] || "Yes",noLabel:outcomes[1] || "No",
           volume: m.volume != null ? Number(m.volume) : (m.volumeNum != null ? Number(m.volumeNum) : null),
           endDate: m.endDate,
-          url: m.slug ? "https://polymarket.com/market/" + m.slug : ("https://polymarket.com/event/" + ev.slug),
+          url: "https://polymarket.com/event/" + (ev.slug || ev.id),
         };
       }),
-    }));
+    })).filter((ev) => ev.markets.length);
   },
 };
 

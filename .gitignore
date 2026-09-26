@@ -11,3 +11,6 @@ desktop.ini
 # Local junk
 *.log
 resp.json
+
+node_modules/
+coverage/

@@ -2,7 +2,7 @@
 "use strict";
 
 (function () {
-  const INJURY_RE = /\b(injur|out\b|questionable|doubtful|day-to-day|ripgate|concussion|fracture|sprain|torn|surgery|sideline|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
+  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
 
   function statusCls(s) {
     const x = (s || "").toLowerCase();
@@ -32,7 +32,7 @@
      editorial notes) → roster flags → community JSON. */
   function reportRow(row, eta) {
     return "<tr><td class=\"strong\">" + CF.esc(row.name) +
-      (row.url ? ' <a href="' + CF.esc(row.url) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
+      (row.url ? ' <a href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
       "</td>" +
       "<td>" + CF.esc(row.pos || "—") + "</td>" +
       "<td>" + CF.esc(row.comment || row.injury || "—") + "</td>" +
@@ -67,9 +67,15 @@
       const r = await CF.API.getLeagueInjuries();
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active");
+      if (x.found && !rows.length) {
+        pill.textContent = CF.sourceLabel(r) + " · league report";
+        note.textContent = "Check the official pregame report for final availability.";
+        body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
+        return;
+      }
       if (rows.length) {
         pill.className = "pill ok";
-        pill.textContent = "live · league report";
+        pill.textContent = CF.sourceLabel(r) + " · League report";
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         await paintMovement(rows);
@@ -83,7 +89,7 @@
       const rows = CF.API.rosterInjuryRows(r2.data);
       if (rows.length) {
         pill.className = "pill ok";
-        pill.textContent = "live · roster report";
+        pill.textContent = CF.sourceLabel(r2) + " · Roster flags";
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         await paintMovement(rows);
@@ -106,12 +112,7 @@
             '<td><span class="st ' + CF.esc(row.statusCls || statusCls(row.status)) + '">' + CF.esc(row.status || "—") + "</span></td>" +
             "<td class=\"dim\">" + CF.esc(row.eta || "") + "</td></tr>"
           ).join("")
-        : '<tr><td colspan="5">' + CF.emptyHTML({
-            icon: "🩹",
-            title: "Report is empty",
-            sub: "Either everyone is healthy (suspicious) or the table is waiting for its first update. The wire on the right has the live picture.",
-          }) + "</td></tr>";
-      await paintMovement(rows);
+        : '<tr><td colspan="5" class="dim">No verified report is available. Check the official Bears injury report for current availability.</td></tr>';
     } catch (e3) {
       pill.className = "pill sample";
       body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({
@@ -157,7 +158,7 @@
         if (INJURY_RE.test(n.heading || "") || INJURY_RE.test(n.description || "")) {
           const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
           parts.push('<div class="news-item" style="grid-template-columns:1fr;padding:12px 14px">' +
-            '<a class="headline" style="font-size:13.5px" href="' + CF.esc(href) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "") + "</a>" +
+            '<a class="headline" style="font-size:13.5px" href="' + CF.esc(CF.safeURL(href)) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "") + "</a>" +
             '<div class="meta"><span>' + CF.timeAgo(n.published) + "</span></div></div>");
         }
       });
@@ -169,7 +170,7 @@
       items.forEach((it) => {
         if (INJURY_RE.test(it.title || "") || INJURY_RE.test(it.desc || "")) {
           parts.push('<div class="news-item" style="grid-template-columns:1fr;padding:12px 14px">' +
-            '<a class="headline" style="font-size:13.5px" href="' + CF.esc(it.link) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+            '<a class="headline" style="font-size:13.5px" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
             '<div class="meta"><span>' + CF.esc(it.source || "wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div></div>");
         }
       });
@@ -179,13 +180,7 @@
       box.innerHTML = parts.slice(0, 12).join("");
       return;
     }
-    box.innerHTML = CF.emptyHTML({
-      icon: "🩹",
-      title: "Quiet on the injury wire",
-      sub: "The wires are answering, but nothing on them mentions a body part right now.",
-      action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a>',
-      style: "padding:18px 14px",
-    });
+    box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">No injury headlines are available from the connected feeds right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';
   }
 
   document.addEventListener("DOMContentLoaded", () => {

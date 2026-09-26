@@ -18,17 +18,20 @@
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
       const played = rows.filter((g) => g.scoreMe != null);
-      let pf = 0, pa = 0, counted = 0, W = 0;
+      let pf = 0, pa = 0, counted = 0, W = 0, T = 0;
       played.forEach((g) => {
         const a = parseInt(g.scoreMe, 10), b = parseInt(g.scoreOpp, 10);
-        if (!isNaN(a) && !isNaN(b)) { pf += a; pa += b; counted++; if (a > b) W++; }
+        if (!isNaN(a) && !isNaN(b)) { pf += a; pa += b; counted++; if (a > b) W++; else if(a === b) T++; }
       });
-      const L = counted - W;
+      const L = counted - W - T;
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
       pill.textContent = r.source === "live" ? "live" : "snapshot";
-      if (!counted) throw new Error("no games yet");
+      if (!counted) {
+        pill.textContent = "Season not started";
+        tiles.innerHTML=tile("0–0", "Record")+tile("—","Points / game")+tile("—","Allowed / game")+tile("—","Differential");return;
+      }
       tiles.innerHTML =
-        tile(W + "–" + L, "Record (W–L)") +
+        tile(W + "–" + L + (T ? "–" + T : ""), T ? "Record (W–L–T)" : "Record (W–L)") +
         tile((pf / counted).toFixed(1), "Points / game") +
         tile((pa / counted).toFixed(1), "Allowed / game") +
         tile((pf - pa > 0 ? "+" : "") + (pf - pa), "Differential");
@@ -45,7 +48,7 @@
      2) otherwise the league wire's per-game leaders across every
         completed Bears game — "camp leaders" while the season is young. */
   function leaderCell(l) {
-    const name = l.url ? '<a href="' + CF.esc(l.url) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
+    const name = l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
     return name + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span>";
   }
 
@@ -93,6 +96,7 @@
           const ev = await CF.API.bearsGameEvent(g.id);
           gamesUsed++;
           CF.API.eventLeaders(ev).forEach((l) => {
+            if(l.teamAbbr !== "CHI") return;
             if (!best[l.category] || (l.value || 0) > (best[l.category].value || 0)) {
               best[l.category] = Object.assign({}, l, { when: CF.fmtDate(g.date) });
             }
@@ -102,7 +106,7 @@
       const rowsOut = Object.values(best);
       if (!rowsOut.length) throw new Error("no leaders");
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · camp leaders · " + gamesUsed + " game" + (gamesUsed === 1 ? "" : "s");
+      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · recent game leaders · " + gamesUsed + " game" + (gamesUsed === 1 ? "" : "s");
       box.innerHTML =
         '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th><th>When</th></tr></thead><tbody>' +
         rowsOut.map((l) =>
@@ -169,8 +173,8 @@
         '<span class="pill final">' + CF.esc(st.shortDetail || st.detail || "final") + "</span>" +
         '<span style="font-size:14.5px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
         " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
-        ' <span class="dim">(' + CF.esc((c.venue && c.venue.displayName) || "Soldier Field") + ", " + CF.fmtDate(ev.date) + ")</span></span>" +
-        (me != null && opp != null ? '<span class="st ' + (Number(me) > Number(opp) ? "active" : "out") + '">' + (Number(me) > Number(opp) ? "W" : "L") + " " + CF.esc(me) + "–" + CF.esc(opp) + " (CHI)</span>" : "") +
+        ' <span class="dim">(' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "Soldier Field") + ", " + CF.fmtDate(ev.date) + ")</span></span>" +
+        (me != null && opp != null ? '<span class="st ' + (Number(me) > Number(opp) ? "active" : "out") + '">' + (Number(me) > Number(opp) ? "W" : Number(me) < Number(opp) ? "L" : "T") + " " + CF.esc(me) + "–" + CF.esc(opp) + " (CHI)</span>" : "") +
         "</div>" +
         (leaders.length
           ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +

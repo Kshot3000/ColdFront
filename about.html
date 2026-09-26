@@ -12,7 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/main.css?v=1.12.0">
+  <link rel="stylesheet" href="css/experience.css?v=1.12.0">
 </head>
 <body>
 <canvas id="snow" aria-hidden="true"></canvas>
@@ -190,13 +191,13 @@
       <span class="rule"></span>
     </div>
     <p class="dim" style="max-width:640px;font-size:14px;margin-bottom:16px">
-      Everything above is keyless and works out of the box. For deeper stats, structured injury ETAs, or a fully independent second wire, drop a free key into a box below. It lives in this browser's local storage only — it's never written to the site or shared, and it's sent only to that provider.
+      Everything above is keyless and works out of the box. For deeper stats, available injury reports, or a fully independent second wire, drop a free key into a box below. It lives in this browser's local storage only — it's never written to the site or shared, and it's sent only to that provider.
     </p>
     <div class="grid grid-3">
       <div class="card pad-lg">
         <div class="eyebrow">API-Sports · free tier</div>
-        <h3 style="font-size:20px">Season stats + injury ETAs</h3>
-        <p class="dim" style="font-size:13.5px;margin-top:8px">When a key is set, the <a href="stats.html">stats</a> and <a href="injuries.html">injury</a> panels switch to full-season player stats and structured injury rows with return ETAs. 100 requests/day free.</p>
+        <h3 style="font-size:20px">Extra stats + injury reports</h3>
+        <p class="dim" style="font-size:13.5px;margin-top:8px">When a key is set, the <a href="stats.html">stats</a> and <a href="injuries.html">injury</a> panels switch to full-season player stats and available injury reports; coverage depends on the provider. Usage and coverage depend on your plan.</p>
         <div class="key-box" style="margin-top:14px">
           <input id="apisports-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API-Sports key…" aria-label="API-Sports key">
           <button class="btn small" id="apisports-save" type="button">Save key</button>
@@ -208,7 +209,7 @@
       <div class="card pad-lg">
         <div class="eyebrow">Odds API · free tier</div>
         <h3 style="font-size:20px">Full Vegas board</h3>
-        <p class="dim" style="font-size:13.5px;margin-top:8px">The <a href="odds.html">odds page</a> already asks for a key right where it's used (500 requests/month free). It stays in this browser, same as everything else — no need to set it here.</p>
+        <p class="dim" style="font-size:13.5px;margin-top:8px">The <a href="odds.html">odds page</a> already asks for a key right where it's used (subject to your plan). It stays in this browser, same as everything else — no need to set it here.</p>
         <div class="dim" style="font-size:12.5px;margin-top:14px;line-height:1.5">
           <b>Enterprise feeds</b> — Sportradar, Opta/Stats Perform, LSports, SportsDataIO — are real-time, low-latency feeds priced for production. They're documented as BYO-key options in the <a href="https://github.com/Kshot3000/ColdFront/blob/main/README.md" target="_blank" rel="noopener">README</a> rather than hard-wired into a static fan site.
         </div>
@@ -228,7 +229,7 @@
     </div>
 
     <div class="callout info" style="margin-top:30px">
-      <b>Colophon:</b> hand-rolled HTML/CSS/JS, no build step, no tracker, no cookie. Fonts from Google (with system fallbacks), snow from a 70-flake canvas, weather from Open-Meteo, football from the league wire, and the market from Polymarket. Source is on GitHub — fork it, fix it, tell the Bears.
+      <b>Colophon:</b> hand-rolled HTML/CSS/JS, no build step, no tracker, no cookie. Fonts from Google (with system fallbacks), layered snowfall with a pause control, weather from Open-Meteo, football from the league wire, and the market from Polymarket. Source is on GitHub — fork it, fix it, tell the Bears.
     </div>
   </div>
 </main>
@@ -278,8 +279,9 @@
   </div>
 </footer>
 
-<script src="js/common.js"></script>
-<script src="js/api.js"></script>
-<script src="js/about.js"></script>
+<script src="js/common.js?v=1.12.0"></script>
+<script src="js/snow.js?v=1.12.0"></script>
+<script src="js/api.js?v=1.12.0"></script>
+<script src="js/about.js?v=1.12.0"></script>
 </body>
 </html>
