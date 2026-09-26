@@ -71,7 +71,7 @@
   function dataSources() {
     const input = CF.$("#apisports-key");
     const state = CF.$("#apisports-state");
-    if (!input || !state) return;
+    if (!input || !state || !CF.API) return;
     const showState = () => {
       const key = CF.API.apisportsKey();
       if (key) {
@@ -102,7 +102,7 @@
   function tsdbKeys() {
     const input = CF.$("#tsdb-key");
     const state = CF.$("#tsdb-state");
-    if (!input || !state) return;
+    if (!input || !state || !CF.API) return;
     const showState = () => {
       const key = CF.API.tsdbKey();
       if (key) {

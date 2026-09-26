@@ -7,3 +7,9 @@ Chicago photography (free licenses):
 Bears/team art: original Cold Front SVGs (paw-mark.svg, football-silhouette.svg, jersey-54.svg) — not NFL trademarks.
 
 Mobile -sm.webp variants: same sources, resized (~720px wide) for lighter city-tile <picture> srcset on narrow viewports.
+
+Wired in v1.6.0: chicago-grant-park-night.webp + chicago-river-skyline-night.webp as cinematic photo-band backgrounds on Team / Practice / Home (already attributed Wikimedia sources above).
+
+Wikimedia Commons (v1.6.0):
+- File:Chicago_Lakefront_Night_Skyline.jpg (CC BY-SA 3.0) → chicago-lakefront-night.webp
+- File:Chicago_from_North_Avenue_Beach_June_2015_panorama_2.jpg (CC BY-SA 3.0) → chicago-north-ave-skyline.webp

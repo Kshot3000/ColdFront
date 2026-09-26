@@ -149,6 +149,7 @@
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="4" class="dim">Standings unavailable — check back when the feed answers. NFC North will refill from the live table or completed games.</td></tr>';
+      paintRaceBars([], CF.$("#div-race"));
       return;
     }
     pill.className = "pill ok";
@@ -161,6 +162,29 @@
       '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
       "</tr>"
     ).join("");
+    paintRaceBars(div.rows, CF.$("#div-race"));
+  }
+
+  /* Win-bar race from the same standings rows — no invented numbers. */
+  function paintRaceBars(rows, root) {
+    if (!root) return;
+    if (!rows || !rows.length) {
+      root.innerHTML = "";
+      root.hidden = true;
+      return;
+    }
+    const maxW = Math.max(1, ...rows.map((r) => Number(r.w) || 0));
+    root.hidden = false;
+    root.innerHTML = '<div class="race-caption">Division race · wins</div>' +
+      rows.map((row) => {
+        const w = Number(row.w) || 0;
+        const pct = Math.round((w / maxW) * 100);
+        return '<div class="race-row' + (row.isMe ? " me" : "") + '" title="' + CF.esc(row.abbr + " " + w + "-" + (row.l != null ? row.l : "—")) + '">' +
+          '<span class="race-abbr">' + CF.esc(row.abbr) + "</span>" +
+          '<span class="race-track"><span class="race-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="race-wl">' + CF.esc(String(w)) + "-" + CF.esc(row.l != null ? String(row.l) : "—") + "</span>" +
+          "</div>";
+      }).join("");
   }
 
   /* ---------- news (top 4) ---------- */
@@ -257,6 +281,101 @@
   }
 
 
+
+  /* ---------- odds / Polymarket pulse (compact, near week clock) ---------- */
+  function formatLineBits(line) {
+    if (!line || !line.lines || !line.lines.length) return null;
+    const l = line.lines[0];
+    const bits = [];
+    if (l.spread) {
+      const h = (typeof l.spread === "object") ? (l.spread.home != null ? l.spread.home : l.spread.away) : l.spread;
+      if (h != null) bits.push({ k: "Spread", v: String(h) });
+    }
+    if (l.total != null) bits.push({ k: "O/U", v: String(l.total) });
+    if (l.ml) {
+      const m = (typeof l.ml === "object") ? (l.ml.home != null ? l.ml.home : l.ml.away) : l.ml;
+      if (m != null) bits.push({ k: "ML", v: String(m) });
+    }
+    return bits.length ? { book: l.book || "Wire", bits } : null;
+  }
+
+  async function loadOddsPulse() {
+    const root = CF.$("#odds-pulse");
+    const pill = CF.$("#odds-pulse-pill");
+    if (!root) return;
+    let gameLabel = "";
+    let gameId = null;
+    try {
+      const sc = await CF.API.getSchedule();
+      const ng = CF.API.nextBearsGameFromSchedule(sc.data);
+      if (ng) {
+        gameId = ng.id;
+        gameLabel = (ng.home ? "vs " : "@ ") + (ng.oppAbbr || ng.opp) + " · " + CF.fmtDate(ng.date);
+      }
+    } catch (e) { /* schedule quiet */ }
+
+    let wireHTML = "";
+    let wireOk = false;
+    try {
+      const r = await CF.API.getOdds();
+      const line = CF.API.oddsForGame(r.data, gameId);
+      const fmt = formatLineBits(line);
+      if (fmt) {
+        wireOk = true;
+        wireHTML =
+          '<div class="pulse-block">' +
+          '<div class="pulse-label">Wire line' + (gameLabel ? ' · ' + CF.esc(gameLabel) : "") + "</div>" +
+          '<div class="pulse-chips">' +
+          fmt.bits.map((b) => '<span class="pulse-chip"><span class="k">' + CF.esc(b.k) + '</span><b>' + CF.esc(b.v) + "</b></span>").join("") +
+          "</div>" +
+          '<div class="pulse-sub">' + CF.esc(fmt.book) + ' · <a href="odds.html">full board →</a></div>' +
+          "</div>";
+      }
+    } catch (e) { /* odds quiet */ }
+
+    let polyHTML = "";
+    let polyOk = false;
+    try {
+      const events = await CF.API.getPolymarket(80);
+      const bears = CF.API.polymarketBears(events);
+      let top = null;
+      for (const ev of bears) {
+        for (const m of (ev.markets || [])) {
+          if (m.yes != null) { top = m; break; }
+        }
+        if (top) break;
+      }
+      if (top) {
+        polyOk = true;
+        const yes = Math.round(top.yes * 100);
+        polyHTML =
+          '<div class="pulse-block">' +
+          '<div class="pulse-label">Polymarket pulse</div>' +
+          '<div class="pulse-q">' + CF.esc(top.question) + "</div>" +
+          '<div class="pulse-chips">' +
+          '<span class="pulse-chip yes"><span class="k">YES</span><b>' + yes + "¢</b></span>" +
+          (top.no != null ? '<span class="pulse-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>" : "") +
+          "</div>" +
+          '<div class="pulse-sub"><a href="' + CF.esc(top.url) + '" target="_blank" rel="noopener">market ↗</a> · <a href="odds.html">more →</a></div>' +
+          "</div>";
+      }
+    } catch (e2) { /* poly quiet */ }
+
+    if (!wireOk && !polyOk) {
+      if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
+      root.innerHTML =
+        '<div class="pulse-empty dim">No live line or Bears market right now' +
+        (gameLabel ? " (next: " + CF.esc(gameLabel) + ")" : "") +
+        '. <a href="odds.html">Odds board →</a></div>';
+      return;
+    }
+    if (pill) {
+      pill.textContent = (wireOk && polyOk) ? "wire + poly" : (wireOk ? "wire" : "polymarket");
+      pill.className = "tag";
+    }
+    root.innerHTML = wireHTML + polyHTML;
+  }
+
   /* ---------- week clock (practice → media → gameday → film) ---------- */
   function weekPhaseFromGame(game, schedGame) {
     const g = (game && (game.home || game.away) && (game.home.abbr === "CHI" || game.away.abbr === "CHI"))
@@ -339,11 +458,13 @@
     loadNews();
     loadInjuries();
     loadWeekClock();
+    loadOddsPulse();
     // Keep the home page moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(loadNextGame, 30e3);              // next game + live clock: 30 s
     CF.refresh.register(loadStandings, 60e3);            // NFC North: 60 s
     CF.refresh.register(loadNews, 60e3);                 // headlines: 60 s
     CF.refresh.register(loadInjuries, 5 * 60e3, { name: "injuries" }); // local report (repo JSON): 5 min
     CF.refresh.register(loadWeekClock, 60e3, { name: "week-clock" });
+    CF.refresh.register(loadOddsPulse, 60e3, { name: "odds-pulse" });
   });
 })();

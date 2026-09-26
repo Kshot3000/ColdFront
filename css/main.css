@@ -2083,3 +2083,290 @@ body:not(.prefers-reduced-motion) #snow {
     background-image: url("../img/chicago-buckingham-fountain-sm.webp");
   }
 }
+
+/* ============================================================
+   v1.6.0 — odds pulse · next opponent · division race · visual craft
+   ============================================================ */
+
+/* Division race bars (real W-L from standings only) */
+.race-bars {
+  margin: 14px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(180deg, rgba(8,18,34,0.55), rgba(4,10,20,0.35));
+}
+.race-caption {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-bottom: 2px;
+}
+.race-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 48px;
+  gap: 10px;
+  align-items: center;
+}
+.race-abbr {
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ice);
+}
+.race-row.me .race-abbr { color: var(--orange-hot); }
+.race-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(92, 122, 153, 0.22);
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.35);
+}
+.race-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(92,122,153,0.55), rgba(200,56,3,0.85));
+  box-shadow: 0 0 12px rgba(232, 84, 30, 0.35);
+  min-width: 4px;
+  transition: width 0.45s var(--ease-out);
+}
+.race-row.me .race-fill {
+  background: linear-gradient(90deg, rgba(232,84,30,0.55), rgba(255,140,66,0.95));
+}
+.race-wl {
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  color: var(--snow);
+  text-align: right;
+}
+
+/* Home odds / Polymarket pulse */
+.odds-pulse {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+@media (max-width: 720px) {
+  .odds-pulse { grid-template-columns: 1fr; }
+}
+.pulse-block {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(165deg, rgba(255,255,255,0.04) 0%, transparent 42%),
+    var(--glass);
+  padding: 14px 16px;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.pulse-label {
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange-hot);
+  margin-bottom: 8px;
+}
+.pulse-q {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--snow);
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+.pulse-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pulse-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line-2);
+  background: rgba(11, 22, 38, 0.5);
+  font-size: 13px;
+  color: var(--snow);
+}
+.pulse-chip .k {
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.pulse-chip.yes { border-color: rgba(76, 175, 125, 0.55); }
+.pulse-chip.yes b { color: #b9e3c6; }
+.pulse-chip.no { border-color: rgba(232, 84, 30, 0.55); }
+.pulse-chip.no b { color: #ffb49a; }
+.pulse-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pulse-empty {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px dashed rgba(92, 122, 153, 0.35);
+  text-align: center;
+  font-size: 13px;
+}
+
+/* Next opponent card */
+.next-opp-card {
+  margin: 8px 0 22px;
+  padding: 16px 18px;
+}
+.next-opp-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.next-opp-vs {
+  font-family: var(--display);
+  font-size: clamp(22px, 3.2vw, 30px);
+  letter-spacing: 0.04em;
+  color: var(--snow);
+  line-height: 1.15;
+}
+.next-opp-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.next-opp-meta b { color: var(--frost); }
+.opp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: rgba(8, 18, 34, 0.65);
+  font-size: 12.5px;
+  color: var(--ice);
+  max-width: 100%;
+}
+.opp-chip.home {
+  border-color: rgba(120, 180, 255, 0.45);
+  box-shadow: 0 0 18px rgba(100, 160, 255, 0.12);
+}
+.opp-chip.away {
+  border-color: rgba(232, 84, 30, 0.45);
+  box-shadow: 0 0 18px rgba(232, 84, 30, 0.12);
+}
+.opp-chip b { color: var(--snow); }
+
+/* New cinematic bands from unused assets */
+.photo-band.grant-park .photo-band-bg {
+  background-image: url("../img/chicago-grant-park-night.webp");
+  background-position: center 45%;
+  filter: saturate(1.05) brightness(0.62);
+}
+.photo-band.river-skyline .photo-band-bg {
+  background-image: url("../img/chicago-river-skyline-night.webp");
+  background-position: center 40%;
+  filter: saturate(1.02) brightness(0.6);
+}
+
+/* Hero craft: richer vignette + frost rim */
+.hero {
+  position: relative;
+}
+.hero .wrap > h1 {
+  text-shadow: 0 2px 28px rgba(0,0,0,0.55), 0 0 40px rgba(200,56,3,0.18);
+}
+.hero-grid .card {
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.page-intro h1 {
+  text-shadow: 0 2px 24px rgba(0,0,0,0.45);
+}
+.photo-band {
+  border-color: rgba(92, 122, 153, 0.28);
+}
+.photo-band .photo-band-copy h3 {
+  letter-spacing: 0.02em;
+}
+
+/* Keep hamburger rock-solid across all pages (incl. 404) */
+@media (max-width: 960px) {
+  .nav-toggle {
+    position: relative;
+    z-index: 70;
+  }
+  body.nav-open #snow {
+    pointer-events: none;
+  }
+}
+
+#odds-pulse,
+#next-opp,
+#div-race,
+#div-race-2 {
+  scroll-margin-top: calc(var(--cf-head-h, 72px) + 12px);
+}
+
+.photo-band.lakefront-night .photo-band-bg {
+  background-image: url("../img/chicago-lakefront-night.webp");
+  background-position: center 42%;
+  filter: saturate(1.08) brightness(0.58);
+}
+.photo-band.north-ave .photo-band-bg {
+  background-image: url("../img/chicago-north-ave-skyline.webp");
+  background-position: center 40%;
+  filter: saturate(1.05) brightness(0.6);
+}
+@media (max-width: 700px) {
+  .photo-band.grant-park .photo-band-bg {
+    background-image: url("../img/chicago-grant-park-night-sm.webp");
+  }
+  .photo-band.river-skyline .photo-band-bg {
+    background-image: url("../img/chicago-river-skyline-night-sm.webp");
+  }
+  .photo-band.lakefront-night .photo-band-bg {
+    background-image: url("../img/chicago-lakefront-night-sm.webp");
+  }
+  .photo-band.north-ave .photo-band-bg {
+    background-image: url("../img/chicago-north-ave-skyline-sm.webp");
+  }
+}
+
+.city-strip.city-strip-6 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) {
+  .city-strip.city-strip-6 { grid-template-columns: repeat(2, 1fr); }
+}
+.city-tile.t-lakefront-night .city-tile-bg,
+.city-tile.t-lakefront-night .city-tile-img { object-position: center 40%; }
+
+
+/* v1.6 craft — page intro + card glass depth */
+.page-intro {
+  margin-bottom: 6px;
+}
+.page-intro p {
+  max-width: 62ch;
+  line-height: 1.55;
+}
+.card.game-card,
+.next-opp-card {
+  border-color: rgba(92, 122, 153, 0.32);
+}
+.hero .hub-pitch {
+  letter-spacing: 0.01em;
+}

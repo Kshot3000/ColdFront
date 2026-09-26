@@ -193,6 +193,67 @@
     if (row && row.dataset.boxgame) loadBoxscore(row.dataset.boxgame);
   });
 
+
+  /* ---------- next opponent card ----------
+     Home → Chicago weather chip (existing CF.loadWeather).
+     Away → opponent city note from schedule geo / venue / NFL_CITIES. */
+  async function loadNextOpponent() {
+    const vs = CF.$("#next-opp-vs");
+    const meta = CF.$("#next-opp-meta");
+    const chip = CF.$("#next-opp-chip");
+    const pill = CF.$("#next-opp-pill");
+    if (!vs || !meta || !chip) return;
+    let g = null;
+    try {
+      const sc = await CF.API.getSchedule();
+      g = CF.API.nextBearsGameFromSchedule(sc.data);
+    } catch (e) { /* schedule quiet */ }
+    if (!g) {
+      if (pill) { pill.className = "pill sample"; pill.textContent = "offline"; }
+      vs.textContent = "Board is quiet";
+      meta.textContent = "Next kickoff lands here when the schedule answers.";
+      chip.innerHTML = '<span class="opp-chip dim">no opponent yet</span>';
+      return;
+    }
+    const site = g.home ? "Home · Soldier Field" : "Away";
+    const matchup = (g.home ? "vs " : "@ ") + (g.opp || "opponent");
+    if (pill) {
+      pill.className = "pill ok";
+      pill.textContent = g.home ? "home" : "away";
+    }
+    vs.textContent = matchup;
+    meta.innerHTML =
+      "<b>" + CF.fmtDate(g.date) + "</b> · " + (CF.fmtTime(g.date) || "TBD") +
+      " · " + CF.esc(site) +
+      (g.venue ? " · " + CF.esc(g.venue) : "") +
+      (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
+    chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
+
+    if (g.home) {
+      try {
+        const wx = await CF.loadWeather();
+        if (!wx) {
+          chip.innerHTML = '<span class="opp-chip">🌤 Chicago · weather offline</span>';
+          return;
+        }
+        const f = (c) => Math.round(Number(c) * 9 / 5 + 32);
+        const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
+        chip.innerHTML =
+          '<span class="opp-chip home" title="Soldier Field conditions">' +
+          "❄ Chicago · <b>" + f(wx.tempC) + "°F</b> " + desc +
+          (wx.wind != null ? " · wind " + Math.round(wx.wind) + " km/h" : "") +
+          "</span>";
+      } catch (e2) {
+        chip.innerHTML = '<span class="opp-chip">❄ Chicago · weather unavailable</span>';
+      }
+    } else {
+      const note = CF.API.nflCityNote(g.oppAbbr, g.city, g.venue);
+      chip.innerHTML = note
+        ? '<span class="opp-chip away" title="Away site">✈ Road trip · <b>' + CF.esc(note) + "</b></span>"
+        : '<span class="opp-chip away">✈ Road game · city TBD</span>';
+    }
+  }
+
   /* ---------- division ----------
      ESPN standings → (preseason: the endpoint is an empty stub) a table
      derived from completed games in the season window, clearly labeled. */
@@ -224,6 +285,7 @@
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="7" class="dim">Standings unavailable right now.</td></tr>';
+      paintRaceBars([], CF.$("#div-race-2"));
       return;
     }
     pill.className = "pill ok";
@@ -239,6 +301,28 @@
       '<td>' + CF.esc(row.streak || "") + "</td>" +
       "</tr>"
     ).join("");
+    paintRaceBars(div.rows, CF.$("#div-race-2"));
+  }
+
+  function paintRaceBars(rows, root) {
+    if (!root) return;
+    if (!rows || !rows.length) {
+      root.innerHTML = "";
+      root.hidden = true;
+      return;
+    }
+    const maxW = Math.max(1, ...rows.map((r) => Number(r.w) || 0));
+    root.hidden = false;
+    root.innerHTML = '<div class="race-caption">Division race · wins</div>' +
+      rows.map((row) => {
+        const w = Number(row.w) || 0;
+        const pct = Math.round((w / maxW) * 100);
+        return '<div class="race-row' + (row.isMe ? " me" : "") + '" title="' + CF.esc(row.abbr + " " + w + "-" + (row.l != null ? row.l : "—")) + '">' +
+          '<span class="race-abbr">' + CF.esc(row.abbr) + "</span>" +
+          '<span class="race-track"><span class="race-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="race-wl">' + CF.esc(String(w)) + "-" + CF.esc(row.l != null ? String(row.l) : "—") + "</span>" +
+          "</div>";
+      }).join("");
   }
 
   /* ---------- date nav ---------- */
@@ -276,10 +360,12 @@
     loadBoard();
     loadLog();
     loadDivision();
+    loadNextOpponent();
     // Keep games moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(loadBoard, 30e3);                 // board: 30 s (scheduled → live → final)
     CF.refresh.register(loadLog, 3 * 60e3);               // season log: 3 min
     CF.refresh.register(loadDivision, 5 * 60e3);          // division table: 5 min
+    CF.refresh.register(loadNextOpponent, 3 * 60e3, { name: "next-opp" });
     // Preload a box score so the panel is never empty: a live or finished
     // Bears game on the board, else the most recent completed game from
     // the season log (waits briefly for the log on slower networks).

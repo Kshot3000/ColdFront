@@ -223,18 +223,44 @@ CF.API = {
       const c = (it.competitions || [it])[0];
       const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
       const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
-      const opp = home.team && home.team.abbreviation === "CHI" ? away : home;
+      const bearsHome = !!(home.team && home.team.abbreviation === "CHI");
+      const opp = bearsHome ? away : home;
+      const geo = c.geolocation || (c.venue && c.venue.address) || {};
+      const cityBits = [geo.city, geo.state || geo.stateProvince].filter(Boolean).join(", ");
       return {
         id: it.id,
         date: it.date,
         season: it.season ? it.season.displayName : (it.seasonType || ""),
-        home: !!(home.team && home.team.abbreviation === "CHI"),
+        home: bearsHome,
         opp: opp.team ? opp.team.displayName : (it.name || "opponent"),
+        oppAbbr: opp.team ? (opp.team.abbreviation || "") : "",
         tv: (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "",
         venue: c.venue ? c.venue.displayName : "",
+        city: cityBits || "",
       };
     }
     return null;
+  },
+
+  /* Opponent-city notes for away games (static geography — not fake scores).
+     Used when the schedule payload has no geolocation. */
+  NFL_CITIES: {
+    ARI: "Glendale, AZ", ATL: "Atlanta, GA", BAL: "Baltimore, MD", BUF: "Orchard Park, NY",
+    CAR: "Charlotte, NC", CIN: "Cincinnati, OH", CLE: "Cleveland, OH", DAL: "Arlington, TX",
+    DEN: "Denver, CO", DET: "Detroit, MI", GB: "Green Bay, WI", HOU: "Houston, TX",
+    IND: "Indianapolis, IN", JAX: "Jacksonville, FL", KC: "Kansas City, MO", LAC: "Inglewood, CA",
+    LAR: "Inglewood, CA", LV: "Las Vegas, NV", MIA: "Miami Gardens, FL", MIN: "Minneapolis, MN",
+    NE: "Foxborough, MA", NO: "New Orleans, LA", NYG: "East Rutherford, NJ", NYJ: "East Rutherford, NJ",
+    PHI: "Philadelphia, PA", PIT: "Pittsburgh, PA", SEA: "Seattle, WA", SF: "Santa Clara, CA",
+    TB: "Tampa, FL", TEN: "Nashville, TN", WSH: "Landover, MD", WAS: "Landover, MD", CHI: "Chicago, IL",
+  },
+
+  nflCityNote: (abbr, city, venue) => {
+    if (city) return city;
+    const mapped = abbr ? CF.API.NFL_CITIES[String(abbr).toUpperCase()] : null;
+    if (mapped) return mapped;
+    if (venue) return venue;
+    return "";
   },
 
   // Flatten a schedule payload into a simple array.

@@ -122,6 +122,7 @@
               </tbody>
             </table>
           </div>
+          <div class="race-bars" id="div-race" hidden aria-label="NFC North win race"></div>
           <p class="src-note">Live from ESPN when the feed answers; otherwise your last saved snapshot.</p>
           <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
             <a class="btn small" href="games.html">Full game log →</a>
@@ -162,6 +163,16 @@
         </a>
       </div>
       <p class="week-clock-note" id="week-clock-note">Driven by the next kickoff when the schedule answers — otherwise a calm Midweek fallback.</p>
+
+      <div class="section-head" style="margin-top:28px">
+        <h2>Odds pulse</h2>
+        <span class="tag" id="odds-pulse-pill">tuning…</span>
+        <span class="rule"></span>
+        <a class="btn small" href="odds.html">Full board →</a>
+      </div>
+      <div class="odds-pulse" id="odds-pulse" aria-live="polite">
+        <div class="pulse-empty dim">Checking the wire and Polymarket…</div>
+      </div>
     </div>
   </section>
 
@@ -210,12 +221,27 @@
         </article>
       </div>
 
+      <div class="photo-band grant-park" aria-label="Grant Park at night" style="margin-bottom:22px">
+        <div class="photo-band-bg" aria-hidden="true"></div>
+        <div class="photo-band-inner">
+          <div class="photo-band-copy">
+            <div class="eyebrow" style="margin:0 0 6px">Grant Park</div>
+            <h3>Lake wind. Downtown pulse. Kickoff energy.</h3>
+            <p>Grant Park after dark — the walk between the Loop and the field. Independent photography; Cold Front marks only. Never league logos.</p>
+          </div>
+          <div class="photo-band-art" aria-hidden="true">
+            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
+            <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
+          </div>
+        </div>
+      </div>
+
       <div class="section-head">
         <h2>Chicago after dark</h2>
         <span class="tag">skyline · field · lake · L</span>
         <span class="rule"></span>
       </div>
-      <div class="city-strip city-strip-5" aria-label="Chicago photography">
+      <div class="city-strip city-strip-6" aria-label="Chicago photography">
         <div class="city-tile t-river">
           <picture class="city-tile-pic">
             <source media="(max-width: 700px)" srcset="img/chicago-river-night-sm.webp" type="image/webp">
@@ -250,6 +276,13 @@
             <img class="city-tile-img" src="img/chicago-cta-night.webp" alt="" width="1400" height="925" loading="lazy" decoding="async">
           </picture>
           <span class="city-tile-label">The L at night</span>
+        </div>
+        <div class="city-tile t-lakefront-night">
+          <picture class="city-tile-pic">
+            <source media="(max-width: 700px)" srcset="img/chicago-lakefront-night-sm.webp" type="image/webp">
+            <img class="city-tile-img" src="img/chicago-lakefront-night.webp" alt="" width="1280" height="848" loading="lazy" decoding="async">
+          </picture>
+          <span class="city-tile-label">Lakefront night</span>
         </div>
       </div>
       <div class="photo-band soldier" style="margin-top:18px">
