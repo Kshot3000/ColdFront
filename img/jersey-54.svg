@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180" role="img" aria-label="Jersey number graphic">
+  <defs>
+    <linearGradient id="j" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#16283f"/>
+      <stop offset="100%" stop-color="#0b1626"/>
+    </linearGradient>
+  </defs>
+  <path d="M40 28 L80 18 L120 28 L148 48 L132 62 L120 52 L120 162 L40 162 L40 52 L28 62 L12 48 Z" fill="url(#j)" stroke="#C83803" stroke-width="3"/>
+  <path d="M40 52 L80 42 L120 52" fill="none" stroke="#E8541E" stroke-width="2.5"/>
+  <text x="80" y="118" text-anchor="middle" font-family="Oswald, Arial Narrow, sans-serif" font-weight="700" font-size="72" fill="#E8541E" letter-spacing="-2">54</text>
+  <text x="80" y="148" text-anchor="middle" font-family="Oswald, Arial Narrow, sans-serif" font-size="11" letter-spacing="0.35em" fill="#9FB8CC">FRONT</text>
+</svg>

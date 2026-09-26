@@ -13,8 +13,8 @@ CF.CONFIG = {
   site: {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
-    blurb: "An independent fan site for people who think football should be played in a blizzard.",
-    version: "1.0.0",
+    blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
+    version: "1.1.0",
   },
 
   author: {
@@ -663,16 +663,23 @@ CF.setSnow = (on) => {
 };
 
 CF._snow = (function () {
-  const N = 70;
-  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false;
-  const mk = (init) => ({
+  /* Depth layers: near (large/fast), mid, far (small/slow) for wind + depth. */
+  const LAYERS = [
+    { n: 45, rMin: 1.6, rMax: 3.4, vyMin: 0.7, vyMax: 1.55, vxAmp: 0.55, sway: 0.018, aMin: 0.4, aMax: 0.85 },
+    { n: 55, rMin: 0.9, rMax: 2.0, vyMin: 0.4, vyMax: 0.95, vxAmp: 0.35, sway: 0.014, aMin: 0.28, aMax: 0.6 },
+    { n: 40, rMin: 0.5, rMax: 1.2, vyMin: 0.22, vyMax: 0.55, vxAmp: 0.22, sway: 0.01, aMin: 0.15, aMax: 0.4 },
+  ];
+  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false, wind = 0, windT = 0;
+  const mk = (init, L) => ({
     x: Math.random() * W,
-    y: init ? Math.random() * H : -6,
-    r: 0.8 + Math.random() * 2.2,
-    vy: 0.35 + Math.random() * 0.9,
-    vx: -0.15 + Math.random() * 0.3,
-    a: 0.25 + Math.random() * 0.55,
+    y: init ? Math.random() * H : -8,
+    r: L.rMin + Math.random() * (L.rMax - L.rMin),
+    vy: L.vyMin + Math.random() * (L.vyMax - L.vyMin),
+    vx: (Math.random() - 0.5) * L.vxAmp,
+    a: L.aMin + Math.random() * (L.aMax - L.aMin),
     sway: Math.random() * Math.PI * 2,
+    swaySp: L.sway * (0.7 + Math.random() * 0.6),
+    L: L,
   });
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   function onVis() {
@@ -681,15 +688,17 @@ CF._snow = (function () {
   }
   function loop() {
     if (!running) return;
+    windT += 0.004;
+    wind = Math.sin(windT) * 0.35 + Math.sin(windT * 0.37) * 0.18;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "#e8f1fa";
     for (const f of flakes) {
-      f.sway += 0.012;
-      f.x += f.vx + Math.sin(f.sway) * 0.18;
-      f.y += f.vy;
-      if (f.y > H + 6) { Object.assign(f, mk(false)); }
-      if (f.x > W + 6) f.x = -6;
-      if (f.x < -8) f.x = W + 4;
+      f.sway += f.swaySp;
+      f.x += f.vx + wind * (0.4 + f.r * 0.15) + Math.sin(f.sway) * 0.22;
+      f.y += f.vy + Math.abs(wind) * 0.08;
+      if (f.y > H + 8) { Object.assign(f, mk(false, f.L)); }
+      if (f.x > W + 10) f.x = -8;
+      if (f.x < -10) f.x = W + 6;
       ctx.globalAlpha = f.a;
       ctx.beginPath();
       ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
@@ -707,7 +716,9 @@ CF._snow = (function () {
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", onVis);
     flakes = [];
-    for (let i = 0; i < N; i++) flakes.push(mk(true));
+    for (const L of LAYERS) {
+      for (let i = 0; i < L.n; i++) flakes.push(mk(true, L));
+    }
     running = true;
     loop();
   }
@@ -733,11 +744,29 @@ CF.injStatusCls = (s) => {
 };
 
 /* ---------------- nav + chrome ---------------- */
+CF.injectAtmosphere = () => {
+  if (document.querySelector(".cf-atmosphere")) return;
+  const el = document.createElement("div");
+  el.className = "cf-atmosphere";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML =
+    '<div class="cf-aurora"></div>' +
+    '<div class="cf-bands"></div>' +
+    '<div class="cf-noise"></div>' +
+    '<div class="cf-skyline"></div>' +
+    '<div class="cf-vignette"></div>';
+  const snow = CF.$("#snow");
+  if (snow && snow.parentNode) snow.parentNode.insertBefore(el, snow);
+  else document.body.insertBefore(el, document.body.firstChild);
+};
+
 CF.initChrome = () => {
+  CF.injectAtmosphere();
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   CF.$$(".nav a").forEach((a) => {
     const href = (a.getAttribute("href") || "").replace(/\.html$/, "");
     if (href === page || (page === "index" && href === "")) a.classList.add("active");
+    if (/x\.com\/kshot/i.test(a.getAttribute("href") || "")) a.classList.add("nav-x");
   });
   const toggle = CF.$(".nav-toggle");
   const nav = CF.$(".nav");

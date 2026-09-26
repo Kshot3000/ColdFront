@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Cold Front paw mark">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#E8541E"/>
+      <stop offset="100%" stop-color="#C83803"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="#0B1626"/>
+  <rect x="3" y="3" width="114" height="114" rx="26" fill="none" stroke="#5C7A99" stroke-opacity="0.45"/>
+  <g fill="url(#g)" filter="url(#glow)">
+    <ellipse cx="60" cy="74" rx="22" ry="18"/>
+    <ellipse cx="28" cy="46" rx="11" ry="14" transform="rotate(-22 28 46)"/>
+    <ellipse cx="48" cy="30" rx="12" ry="15" transform="rotate(-8 48 30)"/>
+    <ellipse cx="72" cy="30" rx="12" ry="15" transform="rotate(8 72 30)"/>
+    <ellipse cx="92" cy="46" rx="11" ry="14" transform="rotate(22 92 46)"/>
+  </g>
+  <line x1="22" y1="102" x2="98" y2="102" stroke="#E8541E" stroke-width="4" stroke-linecap="round"/>
+  <path d="M32 102 h14 l-7 -12 z" fill="#E8541E"/>
+  <path d="M53 102 h14 l-7 -12 z" fill="#E8541E"/>
+  <path d="M74 102 h14 l-7 -12 z" fill="#E8541E"/>
+</svg>
