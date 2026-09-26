@@ -86,7 +86,7 @@
       </div>
 
       <div class="hero-grid">
-        <div class="card game-card" id="next-game" aria-live="polite">
+        <div class="card game-card" id="next-game" aria-live="polite" aria-atomic="false" aria-relevant="additions text">
           <div class="badge-row" style="justify-content:space-between">
             <h3 style="margin:0" id="ng-title">Next on the board…</h3>
             <span class="pill is-loading" id="ng-pill">loading</span>
@@ -129,6 +129,39 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section aria-label="Bears week clock">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Week clock</h2>
+        <span class="tag" id="week-clock-pill">tuning…</span>
+        <span class="rule"></span>
+      </div>
+      <div class="week-clock" id="week-clock" role="list" aria-live="polite">
+        <a class="week-clock-phase" role="listitem" data-phase="practice" href="practice.html">
+          <span class="phase-label">Practice</span>
+          <span class="phase-hint">Facility &amp; availability</span>
+          <span class="phase-meta">Wed–Thu</span>
+        </a>
+        <a class="week-clock-phase" role="listitem" data-phase="media" href="news.html">
+          <span class="phase-label">Media</span>
+          <span class="phase-hint">Wire &amp; pressers</span>
+          <span class="phase-meta">Fri–Sat</span>
+        </a>
+        <a class="week-clock-phase" role="listitem" data-phase="gameday" href="games.html">
+          <span class="phase-label">Gameday</span>
+          <span class="phase-hint">Board &amp; kickoff</span>
+          <span class="phase-meta">Sun / Mon</span>
+        </a>
+        <a class="week-clock-phase" role="listitem" data-phase="film" href="stats.html">
+          <span class="phase-label">Film</span>
+          <span class="phase-hint">Box &amp; leaders</span>
+          <span class="phase-meta">Mon–Tue</span>
+        </a>
+      </div>
+      <p class="week-clock-note" id="week-clock-note">Driven by the next kickoff when the schedule answers — otherwise a calm Midweek fallback.</p>
     </div>
   </section>
 
@@ -229,7 +262,7 @@
         <span class="rule"></span>
         <a class="btn small" href="news.html">Full feed →</a>
       </div>
-      <div class="news-list" id="home-news">
+      <div class="news-list" id="home-news" aria-live="polite" aria-busy="true">
         <div class="empty is-loading" role="status" aria-live="polite">
           <div class="big">📡</div>
           <div class="empty-title">Pulling the wire</div>

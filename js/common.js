@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.3.1",
+    version: "1.4.0",
   },
 
   author: {
@@ -837,6 +837,17 @@ CF.injectAtmosphere = () => {
   else document.body.insertBefore(el, document.body.firstChild);
 };
 
+CF.ensureSkipLink = () => {
+  if (CF.$(".skip-link")) return;
+  const main = CF.$("main");
+  if (main && !main.id) main.id = "main";
+  const a = document.createElement("a");
+  a.className = "skip-link";
+  a.href = "#" + ((main && main.id) || "main");
+  a.textContent = "Skip to content";
+  document.body.insertBefore(a, document.body.firstChild);
+};
+
 CF.closeNav = (nav, toggle) => {
   if (!nav) return;
   nav.classList.remove("open");
@@ -875,6 +886,13 @@ CF.openNav = (nav, toggle) => {
 
 CF.initChrome = () => {
   CF.injectAtmosphere();
+  CF.ensureSkipLink();
+
+  const wxEl = CF.$("[data-cf-weather]");
+  if (wxEl) {
+    if (!wxEl.getAttribute("aria-live")) wxEl.setAttribute("aria-live", "polite");
+    if (!wxEl.getAttribute("aria-atomic")) wxEl.setAttribute("aria-atomic", "true");
+  }
 
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   CF.$$(".nav a").forEach((a) => {

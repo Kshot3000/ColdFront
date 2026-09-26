@@ -192,6 +192,7 @@
       const items = (news || []).slice(0, 4);
       if (items.length) {
         box.innerHTML = items.map(newsItemHTML).join("");
+        box.setAttribute("aria-busy", "false");
         pill.textContent = "live feed";
         return;
       }
@@ -200,13 +201,17 @@
     try {
       const items = await CF.API.getGoogleNews("Chicago Bears", 4);
       box.innerHTML = items.map(wideItemHTML).join("");
+      box.setAttribute("aria-busy", "false");
       pill.textContent = "wide wire";
     } catch (e2) {
       pill.textContent = "offline";
-      box.innerHTML = '<div class="empty" role="status"><div class="big">📡</div>' +
-        '<div class="empty-title">Wire is dark</div>' +
-        '<p class="empty-sub">Both feeds are down on this network and no snapshot is saved yet. Visit once while online and headlines cache locally.</p>' +
-        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a></div>';
+      box.innerHTML = CF.emptyHTML({
+        icon: "📡",
+        title: "Wire is dark",
+        sub: "Both feeds are down on this network and no snapshot is saved yet. Visit once while online and headlines cache locally.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Official Bears news →</a>',
+      });
+      box.setAttribute("aria-busy", "false");
     }
   }
 
@@ -251,15 +256,86 @@
     }
   }
 
+
+  /* ---------- week clock (practice → media → gameday → film) ---------- */
+  function weekPhaseFromGame(game, schedGame) {
+    const g = (game && (game.home || game.away) && (game.home.abbr === "CHI" || game.away.abbr === "CHI"))
+      ? game
+      : schedGame;
+    if (!g || !g.date) {
+      return {
+        active: "practice",
+        note: "Schedule is quiet — Midweek default. Practice notes and the wire stay warm until the next kickoff lands.",
+        pill: "fallback",
+      };
+    }
+    const kick = new Date(g.date).getTime();
+    if (isNaN(kick)) {
+      return { active: "practice", note: "Kickoff time unclear — showing the Midweek practice beat.", pill: "fallback" };
+    }
+    const hours = (kick - Date.now()) / 3600e3;
+    const when = CF.fmtDate(g.date) + (CF.fmtTime(g.date) ? " · " + CF.fmtTime(g.date) : "");
+    const opp = g.opp || (g.away && g.home ? ((g.home.abbr === "CHI" ? g.away.abbr : g.home.abbr)) : "opponent");
+    if (game && game.state === "in") {
+      return { active: "gameday", note: "<b>Live now</b> — board is the beat. " + CF.esc(when), pill: "live" };
+    }
+    if (game && game.state === "post" && hours > -60) {
+      return { active: "film", note: "<b>Final in the books</b> — film &amp; numbers until the next week starts. " + CF.esc(when), pill: "film" };
+    }
+    if (hours <= 30) {
+      return { active: "gameday", note: "<b>Gameday window</b> vs " + CF.esc(String(opp)) + " — " + CF.esc(when), pill: "gameday" };
+    }
+    if (hours <= 72) {
+      return { active: "media", note: "<b>Media week</b> — pressers &amp; the wire before " + CF.esc(when), pill: "media" };
+    }
+    if (hours <= 120) {
+      return { active: "practice", note: "<b>Practice week</b> toward " + CF.esc(String(opp)) + " · " + CF.esc(when), pill: "practice" };
+    }
+    return { active: "practice", note: "Next up: <b>" + CF.esc(String(opp)) + "</b> · " + CF.esc(when) + " — facility days first.", pill: "practice" };
+  }
+
+  function paintWeekClock(phase) {
+    const root = CF.$("#week-clock");
+    const note = CF.$("#week-clock-note");
+    const pill = CF.$("#week-clock-pill");
+    if (!root) return;
+    CF.$$(".week-clock-phase", root).forEach((el) => {
+      const on = el.getAttribute("data-phase") === phase.active;
+      el.classList.toggle("is-active", on);
+      el.setAttribute("aria-current", on ? "step" : "false");
+    });
+    if (note) note.innerHTML = phase.note;
+    if (pill) {
+      pill.textContent = phase.pill || "week";
+      pill.className = "tag" + (phase.pill === "live" ? " live" : "");
+    }
+  }
+
+  async function loadWeekClock() {
+    let game = null, schedGame = null;
+    try {
+      const sb = await CF.API.getScoreboard();
+      game = CF.API.bearsGameFromScoreboard(sb.data);
+    } catch (e) { /* board quiet */ }
+    try {
+      const sc = await CF.API.getSchedule();
+      schedGame = CF.API.nextBearsGameFromSchedule(sc.data);
+    } catch (e2) { /* schedule quiet */ }
+    paintWeekClock(weekPhaseFromGame(game, schedGame));
+  }
+
+
   document.addEventListener("DOMContentLoaded", () => {
     loadNextGame();
     loadStandings();
     loadNews();
     loadInjuries();
+    loadWeekClock();
     // Keep the home page moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(loadNextGame, 30e3);              // next game + live clock: 30 s
     CF.refresh.register(loadStandings, 60e3);            // NFC North: 60 s
     CF.refresh.register(loadNews, 60e3);                 // headlines: 60 s
     CF.refresh.register(loadInjuries, 5 * 60e3, { name: "injuries" }); // local report (repo JSON): 5 min
+    CF.refresh.register(loadWeekClock, 60e3, { name: "week-clock" });
   });
 })();

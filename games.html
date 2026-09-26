@@ -77,6 +77,21 @@
       </div>
     </div>
 
+    <div class="photo-band buckingham" aria-label="Buckingham Fountain" style="margin-top:14px">
+      <div class="photo-band-bg" aria-hidden="true"></div>
+      <div class="photo-band-inner">
+        <div class="photo-band-copy">
+          <div class="eyebrow" style="margin:0 0 6px">Grant Park</div>
+          <h3>Fountain spray. Lake wind. Board lights.</h3>
+          <p>Buckingham Fountain between downtown and the field — the walk fans know before kickoff. Wikimedia photography; Cold Front marks only.</p>
+        </div>
+        <div class="photo-band-art" aria-hidden="true">
+          <img class="art-mark" src="img/jersey-54.svg" alt="" width="88" height="88" decoding="async">
+          <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
+        </div>
+      </div>
+    </div>
+
     <!-- Live / day scoreboard -->
     <div class="section-head">
       <h2>Board</h2>
@@ -89,7 +104,7 @@
         <button class="btn small" id="day-today" type="button">Today</button>
       </span>
     </div>
-    <div id="board">
+    <div id="board" aria-live="polite" aria-busy="true">
       <div class="empty is-loading" role="status"><div class="big">🏈</div><div class="empty-title">Reading the board</div><p class="empty-sub">Scoreboard for the day you picked — live when the feed answers.</p></div>
     </div>
 

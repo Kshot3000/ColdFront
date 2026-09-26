@@ -1841,3 +1841,156 @@ main > section,
 body:not(.prefers-reduced-motion) #snow {
   opacity: 0.78;
 }
+
+
+/* ============================================================
+   v1.4.0 — a11y focus · skip-link · week clock · responsive photos
+   ============================================================ */
+
+/* Skip link — first focusable, Bears-orange rim */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 10000;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--orange);
+  color: #fff;
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: var(--rim-glow);
+  transform: translateY(-160%);
+  transition: transform 0.18s var(--ease-out);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--snow);
+  outline-offset: 3px;
+  color: #fff;
+}
+
+/* Visible focus rings — navy + orange, theme-fit, not browser default */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(209, 58, 2, 0.28);
+  border-radius: 8px;
+}
+.nav a:focus-visible,
+.nav-toggle:focus-visible,
+.btn:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(255, 90, 31, 0.32), 0 0 18px rgba(209, 58, 2, 0.35);
+}
+.nav-toggle:focus-visible { border-radius: 10px; }
+
+/* Week clock strip */
+.week-clock {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 8px 0 0;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(180deg, rgba(8,18,34,0.72), rgba(4,10,20,0.55));
+  box-shadow: var(--shadow);
+}
+.week-clock-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  color: var(--ice);
+  text-decoration: none;
+  background: rgba(10, 20, 36, 0.45);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  min-height: 88px;
+}
+.week-clock-phase:hover {
+  border-color: rgba(255, 90, 31, 0.35);
+  background: rgba(200, 56, 3, 0.1);
+  color: var(--snow);
+  transform: translateY(-1px);
+}
+.week-clock-phase .phase-label {
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--snow);
+}
+.week-clock-phase .phase-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+.week-clock-phase .phase-meta {
+  margin-top: auto;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.week-clock-phase.is-active {
+  border-color: rgba(255, 90, 31, 0.7);
+  background: rgba(200, 56, 3, 0.16);
+  box-shadow: 0 0 24px rgba(209, 58, 2, 0.22);
+}
+.week-clock-phase.is-active .phase-meta { color: var(--orange-hot); }
+.week-clock-note {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.week-clock-note b { color: var(--frost); }
+
+@media (max-width: 700px) {
+  .week-clock {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+  .week-clock-phase { min-height: 78px; padding: 10px; }
+}
+
+/* Responsive photo swaps — smaller webps on narrow viewports */
+@media (max-width: 700px) {
+  .photo-band.soldier .photo-band-bg {
+    background-image: url("../img/soldier-field-dark-sm.webp");
+  }
+  .city-tile.t-soldier .city-tile-bg {
+    background-image: url("../img/soldier-field-sm.webp");
+  }
+  .city-tile.t-skyline .city-tile-bg {
+    background-image: url("../img/chicago-skyline-night-sm.webp");
+  }
+  .city-tile.t-theatre .city-tile-bg {
+    background-image: url("../img/chicago-night-alt-sm.webp");
+  }
+  .city-tile.t-cta .city-tile-bg {
+    background-image: url("../img/chicago-cta-night-sm.webp");
+  }
+  .hero-photo {
+    background:
+      linear-gradient(180deg, rgba(2,6,14,0.55) 0%, rgba(2,6,14,0.35) 28%, rgba(2,6,14,0.78) 78%, rgba(2,6,14,0.96) 100%),
+      linear-gradient(90deg, rgba(2,6,14,0.55) 0%, transparent 30%, transparent 70%, rgba(2,6,14,0.45) 100%),
+      radial-gradient(ellipse 70% 55% at 70% 40%, rgba(255,90,31,0.22), transparent 62%),
+      url("../img/hero-chicago-night-sm.webp") center 35% / cover no-repeat;
+  }
+}
+
+.city-strip.city-strip-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) {
+  .city-strip.city-strip-4 { grid-template-columns: repeat(2, 1fr); }
+}

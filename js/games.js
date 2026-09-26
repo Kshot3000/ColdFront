@@ -25,7 +25,8 @@
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
       pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + new Date().toLocaleDateString();
       if (!events.length) {
-        box.innerHTML = '<div class="empty"><div class="big">🌫</div>No games on the board that day — whiteout, probably.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
+        box.innerHTML = CF.emptyHTML({ icon: "🌫", title: "Whiteout on the board", sub: "No games that day — try another date, or check back after kickoff." });
+        box.setAttribute("aria-busy", "false");
         return;
       }
       // Bears game first.
@@ -33,16 +34,20 @@
         .some((c) => (c.team || {}).abbreviation === "CHI");
       events.sort((a, b) => (isBears(b) ? 1 : 0) - (isBears(a) ? 1 : 0));
       box.innerHTML = events.map((e) => eventCard(e, isBears(e))).join("");
+      box.setAttribute("aria-busy", "false");
       // The board keeps refreshing on the shared CF.refresh job below (30 s),
       // so scheduled → live → final transitions pick themselves up.
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      box.innerHTML =
-        '<div class="empty"><div class="big">🏈</div>Board is unreachable from this network, and no snapshot for ' +
-        CF.dayParam(dayOffset) + " is saved on this device yet.<br>" +
-        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/scoreboard/" target="_blank" rel="noopener">ESPN scoreboard ↗</a> ' +
-        '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.nfl.com/scores" target="_blank" rel="noopener">NFL.com scores ↗</a></div>';
+      box.innerHTML = CF.emptyHTML({
+        icon: "🏈",
+        title: "Board unreachable",
+        sub: "No snapshot for " + CF.dayParam(dayOffset) + " on this device yet.",
+        action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.espn.com/nfl/scoreboard/" target="_blank" rel="noopener">ESPN scoreboard ↗</a> '
+          + '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://www.nfl.com/scores" target="_blank" rel="noopener">NFL.com scores ↗</a>',
+      });
+      box.setAttribute("aria-busy", "false");
     }
   }
 
@@ -147,7 +152,7 @@
 
   async function loadBoxscore(gameId) {
     const box = CF.$("#boxscore");
-    box.innerHTML = '<div class="empty"><div class="big">📋</div>Pulling the box score…</div>';
+    box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Pulling the box score…", loading: true });
     try {
       const ev = await CF.API.bearsGameEvent(gameId);
       const c = (ev.competitions || [])[0] || {};
@@ -178,7 +183,7 @@
         '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="stats.html">Season stats →</a></p></div>';
       box.innerHTML = html;
     } catch (e) {
-      box.innerHTML = '<div class="empty"><div class="big">📋</div>Box score unavailable right now — the feed for that game didn\'t answer.</div>';
+      box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Box score unavailable", sub: "The feed for that game didn\'t answer." });
     }
   }
 

@@ -107,7 +107,7 @@
     const box = CF.$("#oddsapi-board");
     if (!key) { CF.toast("Paste a key first — free at the-odds-api.com"); return; }
     try { localStorage.setItem(KEY_LS, key); } catch (e) { /* ignore */ }
-    box.innerHTML = '<div class="empty"><div class="big">🎲</div>Summoning the books…</div>';
+    box.innerHTML = CF.emptyHTML({ icon: "🎲", title: "Summoning the books…", loading: true });
     try {
       const games = await CF.API.getOddsApi(key);
       const bears = games.filter((g) => /bears/i.test(g.home_team || "") || /bears/i.test(g.away_team || ""));
