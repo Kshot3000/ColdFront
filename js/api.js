@@ -80,9 +80,13 @@ CF.API = {
       [CF.API.web("/standings")]);
     // Preseason / early season: endpoint returns a stub with only
     // fullViewLink — treat as empty so callers use derived standings.
+    // Drop the stub from localStorage so it can't poison later visits.
     const d = r && r.data;
     const stub = d && typeof d === "object" && d.fullViewLink && !d.children && !d.standings && !d.groups;
-    if (stub) throw new Error("standings stub");
+    if (stub) {
+      try { localStorage.removeItem("cf.standings"); } catch (e) { /* ignore */ }
+      throw new Error("standings stub");
+    }
     return r;
   },
 
@@ -100,23 +104,34 @@ CF.API = {
   /* League-wide injury report. Heavy payload (~9 MB) but it carries the
      full Bears list: status per player + editorial notes on the wire. */
   getLeagueInjuries: async () => {
-    /* League injuries payload is ~9 MB. Race direct hosts (short) against
-       a Bears-only same-origin snapshot so the panel never waits on a
-       multi-megabyte download when the wire is slow. */
+    /* League injuries payload is ~9 MB. Give live hosts a short head start,
+       then race a delayed Bears-only same-origin snapshot so the panel
+       never hangs — and if the snap wins, keep live warming the cache. */
     const ttl = (CF.CONFIG.ttl && CF.CONFIG.ttl.injuries) || 300e3;
     const cached = CF.cacheGet("injuries");
     const live = CF.raceJSON([
       () => CF.fetchJSON(CF.API.base() + "/injuries", { timeout: 8000 }),
       () => CF.fetchJSON(CF.API.webBase() + "/injuries", { timeout: 8000 }),
     ]).then((data) => ({ data, source: "live" }));
-    const snap = (async () => {
+    const delayedSnap = (async () => {
+      await new Promise((r) => setTimeout(r, 1600));
       const s = CF.snapshotGet ? await CF.snapshotGet("injuries-bears") : null;
       if (!s) throw new Error("no injury snapshot");
       return { data: s, source: "snapshot" };
     })();
+    const delayedCache = cached
+      ? (async () => {
+          await new Promise((r) => setTimeout(r, 1200));
+          return { data: cached, source: "cache" };
+        })()
+      : Promise.reject(new Error("no cache"));
     try {
-      const r = await Promise.any([live, snap]);
+      const r = await Promise.any([live, delayedSnap, delayedCache]);
       if (r.source === "live") CF.cacheSet("injuries", r.data, ttl);
+      else {
+        // Snap/cache painted first — keep live refreshing in the background.
+        live.then((L) => { if (L && L.data) CF.cacheSet("injuries", L.data, ttl); }).catch(function () {});
+      }
       return { data: r.data, source: r.source, name: "injuries" };
     } catch (e) {
       if (cached) return { data: cached, source: "cache", name: "injuries" };
@@ -216,16 +231,17 @@ CF.API = {
     const q = query || 'Chicago Bears';
     const cached = CF.cacheGet("gnews." + q);
     const feeds = [
-      CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en",
+      // Bing first: public CORS proxies reach it more often than Google News.
       CF.CONFIG.endpoints.bingNews + "?q=" + encodeURIComponent(q) + "&format=RSS",
+      CF.CONFIG.endpoints.googleNews + "?q=" + encodeURIComponent(q) + "&hl=en-US&gl=US&ceid=US:en",
     ];
     let items = [];
-    // Race live RSS (short) against same-origin snapshot so Pages never
-    // waits on dead CORS proxies when Google/Bing block the browser.
+    // Race live RSS (short) against a delayed same-origin snapshot so Pages
+    // never waits on dead CORS proxies when Google/Bing block the browser.
     const live = (async () => {
       for (const url of feeds) {
         try {
-          const xml = await CF.fetchText(url, { timeout: 6500 });
+          const xml = await CF.fetchText(url, { timeout: 5500 });
           const list = CF.API.parseRss(xml).slice(0, max || 12);
           if (list.length) return list;
         } catch (e) { /* next upstream */ }
@@ -236,13 +252,25 @@ CF.API = {
       try {
         const snap = CF.snapshotGet ? await CF.snapshotGet("gnews") : null;
         const list = snap && (snap.items || snap);
-        return Array.isArray(list) ? list.slice(0, max || 12) : [];
+        if (!Array.isArray(list)) return [];
+        return list.slice(0, max || 12).map((it) => ({
+          title: it.title,
+          link: it.link,
+          source: it.source || null,
+          date: it.date || it.pubDate || it.isoDate || null,
+          desc: it.desc || null,
+        }));
       } catch (e) { return []; }
     })();
     try {
       items = await Promise.any([
         live.then((list) => { if (!list.length) throw new Error("empty live"); return list; }),
-        snapP.then((list) => { if (!list.length) throw new Error("empty snap"); return list; }),
+        (async () => {
+          await new Promise((r) => setTimeout(r, 1400));
+          const list = await snapP;
+          if (!list.length) throw new Error("empty snap");
+          return list;
+        })(),
       ]);
     } catch (e) {
       items = [];

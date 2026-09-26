@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.8.0",
+    version: "1.9.0",
   },
 
   author: {
@@ -120,7 +120,7 @@ CF.CONFIG = {
     weatherParams: {
       latitude: 41.8781, longitude: -87.6298,
       current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code",
-      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,snowfall_sum",
+      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,snowfall_sum,wind_speed_10m_max",
       forecast_days: 3, timezone: "America/Chicago",
     },
     polymarket: "https://gamma-api.polymarket.com/events",
@@ -138,9 +138,9 @@ CF.CONFIG = {
     // chain moves on. Loopback-only — unreachable from the internet.
     localProxy: "http://127.0.0.1:8799",
     // Optional always-on remote proxy for phones / other machines: deploy
-    // proxy/cf-proxy-worker.js to any host (the file targets Cloudflare
-    // Workers) and put its URL here, e.g. "https://cf-proxy.example.workers.dev".
-    // Leave as "" to skip this step entirely.
+    // proxy/cf-proxy-worker.js (see proxy/DEPLOY.md) and put its URL here,
+    // e.g. "https://cf-proxy.<you>.workers.dev". Leave "" to skip — the
+    // public CORS bench + same-origin snapshots cover GitHub Pages.
     remoteProxy: "",
   },
 
@@ -332,6 +332,28 @@ CF.usableLocalProxy = () => {
   return p;
 };
 
+/* Site root for same-origin assets — derived from js/common.js so nested
+   pages (_qa/, deep links) still resolve data/snapshots correctly. */
+CF.siteRoot = () => {
+  try {
+    if (CF._siteRoot) return CF._siteRoot;
+    const scripts = document.getElementsByTagName("script");
+    for (let i = scripts.length - 1; i >= 0; i--) {
+      const src = scripts[i].src || "";
+      if (/js\/common\.js(\?|#|$)/i.test(src)) {
+        CF._siteRoot = src.replace(/js\/common\.js(\?.*)?(#.*)?$/i, "");
+        return CF._siteRoot;
+      }
+    }
+  } catch (e) { /* fall through */ }
+  try {
+    // Strip filename: /ColdFront/games.html → /ColdFront/
+    const path = location.pathname || "/";
+    CF._siteRoot = location.origin + path.replace(/\/[^/]*$/, "/");
+  } catch (e2) { CF._siteRoot = ""; }
+  return CF._siteRoot;
+};
+
 /* Same-origin snapshot fallback (data/snapshots/<key>.json). */
 CF.snapshotGet = async (cacheKey) => {
   const base = (CF.CONFIG.endpoints.snapshotBase || "data/snapshots").replace(/\/$/, "");
@@ -340,16 +362,23 @@ CF.snapshotGet = async (cacheKey) => {
   const rels = [];
   if (cacheKey) rels.push(base + "/" + cacheKey + ".json");
   if (stem && stem !== cacheKey) rels.push(base + "/" + stem + ".json");
+  const root = CF.siteRoot();
   for (const rel of rels) {
-    try {
-      // Resolve against the page URL so GitHub Pages subpaths work
-      // (/ColdFront/data/snapshots/...) and relative fetch isn't ambiguous.
-      let url = rel;
-      try { if (typeof location !== "undefined" && location.href) url = new URL(rel, location.href).href; } catch (e0) { /* keep rel */ }
-      const r = await fetch(url, { cache: "no-cache" });
-      if (!r.ok) continue;
-      return await r.json();
-    } catch (e) { /* try next */ }
+    const candidates = [];
+    // Prefer site-root resolution (works from /_qa and GitHub Pages subpath).
+    if (root) candidates.push(root + rel);
+    try { if (typeof location !== "undefined" && location.href) candidates.push(new URL(rel, location.href).href); } catch (e0) { /* ignore */ }
+    candidates.push(rel);
+    const seen = {};
+    for (const url of candidates) {
+      if (!url || seen[url]) continue;
+      seen[url] = 1;
+      try {
+        const r = await fetch(url, { cache: "no-cache" });
+        if (!r.ok) continue;
+        return await r.json();
+      } catch (e) { /* try next */ }
+    }
   }
   return null;
 };
@@ -449,27 +478,42 @@ CF.getSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
     return { data, source: "live", name };
   } catch (e) { firstErr = e; }
 
-  // Stage 2 — remote proxy + public CORS proxies (short timeouts — most
-  // free proxies are dead; don't strand the UI for 40s).
+  // Stage 2 — remote + public CORS proxies, RACED against a delayed
+  // same-origin snapshot so dead proxies cannot strand the UI (~1.2s).
   if (direct) {
     const stage2 = [];
-    if (remote) stage2.push(() => CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(direct), { timeout: 5000 }));
-    for (const proxy of CF.PROXIES) stage2.push(() => CF.fetchJSON(proxy(direct), { timeout: 4500 }));
-    if (stage2.length) {
-      try {
-        const data = await CF.raceJSON(stage2);
-        CF.cacheSet(cacheKey, data, ttl);
-        return { data, source: "live", name };
-      } catch (e2) { /* stage 3 */ }
+    if (remote) stage2.push(() => CF.fetchJSON(remote + "/fetch?url=" + encodeURIComponent(direct), { timeout: 4500 }).then(CF._unwrapProxyJSON));
+    for (const proxy of CF.PROXIES) {
+      stage2.push(() => CF.fetchJSON(proxy(direct), { timeout: 3200 }).then(CF._unwrapProxyJSON));
     }
+    const proxyLive = stage2.length
+      ? CF.raceJSON(stage2).then((data) => ({ data, source: "live" }))
+      : Promise.reject(new Error("no proxies"));
+    const delayedSnap = (async () => {
+      await new Promise((r) => setTimeout(r, 1100));
+      const snap = await CF.snapshotGet(cacheKey);
+      if (!snap) throw new Error("no snap");
+      return { data: snap, source: "snapshot" };
+    })();
+    const cachedQuick = CF.cacheGet(cacheKey);
+    const delayedCache = cachedQuick
+      ? (async () => {
+          await new Promise((r) => setTimeout(r, 900));
+          return { data: cachedQuick, source: "cache" };
+        })()
+      : Promise.reject(new Error("no cache"));
+    try {
+      const r = await Promise.any([proxyLive, delayedSnap, delayedCache]);
+      if (r.source === "live") CF.cacheSet(cacheKey, r.data, ttl);
+      return { data: r.data, source: r.source, name };
+    } catch (e2) { /* stage 3 */ }
   }
 
   // Stage 3 — localStorage snapshot from a previous successful visit.
   const cached = CF.cacheGet(cacheKey);
   if (cached) return { data: cached, source: "cache", name };
 
-  // Stage 4 — same-origin baked snapshot (data/snapshots/) so first-time
-  // GitHub Pages visitors still get an honest board, not a hung spinner.
+  // Stage 4 — same-origin baked snapshot (data/snapshots/).
   try {
     const snap = await CF.snapshotGet(cacheKey);
     if (snap) return { data: snap, source: "snapshot", name };
@@ -489,16 +533,17 @@ function urlFor(n) {
   if (n === "injuries") return CF.CONFIG.endpoints.espnBase + "/injuries";
   return null;
 }
-/* Public CORS proxies — the last-resort stage for visitors whose networks
-   block every direct host. cors.eu.org leads because it is the one that
-   has actually answered for ESPN; the others stay on the bench as a
-   rotating reserve (free public proxies come and go). Each is only used
-   after the direct attempts failed, and only one winner is needed. */
+/* Public CORS proxies — rescue stage after direct hosts fail.
+   Free public proxies churn hard (ESPN especially is often blocked). Keep
+   the list short, timeouts tight, and always race a same-origin snapshot
+   so GitHub Pages never sits on a spinner. Prefer deploying
+   proxy/cf-proxy-worker.js (proxy/DEPLOY.md) into remoteProxy when you can. */
 CF.PROXIES = [
-  // Short list — free public proxies churn; keep timeouts tight in getSource.
+  // /raw only — /get returns a JSON envelope that breaks RSS text fetches.
   (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
   (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u),
 ];
+CF._unwrapProxyJSON = (data) => data;
 
 CF.todayParam = (d) => {
   const dt = d || new Date();
@@ -611,6 +656,99 @@ CF.coldFrontGauge = (w) => {
   return { score, label, cls };
 };
 
+/* ---- Cold Front Index sparkline (forecast + visit history) ----
+   Fan-facing: a tiny SVG of the Index over the next few days (from
+   Open-Meteo daily) plus a localStorage trail of recent readings so
+   returning visits show movement. Never invents weather — scores come
+   from CF.coldFrontGauge on real numbers only. */
+CF.cfiHistoryKey = "cfiHistory";
+CF.cfiHistoryPush = (score) => {
+  if (score == null || isNaN(score)) return [];
+  try {
+    const raw = localStorage.getItem("cf." + CF.cfiHistoryKey);
+    let arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) arr = [];
+    const now = Date.now();
+    const s = Math.max(0, Math.min(100, Math.round(Number(score))));
+    if (arr.length && Math.abs(now - (arr[arr.length - 1].t || 0)) < 25 * 60e3) {
+      arr[arr.length - 1] = { t: now, score: s };
+    } else {
+      arr.push({ t: now, score: s });
+    }
+    if (arr.length > 48) arr = arr.slice(-48);
+    localStorage.setItem("cf." + CF.cfiHistoryKey, JSON.stringify(arr));
+    return arr;
+  } catch (e) { return []; }
+};
+CF.cfiHistoryGet = () => {
+  try {
+    const raw = localStorage.getItem("cf." + CF.cfiHistoryKey);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+};
+CF.cfiForecastSeries = (wx) => {
+  const d = wx && wx.daily;
+  if (!d || !Array.isArray(d.time) || !d.time.length) return [];
+  const out = [];
+  for (let i = 0; i < d.time.length; i++) {
+    const tMax = d.temperature_2m_max ? d.temperature_2m_max[i] : null;
+    const wind = d.wind_speed_10m_max ? d.wind_speed_10m_max[i] : null;
+    const snow = d.snowfall_sum ? d.snowfall_sum[i] : 0;
+    if (tMax == null && wind == null) continue;
+    const g = CF.coldFrontGauge({ feelsC: tMax, tempC: tMax, wind: wind || 0, gusts: wind || 0, snowCm: snow || 0 });
+    if (g) out.push({ t: d.time[i], score: g.score, cls: g.cls, label: g.label });
+  }
+  return out;
+};
+CF.cfiSparkSVG = (scores) => {
+  if (!scores || scores.length < 2) return "";
+  const w = 118, h = 26, pad = 2;
+  const n = scores.length;
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const s = Math.max(0, Math.min(100, Number(scores[i]) || 0));
+    const x = pad + (i / (n - 1)) * (w - pad * 2);
+    const y = pad + (1 - s / 100) * (h - pad * 2);
+    pts.push([x, y]);
+  }
+  const poly = pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const last = scores[scores.length - 1];
+  const cls = last >= 70 ? "blizzard" : (last >= 40 ? "cruncher" : "mild");
+  const lastPt = pts[pts.length - 1];
+  return '<svg class="cfi-spark ' + cls + '" viewBox="0 0 ' + w + ' ' + h + '" width="118" height="26" role="img" aria-label="Cold Front Index sparkline">' +
+    '<polyline fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" points="' + poly + '"></polyline>' +
+    '<circle cx="' + lastPt[0].toFixed(1) + '" cy="' + lastPt[1].toFixed(1) + '" r="2.3" fill="currentColor"></circle>' +
+    "</svg>";
+};
+CF.paintCfiSpark = (wx, root) => {
+  const host = root || CF.$("#cfi-spark");
+  if (!host) return;
+  const hist = CF.cfiHistoryGet().map((x) => x.score);
+  const forecast = CF.cfiForecastSeries(wx).map((x) => x.score);
+  // Prefer multi-day forecast (clearest fan signal); fall back to visit history.
+  let series = forecast.length >= 2 ? forecast : hist;
+  if (wx && wx.gauge && series.length) {
+    // Pin today's live reading as the first forecast point when present.
+    if (forecast.length >= 2) series = [wx.gauge.score].concat(forecast.slice(1));
+  }
+  if (series.length < 2 && wx && wx.gauge) {
+    series = hist.concat([wx.gauge.score]);
+  }
+  if (series.length < 2) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  const tip = forecast.length >= 2
+    ? ("Cold Front Index · next " + forecast.length + " days at Soldier Field")
+    : ("Cold Front Index · " + series.length + " recent readings");
+  host.title = tip;
+  host.innerHTML = CF.cfiSparkSVG(series) +
+    '<span class="cfi-spark-label">CFI</span>';
+};
+
 CF.loadWeather = async () => {
   const base = CF.CONFIG.endpoints.weather;
   const p = CF.CONFIG.endpoints.weatherParams;
@@ -696,7 +834,10 @@ CF.renderWeatherStrip = (root) => {
     '<span class="wx-brand">⛈ Chicago Field Conditions</span>' +
     '<span class="wx-item" id="wx-now">warming up…</span>' +
     '<span class="wx-item"><span class="wx-dot"></span><b>41.88°N 87.63°W</b></span>' +
-    '<span class="wx-gauge" id="wx-gauge">reading the front…</span>';
+    '<span class="wx-cfi" id="wx-cfi">' +
+      '<span class="wx-gauge" id="wx-gauge">reading the front…</span>' +
+      '<span class="cfi-spark-wrap" id="cfi-spark" hidden></span>' +
+    "</span>";
   const update = () => CF.loadWeather().then((wx) => {
     CF.setSnow(true); // theme snow stays on; weather only boosts density
     if (CF._syncGamedaySnow) CF._syncGamedaySnow();
@@ -706,6 +847,8 @@ CF.renderWeatherStrip = (root) => {
     if (!wx) {
       now.innerHTML = '<span class="wx-offline">offline — last reading unavailable</span>';
       gauge.textContent = "no data";
+      const sp = CF.$("#cfi-spark", el);
+      if (sp) { sp.innerHTML = ""; sp.hidden = true; }
       return;
     }
     const f = (c) => Math.round(c * 9 / 5 + 32);
@@ -723,7 +866,9 @@ CF.renderWeatherStrip = (root) => {
     if (wx.gauge) {
       gauge.textContent = wx.gauge.label + " · " + wx.gauge.score + "/100";
       gauge.className = "wx-gauge " + wx.gauge.cls;
+      CF.cfiHistoryPush(wx.gauge.score);
     }
+    CF.paintCfiSpark(wx, CF.$("#cfi-spark", el));
   });
   update();
   CF.refresh.register(update, CF.CONFIG.ttl.weather || 60e4); // re-read the front every 10 min while the page is open
@@ -1068,7 +1213,7 @@ CF.initChrome = () => {
 };
 
 
-/* ---------- v1.8.0 — stadium hero rotator · kickoff banner · reveal ---------- */
+/* ---------- v1.8+ — stadium hero rotator · kickoff banner · reveal · CFI spark ---------- */
 
 /* Layered hero: primary Soldier Field → alt stadium → CSS gridiron fallback.
    Soft crossfade rotation when motion is allowed; onerror advances layers. */

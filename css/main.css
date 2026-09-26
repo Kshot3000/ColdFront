@@ -285,6 +285,39 @@ h1, h2, h3, h4, .display {
 .wx-gauge.mild { color: #b9e3c6; background: rgba(76, 175, 125, 0.18); border-color: rgba(76, 175, 125, 0.5); }
 .wx-offline { color: var(--warn); }
 
+/* Cold Front Index sparkline (weather strip) */
+.wx-cfi {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.cfi-spark-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(157, 180, 204, 0.28);
+  background: rgba(10, 22, 40, 0.45);
+}
+.cfi-spark { display: block; color: var(--frost); opacity: 0.95; }
+.cfi-spark.blizzard { color: #ffb089; }
+.cfi-spark.cruncher { color: var(--frost); }
+.cfi-spark.mild { color: #9ad7b0; }
+.cfi-spark-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--steel);
+  text-transform: uppercase;
+}
+@media (max-width: 700px) {
+  .wx-cfi { margin-left: 0; width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .cfi-spark-wrap { margin-left: 0; }
+}
+
 /* ---------- Nav ---------- */
 .site-head {
   position: sticky;

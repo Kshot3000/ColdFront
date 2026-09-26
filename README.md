@@ -2,7 +2,7 @@
 
 **Chicago Bears × Midwest Winter Football** — an independent fan site for people who think football should be played in a blizzard.
 
-Navy, orange, steel and frost. A 70-flake snow canvas. A "Cold Front Index" computed from real Chicago weather. Live news, injuries, practice intel, every game this side of the frozen lake, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
+Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** computed from real Chicago weather — with a multi-day sparkline in the weather strip. Live news, injuries, practice intel, every game this side of the frozen lake, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
 
 > Unofficial, unaffiliated fan project. Not affiliated with or endorsed by the NFL, the Chicago Bears, or any broadcaster. Odds are informational — 18+/21+ where legal.
 
@@ -30,7 +30,7 @@ Every feed is fetched through a **raced multi-source chain**: the primary host a
 | Data | Sources tried (in order) | Notes |
 |---|---|---|
 | Scoreboard, schedule, standings, roster, wire, box scores, odds line | `site.api.espn.com` → `site.web.api.espn.com` → `cdn.espn.com` (core API, schedule) | Same JSON, different infrastructure — a network that blocks one rarely blocks all three |
-| …if a visitor's network blocks all direct hosts | `cors.eu.org` → `allorigins.win` → `corsproxy.io` → `codetabs.com` (public CORS proxies) → optional Cloudflare Worker (`remoteProxy`) | Free public proxies rotate in and out; the site keeps a bench of them and uses whichever answers |
+| …if a visitor's network blocks all direct hosts | optional Cloudflare Worker (`remoteProxy`, see `proxy/DEPLOY.md`) → `allorigins.win` / `corsproxy.io` (public CORS bench) → same-origin `data/snapshots/` | Public proxies churn; Worker is the reliable rescue. Snapshots keep Pages panels from spinning |
 | News wide wire | Google News RSS → Bing News RSS (same chain) | 100+ outlets, no key |
 | Roster / schedule / standings (optional, BYO free key) | **TheSportsDB** — a fully independent provider (different company, CDN, JSON) | Set your free key on the About page; the key stays in `localStorage` and is sent only to TheSportsDB |
 | Prediction markets | `gamma-api.polymarket.com` | Live prices; cents ≈ implied probability |
@@ -136,7 +136,7 @@ curl http://127.0.0.1:8799/healthz        # -> {"ok":true}
 
 **Auto-start at login:** a shortcut to `Start-Local-Proxy.bat` lives in the Windows *Startup* folder (`shell:startup`) — delete that shortcut to turn auto-start off. This is what keeps the site's data updating constantly while your machine is on.
 
-**Remote / mobile (optional):** deploy `proxy/cf-proxy-worker.js` (e.g. `npm i -g wrangler`, then `wrangler deploy` from `proxy/`) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. Both implementations enforce the same host allow-list; the proxy only ever fetches from the sources below.
+**Remote / mobile (optional):** see `proxy/DEPLOY.md`. Deploy `proxy/cf-proxy-worker.js` (`wrangler deploy` from `proxy/`, Node 22+) and paste the Worker URL into `CF.CONFIG.endpoints.remoteProxy` in `js/common.js`. No Cloudflare credentials ship in this repo — leave `remoteProxy: ""` and rely on direct hosts + snapshots until you deploy. Both proxy implementations enforce the same host allow-list.
 
 **Data sources (every feed has a second source — and most have a third):**
 

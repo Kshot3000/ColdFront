@@ -1,0 +1,49 @@
+<!DOCTYPE html><html><body>
+<canvas id="snow"></canvas>
+<div class="weather-strip" data-cf-weather></div>
+<header class="site-head"><div class="wrap">
+<button class="nav-toggle" aria-label="Toggle menu">☰</button>
+<nav class="nav" id="site-nav"><a href="../index.html">Home</a><a href="../games.html">Games</a></nav>
+</div></header>
+<pre id="o">boot</pre>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/common.js"></script>
+<script src="../js/api.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const o=s=>{document.getElementById('o').textContent += '\n'+s; console.log(s)};
+  try {
+    o('ver='+CF.CONFIG.site.version);
+    o('remoteProxy='+JSON.stringify(CF.CONFIG.endpoints.remoteProxy));
+    o('proxyUsable='+JSON.stringify(CF.usableLocalProxy()));
+    o('snow='+!!CF.$('#snow'));
+    CF.$('.nav-toggle').click();
+    o('navOpen='+document.body.classList.contains('nav-open'));
+    CF.$('.nav-toggle').click();
+    const sc=await CF.API.getSchedule();
+    o('schedule='+sc.source+':'+(sc.data.events||[]).length);
+    const sb=await CF.API.getScoreboard();
+    o('scoreboard='+sb.source+':'+(sb.data.events||[]).length);
+    try { await CF.API.getStandings(); o('standings=live'); }
+    catch(e){ const d=await CF.API.preseasonStandingsAuto(); o('standings='+d.name+':'+d.rows.length); }
+    const od=await CF.API.getOdds();
+    o('odds='+od.source+':'+((od.data.games||[]).length));
+    const gn=await CF.API.getGoogleNews('Chicago Bears',4);
+    o('gnews='+gn.length+' date0='+(gn[0]&&gn[0].date));
+    const inj=await CF.API.getLeagueInjuries();
+    const rows=CF.API.bearsInjuryRows(inj.data).rows;
+    o('injuries='+inj.source+':'+rows.length);
+    const ro=await CF.API.getRoster();
+    o('roster='+ro.source+':'+CF.API.rosterPlayers(ro.data).length);
+    const wx=await CF.loadWeather();
+    o('wx='+(wx&&wx.tempC)+' gauge='+(wx&&wx.gauge&&wx.gauge.score)+' daily='+(wx&&wx.daily&&wx.daily.time&&wx.daily.time.length));
+    const series=CF.cfiForecastSeries(wx);
+    o('cfiSeries='+series.length+' svg='+(CF.cfiSparkSVG(series.map(x=>x.score)).length>0));
+    CF.renderWeatherStrip();
+    await new Promise(r=>setTimeout(r,2500));
+    o('sparkDOM='+!!CF.$('#cfi-spark')+' hidden='+(CF.$('#cfi-spark')&&CF.$('#cfi-spark').hidden)+' htmlLen='+((CF.$('#cfi-spark')&&CF.$('#cfi-spark').innerHTML)||'').length);
+    o('QA_OK');
+  } catch(e){ o('QA_FAIL '+e+' '+(e&&e.stack)); }
+});
+</script>
+</body></html>
