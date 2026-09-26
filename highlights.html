@@ -4,19 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#060d18">
-  <title>News Wire — THE COLD FRONT</title>
-  <meta name="description" content="Live Chicago Bears news wire: headlines as they drop, with an injury wire rail. Independent fan site.">
-  <meta property="og:title" content="News Wire — THE COLD FRONT">
+  <title>Game Highlights — THE COLD FRONT</title>
+  <meta name="description" content="Chicago Bears game highlights and latest videos, straight from the official Bears YouTube channel. Independent fan site.">
+  <meta property="og:title" content="Game Highlights — THE COLD FRONT">
+  <meta property="og:description" content="Bears highlights and the latest videos from the official Chicago Bears YouTube channel.">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://kshot3000.github.io/ColdFront/news.html">
+  <meta property="og:url" content="https://kshot3000.github.io/ColdFront/highlights.html">
   <meta property="og:image" content="https://kshot3000.github.io/ColdFront/img/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="THE COLD FRONT — Chicago Bears × Midwest Winter Football">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@kshot9000">
-  <meta name="twitter:title" content="News Wire — THE COLD FRONT">
-  <meta name="twitter:description" content="Live Chicago Bears news wire: headlines as they drop, with an injury wire rail. Independent fan site.">
+  <meta name="twitter:title" content="Game Highlights — THE COLD FRONT">
+  <meta name="twitter:description" content="Chicago Bears game highlights and latest videos, straight from the official Bears YouTube channel.">
   <meta name="twitter:image" content="https://kshot3000.github.io/ColdFront/img/og-image.png">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +25,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css?v=1.12.0">
   <link rel="stylesheet" href="css/experience.css?v=1.12.0">
+  <link rel="stylesheet" href="css/highlights.css?v=1.13.0">
 </head>
 <body>
 <canvas id="snow" aria-hidden="true"></canvas>
@@ -69,59 +71,51 @@
 <main>
   <div class="wrap">
     <div class="page-intro">
-      <div class="eyebrow">Hub · News</div>
+      <div class="eyebrow">Hub · Highlights</div>
 
-
-    <div class="photo-band lincoln-park" aria-label="Lincoln Park skyline at night" style="margin:8px 0 22px">
-      <div class="photo-band-bg" aria-hidden="true"></div>
-      <div class="photo-band-inner">
-        <div class="photo-band-copy">
-          <div class="eyebrow" style="margin:0 0 6px">Lincoln Park night</div>
-          <h3>Headlines against the lake lights.</h3>
-          <p>Skyline over the water for the wire — Unsplash photography; Cold Front marks only. Never league logos.</p>
-        </div>
-        <div class="photo-band-art" aria-hidden="true">
-          <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
-          <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
+      <div class="photo-band soldier" aria-label="Soldier Field at night" style="margin:8px 0 22px">
+        <div class="photo-band-bg" aria-hidden="true"></div>
+        <div class="photo-band-inner">
+          <div class="photo-band-copy">
+            <div class="eyebrow" style="margin:0 0 6px">Soldier Field night</div>
+            <h3>The tape room, minus the projector.</h3>
+            <p>Latest drops from the official Bears channel — highlights, mic'd up, trailers. Cold Front marks only. Never league logos.</p>
+          </div>
+          <div class="photo-band-art" aria-hidden="true">
+            <img class="art-mark lg" src="img/paw-mark.svg" alt="" width="110" height="110" decoding="async">
+            <img class="art-mark" src="img/football-silhouette.svg" alt="" width="88" height="88" decoding="async">
+          </div>
         </div>
       </div>
-    </div>
-      <h1>The News Wire</h1>
-      <p>Headlines as they drop from the league wire, with an <span class="orange">injury rail</span> on the side that flags every headline that smells like a report change. Refreshes on the clock — or hit refresh when you suspect a drop.</p>
+
+      <h1>Game Highlights</h1>
+      <p>The latest from the official <span class="orange">Chicago Bears YouTube channel</span> — game highlights, mic'd up, trailers, and pressers, pulled in live with no key and no account. Tap any card to roll it in the big frame.</p>
     </div>
 
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0 8px" class="badge-row">
-      <span class="pill cache is-loading" id="feed-pill">connecting…</span>
-      <span class="dim" id="feed-updated" style="font-size:12.5px"></span>
-      <span style="margin-left:auto;display:flex;gap:8px">
-        <button class="btn small" id="refresh" type="button">↻ Refresh now</button>
-        <a class="btn small" href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Bears.com news ↗</a>
+      <span class="pill cache is-loading" id="hl-pill">connecting…</span>
+      <span class="dim" id="hl-updated" style="font-size:12.5px"></span>
+      <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn small" id="hl-refresh" type="button">↻ Refresh now</button>
+        <a class="btn small" href="https://www.youtube.com/@ChicagoBears" target="_blank" rel="noopener">Bears on YouTube ↗</a>
       </span>
     </div>
 
-    <div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start" id="news-grid">
-      <div class="news-list" id="news-list">
-        <div class="empty is-loading" role="status"><div class="big">📡</div><div class="empty-title">Tuning in</div><p class="empty-sub">League wire first — then we keep the rail warm.</p></div>
-      </div>
-      <div class="rail" id="injury-rail">
-        <h3>🩹 Injury wire</h3>
-        <p class="dim" style="font-size:12.5px;margin:6px 0 12px">Headlines that mention a body part, a report, or a question mark.</p>
-        <div class="news-list" id="injury-news">
-          <div class="empty" style="padding:18px 14px;font-size:12.5px">Nothing flagged yet.</div>
-        </div>
+    <div class="hl-feature" id="hl-feature" aria-live="polite">
+      <div class="empty is-loading" role="status"><div class="big">🎬</div><div class="empty-title">Rolling the tape</div><p class="empty-sub">Pulling the latest from the Bears channel.</p></div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:22px 0 4px">
+      <h2 style="margin:0;font-size:20px;letter-spacing:.5px">Latest drops</h2>
+      <div class="hl-filters" role="group" aria-label="Filter videos" style="margin-left:auto">
+        <button class="chip" type="button" data-filter="all" aria-pressed="true">All videos</button>
+        <button class="chip" type="button" data-filter="highlight" aria-pressed="false">🎞 Highlights only</button>
       </div>
     </div>
 
-    <div id="gn-section" style="margin-top:38px">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <h2 style="margin:0;font-size:20px;letter-spacing:.5px">The Wide Wire</h2>
-        <span class="dim" style="font-size:12.5px">the same story, every other outlet — Google News RSS</span>
-        <span class="pill cache is-loading" id="gn-pill" style="margin-left:auto">connecting…</span>
-      </div>
-      <div class="news-list" id="gn-list">
-        <div class="empty is-loading" role="status"><div class="big">📰</div><div class="empty-title">Tuning the shortwave</div><p class="empty-sub">Wide wire across outlets — same story, every angle.</p></div>
-      </div>
-    </div>
+    <div class="hl-grid" id="hl-list"></div>
+
+    <p class="dim" style="font-size:12px;margin:26px 0 0">Videos belong to the Chicago Bears / NFL and stream from YouTube. The Cold Front just points at them — unofficial fan project, not affiliated with the league or the team.</p>
   </div>
 </main>
 
@@ -174,6 +168,6 @@
 <script src="js/common.js?v=1.12.0"></script>
 <script src="js/snow.js?v=1.12.0"></script>
 <script src="js/api.js?v=1.12.0"></script>
-<script src="js/news.js?v=1.12.0"></script>
+<script src="js/highlights.js?v=1.13.0"></script>
 </body>
 </html>

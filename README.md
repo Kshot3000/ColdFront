@@ -25,6 +25,7 @@ Favorites, predictions, snow preferences, cached public data, and optional user-
 | Home | Matchup, personal score pick, season numbers, news, North matchups and standings |
 | News | ESPN stories, injury headlines, wider RSS wire, refresh |
 | Games | Date-selectable scoreboard, season schedule, per-game leaders, division standings |
+| Highlights | Latest Bears YouTube videos, featured player, highlights-only filter, no key needed |
 | Stats | Completed-game record, scoring, recent Bears leaders, last-game detail |
 | Odds | ESPN game lines, Bears prediction markets, optional The Odds API board |
 | Injuries | ESPN report, roster flags, community fallback, injury news |
