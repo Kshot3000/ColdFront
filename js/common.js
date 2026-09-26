@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.2.0",
+    version: "1.3.1",
   },
 
   author: {
@@ -193,6 +193,9 @@ CF.toast = (msg) => {
   if (!t) {
     t = document.createElement("div");
     t.id = "toast";
+    t.setAttribute("role", "status");
+    t.setAttribute("aria-live", "polite");
+    t.setAttribute("aria-atomic", "true");
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -216,6 +219,43 @@ CF.copyText = (text, msg) => {
     try { document.execCommand("copy"); done(); } catch (e) { CF.toast("Copy failed — select it manually"); }
     document.body.removeChild(ta);
   }
+};
+
+
+/* ---------------- shared empty / skeleton markup ----------------
+   Keep loading & empty states consistent across pages. Callers pass
+   icon + title (+ optional sub / action HTML). Markup matches the
+   .empty / .skel classes in css/main.css. */
+CF.emptyHTML = (opts) => {
+  opts = opts || {};
+  const icon = opts.icon != null ? opts.icon : "❄";
+  const title = opts.title != null ? opts.title : "Nothing here";
+  const sub = opts.sub != null ? opts.sub : "";
+  const action = opts.action || "";
+  const loading = !!opts.loading;
+  const cls = "empty" + (loading ? " is-loading" : "") + (opts.cls ? " " + opts.cls : "");
+  const style = opts.style ? ' style="' + CF.esc(opts.style) + '"' : "";
+  return '<div class="' + cls + '" role="status" aria-live="polite"' + style + ">" +
+    '<div class="big" aria-hidden="true">' + icon + "</div>" +
+    (title ? '<div class="empty-title">' + title + "</div>" : "") +
+    (sub ? '<p class="empty-sub">' + sub + "</p>" : "") +
+    (action || "") +
+    "</div>";
+};
+
+/* Build N skeleton table rows spanning `cols` columns.
+   widths: optional array of % widths (cycles). */
+CF.skelRows = (cols, n, widths) => {
+  cols = Math.max(1, Number(cols) || 4);
+  n = Math.max(1, Number(n) || 3);
+  widths = widths || [82, 70, 76, 64, 78];
+  let html = "";
+  for (let i = 0; i < n; i++) {
+    const w = widths[i % widths.length];
+    const lg = i === 0 ? " lg" : "";
+    html += '<tr><td colspan="' + cols + '"><span class="skel' + lg + '" style="width:' + w + '%"></span></td></tr>';
+  }
+  return html;
 };
 
 /* ---------------- fetch with timeout + localStorage cache ---------------- */
@@ -603,7 +643,8 @@ CF.renderWeatherStrip = (root) => {
     '<span class="wx-item"><span class="wx-dot"></span><b>41.88°N 87.63°W</b></span>' +
     '<span class="wx-gauge" id="wx-gauge">reading the front…</span>';
   const update = () => CF.loadWeather().then((wx) => {
-    CF.setSnow(CF.snowShouldFall(wx)); // let the flake machine follow the real weather
+    CF.setSnow(true); // theme snow stays on; weather only boosts density
+    if (CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(wx));
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
     if (!wx) {
@@ -632,44 +673,50 @@ CF.renderWeatherStrip = (root) => {
   CF.refresh.register(update, CF.CONFIG.ttl.weather || 60e4); // re-read the front every 10 min while the page is open
 };
 
-/* ---------------- snow canvas (weather- and season-aware) ----------------
-   The theme is winter football, but it's still summer in August, so the
-   flake machine only spins on REAL snow signals: a WMO snow weather code,
-   actual snowfall today (Open-Meteo snowfall_sum >= 0.2 cm), the NWS
-   forecast wording saying snow, or sub-freezing temps. "Chance of
-   precipitation" is NOT a snow signal — in August that's just the odds of a
-   summer storm. With no weather data at all, it falls back to Chicago's
-   real snow window (Nov-Mar). Respects prefers-reduced-motion. */
+/* ---------------- snow canvas (theme snow — always on) ----------------
+   THE COLD FRONT is a winter-football theme: decorative snow runs year-round
+   unless the visitor has prefers-reduced-motion. Weather can still *boost*
+   intensity (blizzard / lake-effect), but it never turns the flakes off.
+   Real snow signals from Open-Meteo / NWS bump density; calm days stay light. */
 CF.snowShouldFall = (wx) => {
-  if (wx && typeof wx === "object") {
-    const code = Number(wx.code) || 0;
-    const SNOW_CODES = [56, 57, 66, 67, 71, 73, 75, 77, 85, 86];
-    if (SNOW_CODES.indexOf(code) >= 0) return true;
-    if (wx.snowCm != null && Number(wx.snowCm) >= 0.2) return true; // actual snowfall today
-    if (wx.snowWord) return true; // NWS forecast wording: snow
-    const t = (wx.feelsC != null) ? wx.feelsC : wx.tempC;
-    if (t != null && Number(t) <= 2) return true;
-    return false;
-  }
-  const m = new Date().getMonth(); // 0 = Jan
-  return m >= 10 || m <= 2;
+  // Theme default: snow is part of the brand. Only reduced-motion kills it.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  return true;
+};
+
+/* Returns 1 (base) or higher when real winter weather is in. */
+CF.snowIntensity = (wx) => {
+  let n = 1;
+  if (!wx || typeof wx !== "object") return n;
+  const code = Number(wx.code) || 0;
+  const SNOW_CODES = [56, 57, 66, 67, 71, 73, 75, 77, 85, 86];
+  if (SNOW_CODES.indexOf(code) >= 0) n = 1.55;
+  if (wx.snowCm != null && Number(wx.snowCm) >= 0.2) n = Math.max(n, 1.45);
+  if (wx.snowWord) n = Math.max(n, 1.35);
+  const t = (wx.feelsC != null) ? wx.feelsC : wx.tempC;
+  if (t != null && Number(t) <= 2) n = Math.max(n, 1.25);
+  return n;
 };
 
 CF.setSnow = (on) => {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) on = false;
-  if (CF._snowOn === on) return;
+  if (CF._snowOn === on) {
+    if (on && CF._snow && CF._snow.ensureRunning) CF._snow.ensureRunning();
+    return;
+  }
   CF._snowOn = on;
   if (on) CF._snow.start(); else CF._snow.stop();
 };
 
 CF._snow = (function () {
-  /* Depth layers: near (large/fast), mid, far (small/slow) for wind + depth. */
+  /* Depth layers: near (large/fast), mid, far (small/slow). Counts bumped so
+     flakes read clearly on mobile and desktop without washing out type. */
   const LAYERS = [
-    { n: 45, rMin: 1.6, rMax: 3.4, vyMin: 0.7, vyMax: 1.55, vxAmp: 0.55, sway: 0.018, aMin: 0.4, aMax: 0.85 },
-    { n: 55, rMin: 0.9, rMax: 2.0, vyMin: 0.4, vyMax: 0.95, vxAmp: 0.35, sway: 0.014, aMin: 0.28, aMax: 0.6 },
-    { n: 40, rMin: 0.5, rMax: 1.2, vyMin: 0.22, vyMax: 0.55, vxAmp: 0.22, sway: 0.01, aMin: 0.15, aMax: 0.4 },
+    { n: 70, rMin: 1.8, rMax: 4.2, vyMin: 0.75, vyMax: 1.7, vxAmp: 0.6, sway: 0.018, aMin: 0.55, aMax: 0.95 },
+    { n: 90, rMin: 1.0, rMax: 2.4, vyMin: 0.45, vyMax: 1.05, vxAmp: 0.4, sway: 0.014, aMin: 0.4, aMax: 0.75 },
+    { n: 70, rMin: 0.55, rMax: 1.4, vyMin: 0.25, vyMax: 0.65, vxAmp: 0.25, sway: 0.01, aMin: 0.28, aMax: 0.55 },
   ];
-  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false, wind = 0, windT = 0;
+  let canvas = null, ctx = null, W = 0, H = 0, flakes = [], raf = 0, running = false, wind = 0, windT = 0, intensity = 1;
   const mk = (init, L) => ({
     x: Math.random() * W,
     y: init ? Math.random() * H : -8,
@@ -681,17 +728,27 @@ CF._snow = (function () {
     swaySp: L.sway * (0.7 + Math.random() * 0.6),
     L: L,
   });
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  function resize() {
+    if (!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   function onVis() {
     if (document.hidden) { running = false; cancelAnimationFrame(raf); }
     else if (CF._snowOn) { running = true; loop(); }
   }
   function loop() {
-    if (!running) return;
+    if (!running || !ctx) return;
     windT += 0.004;
-    wind = Math.sin(windT) * 0.35 + Math.sin(windT * 0.37) * 0.18;
+    wind = Math.sin(windT) * 0.4 + Math.sin(windT * 0.37) * 0.2;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#e8f1fa";
+    ctx.fillStyle = "#eef5fc";
     for (const f of flakes) {
       f.sway += f.swaySp;
       f.x += f.vx + wind * (0.4 + f.r * 0.15) + Math.sin(f.sway) * 0.22;
@@ -707,33 +764,49 @@ CF._snow = (function () {
     ctx.globalAlpha = 1;
     raf = requestAnimationFrame(loop);
   }
-  function start() {
-    if (running) return;
-    canvas = CF.$("#snow");
-    if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    ctx = canvas.getContext("2d");
-    resize();
-    window.addEventListener("resize", resize);
-    document.addEventListener("visibilitychange", onVis);
+  function rebuildFlakes() {
     flakes = [];
-    // Mobile / narrow: cut flake count ~45% for smoother scroll & battery.
-    const narrow = window.matchMedia("(max-width: 700px), (hover: none)").matches;
-    const scale = narrow ? 0.55 : 1;
+    // Keep flakes visible on phones — only a light trim, never half.
+    const narrow = window.matchMedia("(max-width: 700px)").matches;
+    const scale = (narrow ? 0.88 : 1) * intensity;
     for (const L of LAYERS) {
-      const n = Math.max(8, Math.round(L.n * scale));
+      const n = Math.max(18, Math.round(L.n * scale));
       for (let i = 0; i < n; i++) flakes.push(mk(true, L));
     }
-    running = true;
-    loop();
+  }
+  function start() {
+    canvas = CF.$("#snow");
+    if (!canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+    resize();
+    window.removeEventListener("resize", resize);
+    window.addEventListener("resize", resize);
+    document.removeEventListener("visibilitychange", onVis);
+    document.addEventListener("visibilitychange", onVis);
+    rebuildFlakes();
+    if (!running) {
+      running = true;
+      loop();
+    }
   }
   function stop() {
     running = false;
     cancelAnimationFrame(raf);
     window.removeEventListener("resize", resize);
     document.removeEventListener("visibilitychange", onVis);
-    if (ctx) ctx.clearRect(0, 0, W, H);
+    if (ctx && canvas) ctx.clearRect(0, 0, W, H);
   }
-  return { start, stop };
+  function ensureRunning() {
+    if (CF._snowOn && !running) start();
+  }
+  function setIntensity(n) {
+    const next = Math.max(0.8, Math.min(1.8, Number(n) || 1));
+    if (Math.abs(next - intensity) < 0.05) return;
+    intensity = next;
+    if (running) rebuildFlakes();
+  }
+  return { start, stop, ensureRunning, setIntensity };
 })();
 
 /* Shared status pill class for injury rows (Out / Questionable / IR / …). */
@@ -764,32 +837,87 @@ CF.injectAtmosphere = () => {
   else document.body.insertBefore(el, document.body.firstChild);
 };
 
+CF.closeNav = (nav, toggle) => {
+  if (!nav) return;
+  nav.classList.remove("open");
+  document.body.classList.remove("nav-open");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open menu");
+  }
+  const bd = CF.$(".nav-backdrop");
+  if (bd) bd.hidden = true;
+};
+
+CF.openNav = (nav, toggle) => {
+  if (!nav) return;
+  const head = CF.$(".site-head");
+  if (head) document.documentElement.style.setProperty("--cf-head-h", head.offsetHeight + "px");
+  nav.classList.add("open");
+  document.body.classList.add("nav-open");
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Close menu");
+  }
+  let bd = CF.$(".nav-backdrop");
+  if (!bd) {
+    bd = document.createElement("button");
+    bd.type = "button";
+    bd.className = "nav-backdrop";
+    bd.setAttribute("aria-label", "Close menu");
+    bd.addEventListener("click", () => CF.closeNav(nav, toggle));
+    document.body.appendChild(bd);
+  }
+  bd.hidden = false;
+  const first = nav.querySelector("a");
+  if (first) setTimeout(() => first.focus(), 20);
+};
+
 CF.initChrome = () => {
   CF.injectAtmosphere();
+
   const page = (location.pathname.split("/").pop() || "index.html").replace(/\.html$/, "") || "index";
   CF.$$(".nav a").forEach((a) => {
     const href = (a.getAttribute("href") || "").replace(/\.html$/, "");
     if (href === page || (page === "index" && href === "")) a.classList.add("active");
     if (/x\.com\/kshot/i.test(a.getAttribute("href") || "")) a.classList.add("nav-x");
   });
+
   const toggle = CF.$(".nav-toggle");
   const nav = CF.$(".nav");
   if (toggle && nav) {
-    toggle.addEventListener("click", () => {
-      const open = nav.classList.toggle("open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    });
+    if (!nav.id) nav.id = "site-nav";
+    toggle.setAttribute("type", "button");
+    toggle.setAttribute("aria-controls", nav.id);
     toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open menu");
+    toggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (nav.classList.contains("open")) CF.closeNav(nav, toggle);
+      else CF.openNav(nav, toggle);
+    });
     // Close drawer after a tap so mobile chrome doesn't stay open over the next page paint.
-    nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
-      nav.classList.remove("open");
-      toggle.setAttribute("aria-expanded", "false");
-    }));
+    nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => CF.closeNav(nav, toggle)));
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && nav.classList.contains("open")) {
-        nav.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
+      if (!nav.classList.contains("open")) return;
+      if (e.key === "Escape") {
+        CF.closeNav(nav, toggle);
         toggle.focus();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // Don't use offsetParent — fixed-position drawers report null.
+      const list = [toggle].concat(Array.from(nav.querySelectorAll("a, button"))).filter(Boolean);
+      if (list.length < 2) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     });
   }
@@ -815,10 +943,10 @@ CF.initChrome = () => {
   }
 
   CF.renderWeatherStrip();
-  // Snow decision: use the last cached reading if we have one, otherwise
-  // the calendar (Nov-Mar in Chicago). renderWeatherStrip re-decides as
-  // soon as the live weather answers — no August blizzards.
-  CF.setSnow(CF.snowShouldFall(CF.cacheGet("weather")));
+  // Theme snow: always on (unless reduced-motion). Weather only boosts intensity.
+  CF.setSnow(true);
+  const cachedWx = CF.cacheGet("weather");
+  if (cachedWx && CF._snow && CF._snow.setIntensity) CF._snow.setIntensity(CF.snowIntensity(cachedWx));
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
