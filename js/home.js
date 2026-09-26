@@ -266,6 +266,18 @@
       "</td><td><span class=\"st " + CF.esc(CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>";
   }
 
+  async function paintHomeInjuryMove(rows) {
+    const host = CF.$("#home-inj-movement");
+    if (!host || !CF.diffInjuryMovement) return;
+    try {
+      const prior = await CF.loadInjuryPrior();
+      const diff = CF.diffInjuryMovement(rows || [], prior && prior.rows);
+      // Compact on home — skip quiet state to keep the snapshot lean.
+      host.innerHTML = CF.injuryMovementHTML(diff, { maxNew: 3, maxUp: 2, maxRem: 2 });
+    } catch (e) { host.innerHTML = ""; }
+    if (rows && rows.length) CF.injSnapSet(rows);
+  }
+
   async function loadInjuries() {
     const body = CF.$("#home-injuries tbody");
     let rows = [];
@@ -282,6 +294,7 @@
     }
     if (rows.length) {
       body.innerHTML = rows.slice(0, 3).map(injRowHTML).join("");
+      await paintHomeInjuryMove(rows);
       return;
     }
     // Community-maintained JSON, last resort.
@@ -292,8 +305,11 @@
       body.innerHTML = local.length ? local.map((row) =>
         "<tr><td class=\"strong\">" + CF.esc(row.name) + "</td><td>" + CF.esc(row.pos) + "</td><td>" + CF.esc(row.injury) + "</td><td><span class=\"st " + CF.esc(row.statusCls || CF.injStatusCls(row.status)) + "\">" + CF.esc(row.status) + "</span></td></tr>"
       ).join("") : '<tr><td colspan="4" class="dim">Report is empty right now — all clear? Suspicious. Check back.</td></tr>';
+      await paintHomeInjuryMove(data.rows || []);
     } catch (e3) {
       body.innerHTML = '<tr><td colspan="4" class="dim">Report unavailable.</td></tr>';
+      const host = CF.$("#home-inj-movement");
+      if (host) host.innerHTML = "";
     }
   }
 
@@ -419,17 +435,27 @@
       bits.push(src === "live" ? "live sched" : "snapshot");
       if (lineOk) bits.push("wire");
       if (polyOk) bits.push("poly");
+      if (g.home) bits.push("home wx");
       pill.textContent = bits.join(" · ");
       pill.className = "tag";
     }
 
+    let wxHTML = "";
+    if (g.home && CF.kickoffWeatherHTML) {
+      try { wxHTML = await CF.kickoffWeatherHTML(true); } catch (e3) { wxHTML = ""; }
+    }
+
     root.innerHTML =
+      '<div class="desk-accent" aria-hidden="true"></div>' +
       '<div class="desk-head">' +
+      '<div class="desk-kicker"><span class="k">Next kickoff</span></div>' +
       '<div class="desk-match">' + CF.esc(matchup) + "</div>" +
       '<div class="desk-when dim"><b>' + CF.esc(CF.fmtDate(g.date)) + "</b> · " +
       CF.esc(CF.fmtTime(g.date) || "TBD") +
       (g.tv ? " · TV " + CF.esc(g.tv) : "") +
+      (g.home ? " · Home · Soldier Field" : " · Away") +
       "</div></div>" +
+      (wxHTML || "") +
       '<div class="desk-grid">' +
       '<div class="matchup-stat"><span class="k">Rest</span><div class="v">' + CF.esc(restBit) +
       '</div><div class="s">' + CF.esc(restSub) + "</div></div>" +
@@ -627,6 +653,87 @@
   }
 
 
+
+  /* ---------- film-room teaser (after a final) ----------
+     Compact last-box leaders when a completed Bears game is fresh —
+     deep-links to stats last-box + games. Hidden when nothing final. */
+  function filmLeaderCell(l) {
+    return CF.esc(l.player) +
+      (l.pos || l.teamAbbr
+        ? ' <span class="dim">' + CF.esc([l.pos, l.teamAbbr].filter(Boolean).join(" · ")) + "</span>"
+        : "");
+  }
+
+  async function loadFilmRoom() {
+    const root = CF.$("#film-room");
+    const pill = CF.$("#film-room-pill");
+    const section = CF.$("#film-room-section");
+    if (!root) return;
+    let last = null;
+    try {
+      const r = await CF.API.getSchedule();
+      const rows = CF.API.scheduleList(r.data);
+      const now = Date.now();
+      last = rows
+        .filter((g) => new Date(g.date).getTime() < now - 3 * 3600e3 && g.scoreMe != null && g.scoreOpp != null)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    } catch (e) { /* schedule quiet */ }
+    if (!last) {
+      if (section) section.hidden = true;
+      root.innerHTML = "";
+      if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
+      return;
+    }
+    // Keep teaser warm for ~5 days after the final — otherwise hide.
+    const ageH = (Date.now() - new Date(last.date).getTime()) / 3600e3;
+    if (ageH > 120) {
+      if (section) section.hidden = true;
+      root.innerHTML = "";
+      if (pill) { pill.textContent = "archived"; pill.className = "tag"; }
+      return;
+    }
+    try {
+      const ev = await CF.API.bearsGameEvent(last.id);
+      const c = (ev.competitions || [])[0] || {};
+      const leaders = (CF.API.eventLeaders(ev) || []).slice(0, 4);
+      const site = last.home ? "vs" : "@";
+      const score = String(last.scoreMe) + "–" + String(last.scoreOpp);
+      const result = last.result || ((Number(last.scoreMe) > Number(last.scoreOpp)) ? "W" : "L");
+      if (section) section.hidden = false;
+      if (pill) {
+        pill.textContent = "last final";
+        pill.className = "tag";
+      }
+      root.innerHTML =
+        '<div class="film-room-card">' +
+        '<div class="film-room-head">' +
+        '<div class="film-kicker"><span class="k">Film room</span></div>' +
+        '<div class="film-match"><b>' + CF.esc(result) + "</b> " +
+        CF.esc(site) + " " + CF.esc(last.oppAbbr || last.opp || "OPP") +
+        ' <span class="dim">' + CF.esc(score) + " · " + CF.esc(CF.fmtDate(last.date)) + "</span></div>" +
+        "</div>" +
+        (leaders.length
+          ? '<div class="film-leaders" role="list">' +
+            leaders.map((l) =>
+              '<div class="film-leader" role="listitem">' +
+              '<span class="k">' + CF.esc(l.label) + "</span>" +
+              '<span class="film-who">' + filmLeaderCell(l) + "</span>" +
+              '<span class="film-line">' + CF.esc(l.display) + "</span></div>"
+            ).join("") +
+            "</div>"
+          : '<p class="dim" style="margin:8px 0 0;font-size:13px">Leaders quiet on the wire — score still stands.</p>') +
+        '<div class="film-actions">' +
+        '<a class="btn small" href="stats.html#lastbox">Full last box →</a>' +
+        '<a class="btn small" href="games.html">Games log →</a>' +
+        '<a class="btn small" href="stats.html">Stats →</a>' +
+        "</div></div>";
+    } catch (e2) {
+      if (section) section.hidden = true;
+      root.innerHTML = "";
+      if (pill) { pill.textContent = "feed quiet"; pill.className = "tag"; }
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     loadNextGame();
     loadStandings();
@@ -635,6 +742,7 @@
     loadWeekClock();
     loadOddsPulse();
     loadSundayDesk();
+    loadFilmRoom();
     // Keep the home page moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(loadNextGame, 30e3);              // next game + live clock: 30 s
     CF.refresh.register(loadStandings, 60e3);            // NFC North: 60 s
@@ -643,5 +751,6 @@
     CF.refresh.register(loadWeekClock, 60e3, { name: "week-clock" });
     CF.refresh.register(loadOddsPulse, 60e3, { name: "odds-pulse" });
     CF.refresh.register(loadSundayDesk, 60e3, { name: "sunday-desk" });
+    CF.refresh.register(loadFilmRoom, 2 * 60e3, { name: "film-room" });
   });
 })();

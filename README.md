@@ -2,7 +2,7 @@
 
 **Chicago Bears × Midwest Winter Football** — an independent fan site for people who think football should be played in a blizzard.
 
-Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** computed from real Chicago weather — with a multi-day sparkline in the weather strip. Live news, injuries, practice intel (with a participation heat strip), every game this side of the frozen lake, a **Sunday desk** matchup card, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
+Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** computed from real Chicago weather — with a multi-day sparkline in the weather strip. Live news, injuries (with report-movement chips), practice intel (with a participation heat strip), every game this side of the frozen lake, a **Sunday desk** matchup card, a post-final **film room** teaser, player stats, and an odds board with both Vegas lines and Polymarket prediction-market odds.
 
 > Unofficial, unaffiliated fan project. Not affiliated with or endorsed by the NFL, the Chicago Bears, or any broadcaster. Odds are informational — 18+/21+ where legal.
 
@@ -12,12 +12,12 @@ Navy, orange, steel and frost. A 70-flake snow canvas. A **Cold Front Index** co
 
 | Page | What's on it |
 |---|---|
-| `index.html` | Next game + live score + countdown, **Sunday desk** (rest · last meetings · wire/Polymarket), NFC North watch, latest headlines, injury snapshot, quick links, socials |
+| `index.html` | Next game + live score + countdown, **Sunday desk** (rest · last meetings · wire/Polymarket · home kickoff weather), **film-room teaser** after a final, NFC North watch, latest headlines, injury snapshot with **movement chips**, quick links, socials |
 | `news.html` | Live news wire with auto-refresh, plus an **injury wire** rail that flags report-moving headlines |
-| `games.html` | Live scoreboard (auto-refreshing every 30 s), day-by-day picker, **Sunday desk** matchup fusion, full season log with results, **box scores** on tap, division table |
+| `games.html` | Live scoreboard (auto-refreshing every 30 s), day-by-day picker, **Sunday desk** matchup fusion (home kickoff weather), full season log with results, **box scores** on tap, division table |
 | `stats.html` | Season pulse (record, points, differential from the log), player leaders when the feed exposes season stats, last game box score |
 | `odds.html` | League-wire lines, **Polymarket prediction markets** (live prices, volume), and a full-board box that takes **your own The Odds API key** (free tier) for Bet365/Pinnacle/DraftKings side-by-side |
-| `injuries.html` | Community-maintained report table (`data/injuries.json`) + live injury wire |
+| `injuries.html` | Community-maintained report table (`data/injuries.json`) + live injury wire + **movement chips** vs prior snapshot |
 | `practice.html` | Facilities, week rhythm, **participation heat-map week strip**, media availability, and a practice tracker (`data/practice.json` — optional `participation[]`) |
 | `team.html` | Full roster from the league wire — search by name/jersey, filter by position |
 | `about.html` | The site, **@kshot9000** on X, donation addresses (BTC / ERG / ADA) with QR + copy, and the other projects |

@@ -335,9 +335,24 @@
         '<div class="s">No live line or Bears Polymarket right now. <a href="odds.html">Odds board →</a></div></div>';
     }
 
+    let wxBlock = "";
+    if (g.home && CF.kickoffWeatherHTML) {
+      try {
+        const wx = await CF.kickoffWeatherHTML(true);
+        if (wx) {
+          wxBlock =
+            '<div class="matchup-stat desk-wx">' +
+            '<span class="k">Kickoff weather</span>' +
+            wx.replace('class="kickoff-wx"', 'class="kickoff-wx in-desk"') +
+            "</div>";
+        }
+      } catch (e3) { /* weather quiet */ }
+    }
+
     root.innerHTML =
-      '<div class="desk-title"><span class="k">Sunday desk</span> <span class="s">next opp · rest · last meetings · line</span></div>' +
-      lastHTML + restHTML + histHTML + wireHTML + polyHTML;
+      '<div class="desk-title"><span class="k">Sunday desk</span> <span class="s">next opp · rest · last meetings · line' +
+      (g.home ? " · home wx" : "") + "</span></div>" +
+      lastHTML + restHTML + histHTML + wireHTML + polyHTML + wxBlock;
     root.hidden = false;
   }
 

@@ -13,6 +13,21 @@
     return "active";
   }
 
+  async function paintMovement(rows) {
+    const host = CF.$("#inj-movement");
+    if (!host) return;
+    try {
+      const prior = await CF.loadInjuryPrior();
+      const diff = CF.diffInjuryMovement(rows || [], prior && prior.rows);
+      host.innerHTML = CF.injuryMovementHTML(diff, { showQuiet: !!(prior && prior.rows && prior.rows.length) });
+      if (prior && prior.source) host.dataset.prior = prior.source;
+    } catch (e) {
+      host.innerHTML = "";
+    }
+    // Always refresh the device prior from the live table so the next visit diffs cleanly.
+    if (rows && rows.length) CF.injSnapSet(rows);
+  }
+
   /* The table prefers live data: league report (per-player status +
      editorial notes) → roster flags → community JSON. */
   function reportRow(row, eta) {
@@ -40,6 +55,7 @@
           pill.textContent = "live · API-Sports";
           note.textContent = "Structured injury rows via API-Sports (key set on this device). Cross-check with the official pregame report.";
           body.innerHTML = rows.map((row) => reportRow(row, row.eta)).join("");
+          await paintMovement(rows);
           return;
         }
       } catch (e) { /* fall through to the league report */ }
@@ -56,6 +72,7 @@
         pill.textContent = "live · league report";
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        await paintMovement(rows);
         return;
       }
     } catch (e) { /* league feed silent */ }
@@ -69,6 +86,7 @@
         pill.textContent = "live · roster report";
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        await paintMovement(rows);
         return;
       }
     } catch (e2) { /* roster silent too */ }
@@ -93,6 +111,7 @@
             title: "Report is empty",
             sub: "Either everyone is healthy (suspicious) or the table is waiting for its first update. The wire on the right has the live picture.",
           }) + "</td></tr>";
+      await paintMovement(rows);
     } catch (e3) {
       pill.className = "pill sample";
       body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({

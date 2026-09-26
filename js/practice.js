@@ -78,6 +78,9 @@
       pill.className = "tag";
     }
     root.innerHTML =
+      '<div class="heat-accent" aria-hidden="true"></div>' +
+      '<div class="heat-head"><span class="k">Week intensity</span>' +
+      '<span class="dim">Facility → gameday</span></div>' +
       '<div class="heat-legend" aria-hidden="true">' +
       '<span class="heat-leg-item"><i class="heat-swatch lv-0"></i>Off</span>' +
       '<span class="heat-leg-item"><i class="heat-swatch lv-1"></i>Walk</span>' +

@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.10.0",
+    version: "1.11.0",
   },
 
   author: {
@@ -1043,6 +1043,125 @@ CF.injStatusCls = (s) => {
   if (x.includes("day")) return "day-to-day";
   if (x.includes("suspens")) return "out";
   return "active";
+};
+
+/* ---- Injury movement vs prior snapshot ----
+   Fan signal: who is NEW on the report, who got UPGRADED (worse), who was
+   REMOVED (cleared). Prior = localStorage trail, else the baked nightly
+   snapshot when available. Never invents — only diffs real rows. */
+CF.injSnapKey = "injSnap";
+CF.injSeverity = (s) => {
+  const x = (s || "").toLowerCase();
+  if (!x || x === "active" || x.includes("healthy")) return 0;
+  if (x.includes("day")) return 1;
+  if (x.includes("questionable")) return 2;
+  if (x.includes("doubtful")) return 3;
+  if (x.includes("injured reserve") || x === "ir" || x.includes("out") || x.includes("suspens")) return 4;
+  return 2;
+};
+CF.injRowKey = (row) => String((row && row.name) || "").trim().toLowerCase().replace(/\s+/g, " ");
+CF.injSnapGet = () => {
+  try {
+    const raw = localStorage.getItem("cf." + CF.injSnapKey);
+    const o = raw ? JSON.parse(raw) : null;
+    if (!o || !Array.isArray(o.rows)) return null;
+    return o;
+  } catch (e) { return null; }
+};
+CF.injSnapSet = (rows) => {
+  try {
+    const slim = (rows || []).filter((r) => r && r.name).map((r) => ({
+      name: r.name,
+      pos: r.pos || "",
+      status: r.status || "",
+      comment: r.comment || r.injury || "",
+    }));
+    localStorage.setItem("cf." + CF.injSnapKey, JSON.stringify({ t: Date.now(), rows: slim }));
+  } catch (e) { /* private mode */ }
+};
+CF.diffInjuryMovement = (current, priorRows) => {
+  const cur = (current || []).filter((r) => r && r.name && (r.status || "").toLowerCase() !== "active");
+  const pri = (priorRows || []).filter((r) => r && r.name && (r.status || "").toLowerCase() !== "active");
+  const curMap = {};
+  cur.forEach((r) => { curMap[CF.injRowKey(r)] = r; });
+  const priMap = {};
+  pri.forEach((r) => { priMap[CF.injRowKey(r)] = r; });
+  const neu = [], up = [], rem = [];
+  Object.keys(curMap).forEach((k) => {
+    const c = curMap[k];
+    const p = priMap[k];
+    if (!p) neu.push(c);
+    else if (CF.injSeverity(c.status) > CF.injSeverity(p.status)) {
+      up.push({ name: c.name, from: p.status, to: c.status, pos: c.pos });
+    }
+  });
+  Object.keys(priMap).forEach((k) => {
+    if (!curMap[k]) rem.push(priMap[k]);
+  });
+  return { new: neu, upgraded: up, removed: rem, hasPrior: !!(priorRows && priorRows.length) };
+};
+CF.injuryMovementHTML = (diff, opts) => {
+  opts = opts || {};
+  if (!diff || !diff.hasPrior) return "";
+  const bits = [];
+  (diff.new || []).slice(0, opts.maxNew || 4).forEach((r) => {
+    bits.push('<span class="move-chip new" title="Newly listed">' +
+      '<span class="k">New</span><b>' + CF.esc(r.name) + "</b>" +
+      (r.status ? ' <span class="st ' + CF.esc(CF.injStatusCls(r.status)) + '">' + CF.esc(r.status) + "</span>" : "") +
+      "</span>");
+  });
+  (diff.upgraded || []).slice(0, opts.maxUp || 4).forEach((r) => {
+    bits.push('<span class="move-chip up" title="' + CF.esc((r.from || "?") + " → " + (r.to || "?")) + '">' +
+      '<span class="k">↑ Up</span><b>' + CF.esc(r.name) + "</b>" +
+      ' <span class="dim">' + CF.esc(r.from || "?") + " → " + CF.esc(r.to || "?") + "</span></span>");
+  });
+  (diff.removed || []).slice(0, opts.maxRem || 4).forEach((r) => {
+    bits.push('<span class="move-chip rem" title="Cleared from report">' +
+      '<span class="k">Cleared</span><b>' + CF.esc(r.name) + "</b></span>");
+  });
+  if (!bits.length) {
+    return opts.showQuiet
+      ? '<div class="inj-move quiet" role="status"><span class="dim">No report movement vs prior snapshot.</span></div>'
+      : "";
+  }
+  const count = (diff.new || []).length + (diff.upgraded || []).length + (diff.removed || []).length;
+  return '<div class="inj-move" role="status" aria-label="Injury report movement">' +
+    '<div class="inj-move-head"><span class="k">Report movement</span>' +
+    '<span class="dim">' + count + " change" + (count === 1 ? "" : "s") + " vs prior</span></div>" +
+    '<div class="inj-move-chips">' + bits.join("") + "</div></div>";
+};
+/* Resolve prior rows: device snapshot first, else baked nightly injuries. */
+CF.loadInjuryPrior = async () => {
+  const local = CF.injSnapGet();
+  if (local && local.rows && local.rows.length) return { rows: local.rows, source: "device" };
+  try {
+    // Use snapshotGet so /_qa and GitHub Pages subpaths resolve correctly.
+    const data = await CF.snapshotGet("injuries-bears");
+    if (!data) return null;
+    const x = CF.API && CF.API.bearsInjuryRows ? CF.API.bearsInjuryRows(data) : { rows: [] };
+    const rows = (x.rows || []).filter((row) => row.status && row.status.toLowerCase() !== "active");
+    if (rows.length) return { rows, source: "baked" };
+  } catch (e) { /* no baked prior */ }
+  return null;
+};
+/* Compact Chicago kickoff weather line for Sunday desk / next-opp (home only). */
+CF.kickoffWeatherHTML = async (isHome) => {
+  if (!isHome) return "";
+  try {
+    const wx = await CF.loadWeather();
+    if (!wx || wx.tempC == null) {
+      return '<div class="kickoff-wx dim">❄ Soldier Field · weather offline</div>';
+    }
+    const f = Math.round(Number(wx.tempC) * 9 / 5 + 32);
+    const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
+    const wind = wx.wind != null ? " · wind " + Math.round(wx.wind) + " km/h" : "";
+    const gauge = wx.gauge ? (' · CFI <b>' + wx.gauge.score + "</b>") : "";
+    return '<div class="kickoff-wx" title="Kickoff conditions at Soldier Field">' +
+      '<span class="k">Kickoff wx</span>' +
+      '<span class="kickoff-wx-body">❄ Chicago · <b>' + f + "°F</b> " + desc + wind + gauge + "</span></div>";
+  } catch (e) {
+    return '<div class="kickoff-wx dim">❄ Soldier Field · weather unavailable</div>';
+  }
 };
 
 /* ---------------- nav + chrome ---------------- */

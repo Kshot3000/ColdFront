@@ -1,0 +1,101 @@
+<!DOCTYPE html><html><body>
+<canvas id="snow"></canvas>
+<div class="weather-strip" data-cf-weather></div>
+<header class="site-head"><div class="wrap">
+<button class="nav-toggle" aria-label="Toggle menu">☰</button>
+<nav class="nav" id="site-nav">
+  <a href="../index.html">Home</a>
+  <a href="../games.html">Games</a>
+  <a href="../injuries.html">Injuries</a>
+  <a href="../practice.html">Practice</a>
+</nav>
+</div></header>
+<div id="sunday-desk"></div>
+<div id="sunday-desk-pill" class="tag"></div>
+<div id="next-opp-preview" class="matchup-preview sunday-desk" hidden></div>
+<div id="film-room-section"><div id="film-room-pill" class="tag"></div><div id="film-room"></div></div>
+<div id="home-inj-movement"></div>
+<div id="inj-movement"></div>
+<div id="practice-heat"></div>
+<div id="heat-pill" class="tag"></div>
+<pre id="o">boot</pre>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/common.js"></script>
+<script src="../js/api.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const o=s=>{document.getElementById('o').textContent += '\n'+s; console.log(s)};
+  try {
+    o('ver='+CF.CONFIG.site.version);
+    if (CF.CONFIG.site.version !== '1.11.0') throw new Error('bad version');
+    o('snow='+!!CF.$('#snow'));
+    CF.$('.nav-toggle').click();
+    o('navOpen='+document.body.classList.contains('nav-open'));
+    CF.$('.nav-toggle').click();
+    o('navClosed='+!document.body.classList.contains('nav-open'));
+
+    // Injury movement helpers
+    const samplePrev = [
+      { name: 'A Player', status: 'Questionable', pos: 'WR' },
+      { name: 'B Player', status: 'Out', pos: 'CB' },
+      { name: 'C Player', status: 'Doubtful', pos: 'TE' }
+    ];
+    const sampleCur = [
+      { name: 'A Player', status: 'Out', pos: 'WR' },
+      { name: 'D Player', status: 'Questionable', pos: 'LB' },
+      { name: 'C Player', status: 'Doubtful', pos: 'TE' }
+    ];
+    const diff = CF.diffInjuryMovement(sampleCur, samplePrev);
+    o('moveNew='+diff.new.length+' up='+diff.upgraded.length+' rem='+diff.removed.length);
+    if (diff.new.length !== 1 || diff.upgraded.length !== 1 || diff.removed.length !== 1) throw new Error('diff shape');
+    const html = CF.injuryMovementHTML(diff, { showQuiet: true });
+    o('moveHtml='+(html.includes('move-chip')?'yes':'no'));
+    CF.$('#inj-movement').innerHTML = html;
+    o('injHost='+(CF.$('#inj-movement').children.length>0));
+
+    // Prior loader (baked snapshot)
+    const prior = await CF.loadInjuryPrior();
+    o('prior='+(prior?(prior.source+':'+prior.rows.length):'none'));
+
+    const sc = await CF.API.getSchedule();
+    o('schedule='+sc.source+':'+(sc.data.events||[]).length);
+    const g = CF.API.nextBearsGameFromSchedule(sc.data);
+    o('nextOpp='+(g?(g.oppAbbr||g.opp)+'@'+g.date+' home='+!!g.home:'none'));
+
+    if (CF.kickoffWeatherHTML) {
+      const wx = await CF.kickoffWeatherHTML(true);
+      o('kickoffWx='+(wx && wx.includes('kickoff-wx')?'yes':'empty'));
+      if (g && g.home) CF.$('#sunday-desk').innerHTML = '<div class="desk-accent"></div>'+wx;
+    }
+
+    // Film-room data path: last completed + leaders
+    const rows = CF.API.scheduleList(sc.data);
+    const now = Date.now();
+    const last = rows
+      .filter((x) => new Date(x.date).getTime() < now - 3*3600e3 && x.scoreMe != null && x.scoreOpp != null)
+      .sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    o('lastFinal='+(last?(last.oppAbbr||last.opp)+' '+last.scoreMe+'-'+last.scoreOpp:'none'));
+    if (last) {
+      try {
+        const ev = await CF.API.bearsGameEvent(last.id);
+        const leaders = CF.API.eventLeaders(ev);
+        o('leaders='+leaders.length);
+      } catch (e) { o('leaders=fail'); }
+    }
+
+    const inj = await CF.API.getLeagueInjuries();
+    const irows = CF.API.bearsInjuryRows(inj.data).rows.filter(r=>r.status&&r.status.toLowerCase()!=='active');
+    o('injuries='+inj.source+':'+irows.length);
+
+    const prac = await (await fetch('../data/practice.json',{cache:'no-cache'})).json();
+    o('practiceRows='+(prac.rows||[]).length+' part='+(prac.participation||[]).length);
+
+    // CSS polish hooks
+    o('deskCss='+(document.styleSheets.length>0?'ok':'no'));
+    o('moveChipRule='+(!!Array.from(document.styleSheets).some(s=>{try{return Array.from(s.cssRules||[]).some(r=>String(r.selectorText||'').includes('.move-chip'))}catch(e){return false}})));
+
+    o('QA_OK');
+  } catch (e) { o('QA_FAIL '+e+' '+(e&&e.stack)); }
+});
+</script>
+</body></html>
