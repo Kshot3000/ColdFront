@@ -1183,6 +1183,18 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .proj-card .go { font-family: var(--display); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange-hot); }
 
 .social-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+
+/* ============================================================
+   v1.18.0 — balanced social grid: the grid previously auto-filled
+   6 columns, orphaning the last 2 links on a half-empty row.
+   8 links now sit in full rows at every breakpoint (4/2/1 cols).
+   ============================================================ */
+@media (min-width: 1024px) {
+  .social-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 560px) and (max-width: 1023px) {
+  .social-grid { grid-template-columns: repeat(2, 1fr); }
+}
 .social-grid a {
   display: flex;
   align-items: center;
