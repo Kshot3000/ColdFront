@@ -391,3 +391,28 @@ test('roster player cards carry the group identity thread, entrance stagger, and
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('highlights video cards carry the identity thread, entrance stagger, and skeleton loading',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/highlights.css'),'utf8');
+ assert.match(css,/\.hl-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'cards carry the orange identity thread');
+ assert.match(css,/\.hl-card:hover \.hl-mini-play,\s*\.hl-card:focus-visible \.hl-mini-play/s,'the play badge answers hover and keyboard focus alike');
+ assert.match(css,/@media \(hover: none\)\s*\{[\s\S]*?\.hl-mini-play/s,'touch users keep the play badge on');
+ assert.match(css,/@keyframes hlPlayPing/,'the attention ring pings');
+ assert.match(css,/@keyframes hlRise/,'highlights entrance keyframes exist');
+ assert.match(css,/\.hl-card\.cf-enter\s*\{[^}]*animation-delay:\s*calc\(var\(--hi, 0\) \* 40ms\)/s,'the entrance staggers on a --hi cascade');
+ assert.match(css,/\.hl-skel \.skel-shot/s,'skeleton video cards mirror the card shape');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.hl-card\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ const p=await page('highlights');try{
+  const d=p.w.document;
+  const cards=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(cards.length>=2,'the feed renders video cards');
+  assert.ok(cards.every(c=>c.classList.contains('cf-enter')),'first paint staggers every card');
+  assert.equal(cards[0].style.getPropertyValue('--hi'),'0','the cascade starts at --hi: 0');
+  assert.equal(cards[1].style.getPropertyValue('--hi'),'1','the second card follows the cascade');
+  assert.ok(cards.some(c=>c.getAttribute('data-kind')==='highlight'),'game footage carries the highlight kind');
+  d.querySelector('.hl-filters [data-filter="highlight"]').click();await settle();
+  const filtered=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(filtered.length>=1,'the highlights-only filter renders footage');
+  assert.ok(filtered.every(c=>!c.classList.contains('cf-enter')),'filter re-renders stay instant');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

@@ -5,6 +5,9 @@
      YouTube channel RSS (Atom) → public CORS proxies → local snapshot.
    Clicking a card loads it into the featured player (privacy-enhanced
    youtube-nocookie embed). "Highlights only" filters for game footage.
+   v1.32.0: frosted-glass card glow-up with identity thread, staggered
+   frost-fade entrance on first paint, and skeleton video cards while
+   the feed loads.
    ============================================================ */
 "use strict";
 
@@ -96,13 +99,18 @@
 
   var state = { items: [], filter: "all", current: null };
 
+  // v1.32.0 — the frost-fade entrance runs once, on first paint; filter and
+  // refresh re-renders stay instant.
+  var firstPaint = true;
+
   function embedURL(id, autoplay) {
     return "https://www.youtube-nocookie.com/embed/" + id + "?rel=0" + (autoplay ? "&autoplay=1" : "");
   }
 
-  function cardHTML(v, active) {
+  function cardHTML(v, active, enter, idx) {
     var kind = kindOf(v);
-    return '<button type="button" class="hl-card' + (active ? " is-active" : "") + '" data-vid="' + esc(v.videoId) + '" data-kind="' + kind + '">' +
+    return '<button type="button" class="hl-card' + (active ? " is-active" : "") + (enter ? " cf-enter" : "") + '" data-vid="' + esc(v.videoId) + '" data-kind="' + kind + '"' +
+      (enter ? ' style="--hi:' + Math.min(idx, 11) + '"' : "") + '>' +
       '<span class="hl-thumb"><img loading="lazy" src="' + esc(CF.safeURL(v.thumb)) + '" alt="" ' +
       'onerror="CF.hlThumbFail(this)">' +
       '<span class="hl-mini-play" aria-hidden="true"></span></span>' +
@@ -160,7 +168,11 @@
       });
       return;
     }
-    list.innerHTML = items.map(function (v) { return cardHTML(v, v.videoId === state.current); }).join("");
+    // The entrance choreography runs once, on first paint.
+    var enter = firstPaint; firstPaint = false;
+    list.innerHTML = items.map(function (v, i) {
+      return cardHTML(v, v.videoId === state.current, enter, i);
+    }).join("");
     Array.prototype.forEach.call(list.querySelectorAll(".hl-card"), function (c) {
       c.addEventListener("click", function () {
         var v = state.items.filter(function (x) { return x.videoId === c.getAttribute("data-vid"); })[0];
@@ -183,11 +195,23 @@
     pill.classList.toggle("cache", true);
   }
 
+  // v1.32.0 — skeleton video cards mirroring .hl-card while the feed loads,
+  // with a screen-reader status so the wait is announced.
+  function skelCards(n) {
+    var out = '<span class="sr-only" role="status">Loading the latest Bears videos…</span>';
+    for (var i = 0; i < n; i++) {
+      out += '<div class="hl-skel" aria-hidden="true"><span class="skel skel-shot"></span>' +
+        '<span class="skel-copy"><span class="skel lg" style="width:92%"></span>' +
+        '<span class="skel" style="width:56%"></span></span></div>';
+    }
+    return out;
+  }
+
   async function load() {
     var list = CF.$("#hl-list");
     var pill = CF.$("#hl-pill");
     pill.textContent = "connecting…";
-    list.innerHTML = CF.emptyHTML({ icon: "🎬", title: "Rolling the tape", sub: "Pulling the latest from the Bears channel.", loading: true });
+    list.innerHTML = skelCards(6);
     var r = await getVideos();
     state.items = r.items;
     setPill(r.live, r.items.length);
