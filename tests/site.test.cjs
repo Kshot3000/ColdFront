@@ -236,3 +236,29 @@ test('footer glow-up: bottom bar with PRL tip chip that copies the donation addr
   }finally{p.close();}
  }
 });
+
+test('odds board highlights the best Bears price across books',async()=>{
+ const p=await page('odds');try{const w=p.w;
+  w.CF.API.getSchedule=async()=>({source:'live',data:{season:{displayName:'2026'},events:[event('200','PHI','CHI')]}});
+  const payload=[{id:'200',name:'Chicago Bears at Philadelphia Eagles',competitions:[{odds:[
+   {provider:{name:'DraftKings'},pointSpread:{home:{close:{line:-3}},away:{close:{line:3}}},overUnder:47.5,moneyline:{home:{close:{odds:-160}},away:{close:{odds:140}}}},
+   {provider:{name:'FanDuel'},pointSpread:{home:{close:{line:-2.5}},away:{close:{line:2.5}}},overUnder:48,moneyline:{home:{close:{odds:-150}},away:{close:{odds:130}}}}
+  ]}]}];
+  w.CF.API.getOdds=async()=>({source:'live',data:payload});
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await settle(500);
+  const d=w.document;
+  const strip=d.querySelector('.best-strip');
+  assert.ok(strip,'best-price strip renders above the board');
+  assert.match(strip.textContent,/Best Bears prices/);
+  assert.match(strip.textContent,/Spread \+3 @ DraftKings/,'Bears-away best spread is +3 at DraftKings');
+  assert.match(strip.textContent,/ML \+140 @ DraftKings/,'Bears-away best ML is +140 at DraftKings');
+  assert.match(strip.textContent,/Over 47\.5 @ DraftKings/,'best Over is the lowest total');
+  assert.match(strip.textContent,/Under 48 @ FanDuel/,'best Under is the highest total');
+  const bests=[...d.querySelectorAll('.odds-card b.best')].map(b=>b.textContent);
+  assert.ok(bests.some(t=>t.includes('+3')&&t.includes('BEST')),'best spread cell is badged');
+  assert.ok(bests.some(t=>t.includes('+140')&&t.includes('BEST')),'best ML cell is badged');
+  assert.ok(bests.some(t=>t.includes('BEST OVER')),'best Over cell is badged');
+  assert.ok(bests.some(t=>t.includes('BEST UNDER')),'best Under cell is badged');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#odds-board').textContent));
+ }finally{p.close();}
+});

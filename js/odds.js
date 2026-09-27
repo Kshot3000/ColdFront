@@ -35,12 +35,14 @@
       if (!line || !line.lines.length) throw new Error("no lines");
       pill.className = "pill ok";
       pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + gameName;
-      box.innerHTML = line.lines.map((l) =>
+      const side = bearsSideOf(nextGame);
+      const best = side ? bestBearsPrices(line.lines, side) : null;
+      box.innerHTML = (best ? bestStrip(best, line.lines) : "") + line.lines.map((l, i) =>
         '<div class="odds-card">' +
         '<span class="book">' + CF.esc(l.book) + "</span>" +
-        (l.spread && l.spread.home != null ? spreadRow(l) : "") +
-        (l.total != null ? '<div class="odds-row"><span>Total (O/U)</span><b>' + CF.esc(l.total) + "</b></div>" : "") +
-        (l.ml ? mlRow(l) : "") +
+        (l.spread && l.spread.home != null ? spreadRow(l, side, best, i) : "") +
+        (l.total != null ? totalRow(l, best, i) : "") +
+        (l.ml ? mlRow(l, side, best, i) : "") +
         (l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener" style="font-size:12px">details ↗</a>' : "") +
         "</div>"
       ).join("");
@@ -55,13 +57,85 @@
     }
   }
 
-  function spreadRow(l) {
-    return '<div class="odds-row"><span>Spread (home)</span><b class="' + (String(l.spread.home).startsWith("-") ? "neg" : "pos") + '">' + CF.esc(l.spread.home) + "</b></div>" +
-      '<div class="odds-row"><span>Spread (away)</span><b class="' + (String(l.spread.away).startsWith("-") ? "neg" : "pos") + '">' + CF.esc(l.spread.away) + "</b></div>";
+  /* Best-price finder: which book has the friendliest number for the Bears
+     on each market? Best spread = largest line value (fewer points to cover
+     for a favorite, more points for a dog); best ML = largest price;
+     best Over = lowest total; best Under = highest total. */
+  function bearsSideOf(g) {
+    if (!g) return null;
+    if (typeof g.home === "boolean") return g.home ? "home" : "away";
+    if (g.home && g.home.abbr === "CHI") return "home";
+    if (g.away && g.away.abbr === "CHI") return "away";
+    return null;
   }
-  function mlRow(l) {
-    return '<div class="odds-row"><span>ML (home)</span><b class="' + (String(l.ml.home).startsWith("-") ? "neg" : "pos") + '">' + CF.esc(l.ml.home) + "</b></div>" +
-      '<div class="odds-row"><span>ML (away)</span><b class="' + (String(l.ml.away).startsWith("-") ? "neg" : "pos") + '">' + CF.esc(l.ml.away) + "</b></div>";
+  function bestBearsPrices(lines, side) {
+    const num = (v) => (v == null || v === "" ? null : Number(v));
+    const spreads = [], mls = [], totals = [];
+    lines.forEach((l, i) => {
+      const sp = num(l.spread && l.spread[side]);
+      const mlp = num(l.ml && l.ml[side]);
+      const tot = num(l.total);
+      if (sp != null && Number.isFinite(sp)) spreads.push({v: sp, book: l.book, i});
+      if (mlp != null && Number.isFinite(mlp)) mls.push({v: mlp, book: l.book, i});
+      if (tot != null && Number.isFinite(tot)) totals.push({v: tot, book: l.book, i});
+    });
+    const pick = (arr, better) => (arr.length ? arr.reduce((a, b) => (better(b.v, a.v) ? b : a)) : null);
+    return {
+      spread: pick(spreads, (b, a) => b > a),
+      ml: pick(mls, (b, a) => b > a),
+      over: pick(totals, (b, a) => b < a),
+      under: pick(totals, (b, a) => b > a),
+    };
+  }
+  function bestChip(label) {
+    return '<span class="best-chip" title="Best Bears price on this board">' + label + "</span>";
+  }
+  const fmtSigned = (v) => (v > 0 ? "+" : "") + v;
+  function isBest(pick, l, i, v) {
+    return pick && i === pick.i && Number(v) === pick.v;
+  }
+  function bestStrip(best, lines) {
+    const parts = [];
+    if (best.spread) parts.push("Spread " + fmtSigned(best.spread.v) + " @ " + best.spread.book);
+    if (best.ml) parts.push("ML " + fmtSigned(best.ml.v) + " @ " + best.ml.book);
+    if (best.over && best.under && best.over.v === best.under.v) parts.push("O/U " + best.over.v + " @ " + best.over.book);
+    else {
+      if (best.over) parts.push("Over " + best.over.v + " @ " + best.over.book);
+      if (best.under) parts.push("Under " + best.under.v + " @ " + best.under.book);
+    }
+    if (!parts.length) return "";
+    return '<div class="best-strip" role="note"><span class="best-strip-hed">🐻 Best Bears prices</span>' +
+      "<span>across " + lines.length + " " + (lines.length === 1 ? "book" : "books") + ":</span> " +
+      "<b>" + parts.map(CF.esc).join("</b> · <b>") + "</b></div>";
+  }
+  function spreadRow(l, side, best, i) {
+    const row = (key, label) => {
+      const v = l.spread[key];
+      const win = best && key === side && v != null && isBest(best.spread, l, i, v);
+      return '<div class="odds-row"><span>Spread (' + label + ')</span><b class="' +
+        (String(v).startsWith("-") ? "neg" : "pos") + (win ? " best" : "") + '">' +
+        CF.esc(v == null ? "—" : fmtSigned(Number(v))) + (win ? bestChip("BEST") : "") + "</b></div>";
+    };
+    return row("home", "home") + row("away", "away");
+  }
+  function totalRow(l, best, i) {
+    const v = Number(l.total);
+    const over = best && isBest(best.over, l, i, v);
+    const under = best && isBest(best.under, l, i, v);
+    const chips = over && under ? bestChip("BEST O/U") : (over ? bestChip("BEST OVER") : (under ? bestChip("BEST UNDER") : ""));
+    return '<div class="odds-row"><span>Total (O/U)</span><b class="' + ((over || under) ? "best" : "") + '">' +
+      CF.esc(l.total) + chips + "</b></div>";
+  }
+  function mlRow(l, side, best, i) {
+    const row = (key, label) => {
+      const v = l.ml[key];
+      const win = best && key === side && v != null && isBest(best.ml, l, i, v);
+      const shown = v == null ? "—" : fmtSigned(Number(v));
+      return '<div class="odds-row"><span>ML (' + label + ')</span><b class="' +
+        (String(v).startsWith("-") ? "neg" : "pos") + (win ? " best" : "") + '">' +
+        CF.esc(shown) + (win ? bestChip("BEST") : "") + "</b></div>";
+    };
+    return row("home", "home") + row("away", "away");
   }
 
   /* ---------- 2) Polymarket ---------- */
@@ -129,20 +203,42 @@
         return;
       }
       const g = bears[0];
-      const rows = (g.bookmakers || []).map((b) => {
+      const bearsSideFull = /bears/i.test(g.home_team || "") ? "home" : "away";
+      const parsed = (g.bookmakers || []).map((b) => {
         const market=(key)=>(b.markets || []).find((m)=>m.key===key)?.outcomes || [];
         const spread=market("spreads").find((o)=>o.name===g.home_team);
         const total=market("totals").find((o)=>o.name==="Over");
         const ml=market("h2h"),home=ml.find((o)=>o.name===g.home_team),away=ml.find((o)=>o.name===g.away_team);
+        const sp = spread && spread.point != null ? Number(spread.point) : null;
+        const mlSide = bearsSideFull === "home" ? home : away;
+        const mlp = mlSide && mlSide.price != null ? Number(mlSide.price) : null;
+        return {b, spread, total, home, away,
+          bearsSpread: sp != null && Number.isFinite(sp) ? (bearsSideFull === "home" ? sp : -sp) : null,
+          bearsML: mlp != null && Number.isFinite(mlp) ? mlp : null};
+      });
+      const bestSpreadFull = parsed.reduce((a, r) => (r.bearsSpread != null && (a == null || r.bearsSpread > a) ? r.bearsSpread : a), null);
+      const bestMLFull = parsed.reduce((a, r) => (r.bearsML != null && (a == null || r.bearsML > a) ? r.bearsML : a), null);
+      const rows = parsed.map((r) => {
         const price=(n)=>n==null ? "—" : (Number(n)>0 ? "+" : "") + n;
-        return '<tr><td class="strong">'+CF.esc(b.title || b.key)+'</td><td class="num">'+CF.esc(spread ? price(spread.point)+" ("+price(spread.price)+")" : "—")+'</td><td class="num">'+CF.esc(total?.point ?? "—")+'</td><td class="num">'+CF.esc(price(home?.price)+" / "+price(away?.price))+'</td><td class="dim">'+CF.esc(b.last_update ? CF.fmtTime(b.last_update) : "—")+'</td></tr>';
+        const sBest = bestSpreadFull != null && r.bearsSpread === bestSpreadFull;
+        const mBest = bestMLFull != null && r.bearsML === bestMLFull;
+        const mlCell = (o) => {
+          if (!o || o.price == null) return "—";
+          const isB = mBest && ((bearsSideFull === "home" && o === r.home) || (bearsSideFull === "away" && o === r.away));
+          return '<span class="mlx' + (isB ? " best" : "") + '">' + CF.esc(price(o.price)) + "</span>" + (isB ? bestChip("BEST") : "");
+        };
+        return '<tr><td class="strong">'+CF.esc(r.b.title || r.b.key)+'</td>' +
+          '<td class="num'+(sBest ? " best" : "")+'">'+(r.spread ? CF.esc(price(r.spread.point)+" ("+price(r.spread.price)+")") : "—")+(sBest ? bestChip("BEST") : "")+'</td>' +
+          '<td class="num">'+CF.esc(r.total?.point ?? "—")+'</td>' +
+          '<td class="num">'+mlCell(r.home)+" / "+mlCell(r.away)+'</td>' +
+          '<td class="dim">'+CF.esc(r.b.last_update ? CF.fmtTime(r.b.last_update) : "—")+'</td></tr>';
       });
       box.innerHTML =
         '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><thead><tr>' +
         "<th>Book</th><th class=\"num\">Spread</th><th class=\"num\">O/U</th><th class=\"num\">ML home/away</th><th>Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
         '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
-        " · source: The Odds API (your key) · usage depends on your plan</p>";
+        " · source: The Odds API (your key) · usage depends on your plan · orange = best Bears price</p>";
     } catch (e) {
       box.innerHTML = '<div class="empty" style="padding:18px">The Odds API said no (' + "request unavailable" + '). Check the key, or the free-tier quota.</div>';
     } finally { loadingFullBoard = false; CF.$("#odds-key-go").disabled = false; }
