@@ -1006,7 +1006,7 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/\.prediction-diff\.is-bears\s*\{[^}]*box-shadow/s,'the Bears differential glows');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/experience.css?v=1.58.0'),'index.html busts the experience.css cache');
+ assert.ok(html.includes('css/experience.css?v=1.59.0'),'index.html busts the experience.css cache');
  assert.ok(html.includes('js/home.js?v=1.58.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
@@ -1034,4 +1034,35 @@ test('v1.58.0: the prediction differential answers every keystroke',async()=>{
   d.querySelector('#prediction-bears').dispatchEvent(new p.w.Event('input',{bubbles:true}));
   assert.equal(diff.textContent,'');
  }finally{p.close();}
+});
+
+test('v1.59.0: social tiles join the family — identity thread, icon warm-up, focus ring',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.social-grid a::before/,'the tile carries the orange identity thread');
+ assert.match(css,/\.social-grid a:hover::before,\s*\.social-grid a:focus-visible::before\s*\{\s*opacity:\s*1/s,'the thread ignites on hover and keyboard focus');
+ assert.match(css,/\.social-grid a:hover \.ico,\s*\.social-grid a:focus-visible \.ico\s*\{[^}]*color:\s*var\(--orange-hot\)/s,'the icon warms under attention');
+ assert.match(css,/\.social-grid a:focus-visible\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible family focus ring');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.social-grid a::before[\s\S]*transition:\s*none/,'reduced motion snaps the social-tile transitions');
+ const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(index.includes('css/experience.css?v=1.59.0'),'index.html busts the experience.css cache');
+ assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+ const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
+ assert.ok(practice.includes('css/experience.css?v=1.59.0'),'practice.html busts the experience.css cache');
+ assert.ok(practice.includes('data-cf-copy="btc"'),'footer tip chip is intact on practice.html');
+});
+
+test('v1.59.0: social grids render safe external links on index and practice',async()=>{
+ for(const name of ['index','practice']){ const p=await page(name); try{
+  const d=p.w.document;
+  const sel=name==='index'?'#home-socials':'#practice-socials';
+  const links=[...d.querySelectorAll(sel+' a')];
+  assert.ok(links.length>0,sel+' renders tiles');
+  for(const a of links){
+   assert.ok(a.href.startsWith('https://'),'tile points off-site safely');
+   assert.equal(a.getAttribute('target'),'_blank');
+   assert.ok((a.getAttribute('rel')||'').includes('noopener'),'tile carries rel=noopener');
+   assert.ok(a.querySelector('.ico'),'tile carries its icon');
+  }
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector(sel).textContent));
+ }finally{p.close();}}
 });

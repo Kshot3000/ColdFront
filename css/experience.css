@@ -1102,3 +1102,41 @@ main:focus { outline: none; }
   .tbl-wrap.trk.cf-enter { animation: none; }
   .tbl.trk tr.trk-row { transition: none; }
 }
+
+/* ============================================================
+   v1.59.0 — "Stay on the front" social tiles join the family.
+   The social link grids on the homepage and the practice page were
+   the last tile grids without the orange identity treatment: each
+   tile gains the leading-edge identity thread across the top (dim
+   steel at rest, igniting orange on hover or keyboard focus), the
+   icon lifts and warms to orange-hot under attention, and the tile
+   carries the family :focus-visible ring instead of a bare outline.
+   Reduced motion snaps every transition.
+   ============================================================ */
+.social-grid a { position: relative; overflow: hidden; }
+.social-grid a::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.social-grid a:hover::before, .social-grid a:focus-visible::before { opacity: 1; }
+.social-grid a .ico { transition: color 0.2s ease, transform 0.2s ease; }
+.social-grid a:hover .ico, .social-grid a:focus-visible .ico {
+  color: var(--orange-hot);
+  transform: translateY(-2px);
+}
+.social-grid a:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(209, 58, 2, 0.28), 0 0 18px rgba(209, 58, 2, 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .social-grid a, .social-grid a::before, .social-grid a .ico { transition: none; }
+  .social-grid a:hover .ico, .social-grid a:focus-visible .ico { transform: none; }
+}
