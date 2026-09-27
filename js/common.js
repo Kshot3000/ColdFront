@@ -1372,4 +1372,27 @@ CF.initReveal = () => {
   });
 };
 
+/* Count-up flourish for stat numbers. Paints the exact final text first so
+   reduced-motion, paused, or non-animating environments always read correct,
+   then sweeps each numeric segment from 0 when the browser can animate.
+   parts: [{n, decimals, signed}], joined by sep ("–" default). */
+CF.countUp = (el, parts, sep) => {
+  el = typeof el === "string" ? CF.$(el) : el;
+  if (!el || !Array.isArray(parts) || !parts.length) return;
+  const paint = (nums) => nums.map((p) => ((p.signed && p.n > 0 ? "+" : "") + p.n.toFixed(p.decimals | 0))).join(sep == null ? "–" : sep);
+  const finalText = paint(parts);
+  el.textContent = finalText;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce || document.documentElement.classList.contains("motion-paused")) return;
+  const dur = 900, t0 = performance.now();
+  const frame = (now) => {
+    const t = Math.min(1, (now - t0) / dur);
+    const e = 1 - Math.pow(1 - t, 3);
+    el.textContent = paint(parts.map((p) => ({ n: p.n * e, decimals: p.decimals, signed: p.signed })));
+    if (t < 1) window.requestAnimationFrame(frame);
+    else el.textContent = finalText;
+  };
+  window.requestAnimationFrame(frame);
+};
+
 document.addEventListener("DOMContentLoaded", CF.initChrome);

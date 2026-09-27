@@ -73,9 +73,11 @@
       points += a; allowed += b;
       if (a > b) wins++; else if (a < b) losses++; else ties++;
     }
-    show("#season-record", wins + "–" + losses + (ties ? "–" + ties : ""));
-    show("#season-points", games.length ? (points / games.length).toFixed(1) : "—");
-    show("#season-diff", games.length ? (points >= allowed ? "+" : "") + (points - allowed) : "—");
+    CF.countUp("#season-record", [wins, losses].concat(ties ? [ties] : []).map((n) => ({ n })), "–");
+    if (games.length) {
+      CF.countUp("#season-points", [{ n: points / games.length, decimals: 1 }], "");
+      CF.countUp("#season-diff", [{ n: points - allowed, signed: true }], "");
+    }
     show("#season-name", (result.data.season?.displayName || "Current season") + " · " + CF.sourceLabel(result.source));
   }
 
