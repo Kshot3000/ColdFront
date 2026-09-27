@@ -285,6 +285,43 @@ h1, h2, h3, h4, .display {
 .wx-gauge.mild { color: #b9e3c6; background: rgba(76, 175, 125, 0.18); border-color: rgba(76, 175, 125, 0.5); }
 .wx-offline { color: var(--warn); }
 
+/* v1.17.0 — Cold Front Index frost dial: the strip's signature instrument. */
+.wx-gauge.cfi-dial-wrap {
+  padding: 3px 10px 2px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+.cfi-dial { display: block; }
+.cfi-track { stroke: rgba(157, 180, 204, 0.22); stroke-width: 7; stroke-linecap: round; }
+.cfi-value {
+  stroke-width: 7;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(159, 216, 255, 0.35));
+}
+.cfi-ticks line { stroke: rgba(157, 180, 204, 0.55); stroke-width: 1.5; stroke-linecap: round; }
+.cfi-needle line { stroke: #fff; stroke-width: 2.4; stroke-linecap: round; }
+.cfi-needle circle { fill: #fff; }
+.cfi-num {
+  fill: var(--snow);
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.cfi-cap {
+  fill: var(--steel);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cfi-value { filter: none; }
+}
+@media (max-width: 700px) {
+  .wx-gauge.cfi-dial-wrap { margin-left: 0; }
+}
+
 /* Cold Front Index sparkline (weather strip) */
 .wx-cfi {
   display: inline-flex;

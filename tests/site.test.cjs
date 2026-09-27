@@ -131,3 +131,27 @@ test('prediction markets use the NFL tag ID and filter closed or unrelated outco
   assert.equal(events[0].markets[0].url,'https://polymarket.com/event/nfl-champion');
  }finally{p.close();}
 });
+
+test('Cold Front Index frost dial renders with the live score and settles at the final reading',async()=>{
+ const p=await page('index');try{
+  await settle(400);
+  const g=p.w.document.querySelector('#wx-gauge');
+  const dial=g&&g.querySelector('.cfi-dial');
+  assert.ok(dial,'dial rendered in the weather strip');
+  const score=Math.round(p.w.CF.coldFrontGauge(p.w.CF.cacheGet('weather')).score);
+  assert.ok(dial.getAttribute('aria-label').includes(String(score)),'aria-label names the live score');
+  assert.ok(dial.getAttribute('aria-label').includes('of 100'));
+  assert.ok(dial.querySelector('.cfi-value'),'frost arc present');
+  assert.ok(dial.querySelector('.cfi-needle'),'needle present');
+  assert.equal(g.getAttribute('data-cfi-score'),String(score));
+  await settle(1500);
+  assert.equal(dial.querySelector('.cfi-num').textContent,String(score),'count-up settles at the live score');
+ }finally{p.close();}
+ const reduced=await page('index',{reduced:true});try{
+  await settle(400);
+  const g=reduced.w.document.querySelector('#wx-gauge');
+  const score=Math.round(reduced.w.CF.coldFrontGauge(reduced.w.CF.cacheGet('weather')).score);
+  assert.ok(g&&g.querySelector('.cfi-dial'),'dial renders under reduced motion');
+  assert.equal(g.querySelector('.cfi-num').textContent,String(score),'no animation under reduced motion, final reading shown');
+ }finally{reduced.close();}
+});

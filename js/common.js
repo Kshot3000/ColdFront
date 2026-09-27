@@ -753,6 +753,75 @@ CF.cfiSparkSVG = (scores) => {
     '<circle cx="' + lastPt[0].toFixed(1) + '" cy="' + lastPt[1].toFixed(1) + '" r="2.3" fill="currentColor"></circle>' +
     "</svg>";
 };
+/* ---- Cold Front Index frost dial (weather strip showpiece) ----
+   v1.17.0 — the site's signature stat gets a proper instrument: a small
+   animated semicircular SVG frost gauge. Needle sweeps to the live score,
+   the frost arc fills and the number counts up. Reduced-motion readers get
+   the final reading with no animation. Never invents — score comes from
+   CF.coldFrontGauge on real numbers only. */
+CF.cfiDialSVG = (score, cls, label) => {
+  const s = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const c = (cls === "blizzard" || cls === "cruncher" || cls === "mild") ? cls : "mild";
+  const cx = 66, cy = 66;
+  const polar = (deg, rr) => {
+    const a = (deg * Math.PI) / 180;
+    return [(cx + rr * Math.cos(a)).toFixed(1), (cy - rr * Math.sin(a)).toFixed(1)];
+  };
+  let ticks = "";
+  [0, 25, 50, 75, 100].forEach((t) => {
+    const p1 = polar(180 - t * 1.8, 46), p2 = polar(180 - t * 1.8, 40);
+    ticks += '<line x1="' + p1[0] + '" y1="' + p1[1] + '" x2="' + p2[0] + '" y2="' + p2[1] + '"/>';
+  });
+  const stops = {
+    mild: ['<stop offset="0" stop-color="#8fd6a8"/>', '<stop offset="1" stop-color="#3fae72"/>'],
+    cruncher: ['<stop offset="0" stop-color="#9fd8ff"/>', '<stop offset="1" stop-color="#3fa9f5"/>'],
+    blizzard: ['<stop offset="0" stop-color="#9fd8ff"/>', '<stop offset="1" stop-color="#ff6a1f"/>'],
+  }[c];
+  return '<svg class="cfi-dial ' + c + '" viewBox="0 0 132 80" width="104" height="63" role="img"' +
+    ' aria-label="Cold Front Index ' + s + ' of 100 — ' + CF.esc(label) + '">' +
+    '<defs><linearGradient id="cfi-g-' + c + '" x1="0" y1="0" x2="1" y2="0">' + stops.join("") + '</linearGradient></defs>' +
+    '<path class="cfi-track" d="M 12 66 A 54 54 0 0 1 120 66" fill="none"/>' +
+    '<g class="cfi-ticks" aria-hidden="true">' + ticks + '</g>' +
+    '<path class="cfi-value" d="M 12 66 A 54 54 0 0 1 120 66" fill="none" pathLength="100"' +
+    ' stroke="url(#cfi-g-' + c + ')" stroke-dasharray="100" stroke-dashoffset="' + (100 - s) + '"/>' +
+    '<g class="cfi-needle" data-target="' + s + '" transform="rotate(' + (-90 + s * 1.8).toFixed(1) + ' 66 66)" aria-hidden="true">' +
+      '<line x1="66" y1="66" x2="66" y2="27"/>' +
+      '<circle cx="66" cy="66" r="3.4"/>' +
+    '</g>' +
+    '<text class="cfi-num" x="66" y="58" text-anchor="middle" aria-hidden="true">' + s + '</text>' +
+    '<text class="cfi-cap" x="66" y="76" text-anchor="middle" aria-hidden="true">COLD FRONT INDEX</text>' +
+    '</svg>';
+};
+CF.animateCfiDial = (wrap, score) => {
+  if (!wrap) return;
+  const val = wrap.querySelector(".cfi-value");
+  const needle = wrap.querySelector(".cfi-needle");
+  const num = wrap.querySelector(".cfi-num");
+  if (!val || !needle || !num) return;
+  const target = Math.max(0, Math.min(100, Math.round(Number(score) || 0)));
+  const prev = Number(wrap.getAttribute("data-cfi-score")) || 0;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const apply = (v) => {
+    val.setAttribute("stroke-dashoffset", (100 - v).toFixed(1));
+    needle.setAttribute("transform", "rotate(" + (-90 + v * 1.8).toFixed(1) + " 66 66)");
+    num.textContent = String(Math.round(v));
+  };
+  wrap.setAttribute("data-cfi-score", String(target));
+  if (reduce || !("requestAnimationFrame" in window)) { apply(target); return; }
+  apply(0);
+  const t0 = performance.now(), dur = 1100;
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    apply(prev + (target - prev) * e);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  // Guarantee the final reading even if rAF is stubbed or starved (idempotent in real browsers).
+  if (wrap._cfiTimer) clearTimeout(wrap._cfiTimer);
+  wrap._cfiTimer = setTimeout(() => apply(target), dur + 150);
+};
+
 CF.paintCfiSpark = (wx, root) => {
   const host = root || CF.$("#cfi-spark");
   if (!host) return;
@@ -868,7 +937,8 @@ CF.renderWeatherStrip = (root) => {
     const gauge = CF.$("#wx-gauge", el);
     if (!wx) {
       now.innerHTML = '<span class="wx-offline">offline — last reading unavailable</span>';
-      gauge.textContent = "no data";
+      gauge.innerHTML = '<span class="wx-offline" style="font-size:11px">no data</span>';
+      gauge.className = "wx-gauge";
       const sp = CF.$("#cfi-spark", el);
       if (sp) { sp.innerHTML = ""; sp.hidden = true; }
       return;
@@ -886,8 +956,10 @@ CF.renderWeatherStrip = (root) => {
       (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NWS forecast</span>' : "") +
       (wx.offline ? ' · <span class="wx-offline">cached</span>' : "");
     if (wx.gauge) {
-      gauge.textContent = wx.gauge.label + " · " + wx.gauge.score + "/100";
-      gauge.className = "wx-gauge " + wx.gauge.cls;
+      gauge.innerHTML = CF.cfiDialSVG(wx.gauge.score, wx.gauge.cls, wx.gauge.label);
+      gauge.className = "wx-gauge cfi-dial-wrap " + wx.gauge.cls;
+      gauge.title = "Cold Front Index: " + wx.gauge.label + " · " + wx.gauge.score + "/100";
+      CF.animateCfiDial(gauge, wx.gauge.score);
       CF.cfiHistoryPush(wx.gauge.score);
     }
     CF.paintCfiSpark(wx, CF.$("#cfi-spark", el));
