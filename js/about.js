@@ -6,12 +6,14 @@
     const grid = CF.$("#don-grid");
     if (!grid) return;
     grid.innerHTML = CF.CONFIG.donations.map((d, i) =>
-      '<div class="don-card">' +
+      '<div class="don-card cf-enter" style="--ni:' + i + '">' +
       '<div class="top">' +
       '<span class="coin" style="background:' + CF.esc(d.color) + '">' + CF.esc(d.symbol) + "</span>" +
       '<span class="lbl">' + CF.esc(d.label) + "</span>" +
       "</div>" +
-      '<div class="addr" data-addr="' + CF.esc(d.address) + '" title="Click to copy">' + CF.esc(d.address) + "</div>" +
+      '<div class="addr" data-addr="' + CF.esc(d.address) + '" title="Click to copy"' +
+      ' tabindex="0" role="button" aria-label="Copy the ' + CF.esc(d.label) + ' donation address">' +
+      CF.esc(d.address) + "</div>" +
       '<div class="acts">' +
       '<button class="btn small" data-copy="' + CF.esc(d.address) + '" type="button">⧉ Copy</button>' +
       (d.view ? '<a class="btn small" href="' + CF.esc(d.view) + '" target="_blank" rel="noopener">Explorer ↗</a>' : "") +
@@ -29,6 +31,16 @@
       }
       const addr = ev.target.closest("[data-addr]");
       if (addr) CF.copyText(addr.dataset.addr, "Address copied — thank you 🧊");
+    });
+    grid.addEventListener("keydown", (ev) => {
+      // The address strip is a mouse-operable copy target; give
+      // keyboard users the same action via Enter or Space.
+      const addr = ev.target.closest("[data-addr]");
+      if (!addr) return;
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        CF.copyText(addr.dataset.addr, "Address copied — thank you 🧊");
+      }
     });
   }
 

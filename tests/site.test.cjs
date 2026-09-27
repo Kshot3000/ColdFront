@@ -805,3 +805,30 @@ test('roster cards degrade gracefully when the feed omits a jersey number',async
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('donation cards get the family treatment: identity thread, keyboard copy, entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','main.css'),'utf8');
+ assert.match(css,/\.don-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the cards carry the orange identity thread');
+ assert.match(css,/\.don-card:hover,\s*\.don-card:focus-within\s*\{[^}]*transform:\s*translateY\(-3px\)/s,'hover lift has focus-within parity');
+ assert.match(css,/\.don-card:hover \.lbl,\s*\.don-card:focus-within \.lbl/s,'the label warms under attention');
+ assert.match(css,/\.don-card \.addr:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the copy strip gets a visible focus ring');
+ assert.match(css,/\.don-card\.cf-enter\s*\{[^}]*animation:\s*cfRosterIn/s,'the cards enter with the staggered frost-fade');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.don-card\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ const p=await page('about');try{const d=p.w.document;
+  const cards=[...d.querySelectorAll('#don-grid .don-card')];
+  assert.equal(cards.length,4,'all four donation cards render');
+  cards.forEach((c,i)=>{
+   assert.ok(c.classList.contains('cf-enter'),'card '+i+' enters staggered');
+   assert.equal(c.style.getPropertyValue('--ni'),String(i),'card '+i+' carries its stagger index');
+   const addr=c.querySelector('.addr');
+   assert.equal(addr.getAttribute('tabindex'),'0','the copy strip is keyboard-focusable');
+   assert.equal(addr.getAttribute('role'),'button','the copy strip is exposed as a button');
+   assert.ok(addr.getAttribute('aria-label'),'the copy strip names its action');
+  });
+  const text=d.querySelector('#don-grid').textContent;
+  assert.ok(text.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip address is intact');
+  assert.ok(text.includes('prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d'),'the PRL donation address is intact');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(text));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

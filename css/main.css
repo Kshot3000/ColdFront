@@ -1369,6 +1369,61 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .don-card .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 .don-card .qr { width: 100%; border-radius: 8px; border: 1px solid var(--line); background: #fff; padding: 6px; }
 
+/* ============================================================
+   v1.48.0 — donation card glow-up (about).
+   The crypto donation cards get the family treatment: an
+   orange identity thread across the top that ignites on hover
+   or keyboard focus, :focus-within parity for the hover lift so
+   keyboard users get the same response, the coin chip warming
+   under attention, and a staggered frost-fade entrance on
+   first paint. The click-to-copy address strip was mouse-only;
+   it is now a keyboard-operable button (Enter/Space copies)
+   with a visible :focus-visible ring. Reduced motion snaps the
+   entrance and every transition.
+   ============================================================ */
+.don-card { position: relative; overflow: hidden; }
+.don-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.don-card:hover::before,
+.don-card:focus-within::before { opacity: 1; }
+.don-card:hover,
+.don-card:focus-within {
+  border-color: var(--glass-border-hot);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift), var(--rim-glow);
+}
+.don-card { transition: border-color 0.2s ease, transform 0.22s ease, box-shadow 0.25s ease; }
+.don-card .lbl { transition: color 0.2s ease, text-shadow 0.2s ease; }
+.don-card:hover .lbl,
+.don-card:focus-within .lbl { color: var(--orange-hot); text-shadow: 0 0 14px rgba(255, 122, 40, 0.4); }
+.don-card .coin { transition: box-shadow 0.22s ease, filter 0.22s ease; }
+.don-card:hover .coin,
+.don-card:focus-within .coin { box-shadow: 0 0 16px rgba(255, 122, 40, 0.55); filter: saturate(1.2); }
+.don-card .addr:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px rgba(209, 58, 2, 0.28);
+}
+.don-card.cf-enter {
+  animation: cfRosterIn 0.55s var(--ease-out) backwards;
+  animation-delay: calc(var(--ni, 0) * 35ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .don-card.cf-enter { animation: none; }
+  .don-card, .don-card::before, .don-card .lbl, .don-card .coin { transition: none; }
+}
+
 .proj-card {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
