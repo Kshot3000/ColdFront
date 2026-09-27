@@ -111,7 +111,17 @@
       <button type="button" class="filter-chip" data-roster-group="favorites" aria-pressed="false">★ My favorites</button>
       <button type="button" class="filter-chip" id="roster-view" aria-pressed="false">Table view</button>
     </div>
-    <div class="roster-grid" id="roster-cards"><div class="empty">Finding your Bears…</div></div>
+    <div class="roster-grid" id="roster-cards">
+      <span class="sr-only" role="status">Loading the Bears roster…</span>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:62%"></span><span class="skel" style="width:88%"></span><span class="skel" style="width:70%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:58%"></span><span class="skel" style="width:82%"></span><span class="skel" style="width:74%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:66%"></span><span class="skel" style="width:80%"></span><span class="skel" style="width:68%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:60%"></span><span class="skel" style="width:86%"></span><span class="skel" style="width:72%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:64%"></span><span class="skel" style="width:84%"></span><span class="skel" style="width:66%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:57%"></span><span class="skel" style="width:89%"></span><span class="skel" style="width:71%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:63%"></span><span class="skel" style="width:81%"></span><span class="skel" style="width:69%"></span></div></div>
+      <div class="skel-player" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel lg" style="width:61%"></span><span class="skel" style="width:85%"></span><span class="skel" style="width:73%"></span></div></div>
+    </div>
     <div class="tbl-wrap" id="roster-table-wrap" hidden>
       <table class="tbl" id="roster-table">
         <thead><tr><th>#</th><th>Player</th><th>Pos</th><th class="num">Age</th><th class="num">Exp</th><th class="num">Ht</th><th class="num">Wt</th><th>From</th></tr></thead>

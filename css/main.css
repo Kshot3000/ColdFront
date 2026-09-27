@@ -3914,3 +3914,68 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 #north-games .mini-game.bears-loss { opacity: 0.62; }
 #north-games .mini-game.bears-loss:hover,
 #north-games .mini-game.bears-loss:focus-visible { opacity: 1; }
+
+/* ============================================================
+   v1.31.0 — roster player-card glow-up.
+   Group identity thread (inset leading edge, mirroring the injury
+   severity and mini-game treatments), hover lift with
+   :focus-within keyboard parity, group-tinted position chip, a
+   jersey watermark that warms under attention, a glowing saved
+   favorite star, a staggered frost-fade entrance on first paint,
+   and skeleton player cards while the roster loads. The global
+   reduced-motion rule snaps every transition and the entrance.
+   ============================================================ */
+.player-card {
+  --group-accent: transparent;
+  box-shadow: inset 3px 0 0 var(--group-accent);
+  transition: transform 0.28s var(--ease-out), border-color 0.28s ease, box-shadow 0.28s ease;
+}
+.player-card[data-group="offense"] { --group-accent: var(--orange-hot); }
+.player-card[data-group="defense"] { --group-accent: #6fa8d8; }
+.player-card[data-group="special"] { --group-accent: var(--warn); }
+.player-card:hover,
+.player-card:focus-within {
+  transform: translateY(-4px);
+  border-color: rgba(255, 121, 65, 0.48);
+  box-shadow: inset 3px 0 0 var(--group-accent),
+    0 18px 38px -18px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 121, 65, 0.18);
+}
+.player-card .player-number { transition: color 0.28s ease; }
+.player-card:hover .player-number,
+.player-card:focus-within .player-number { color: rgba(255, 90, 31, 0.22); }
+.player-card .player-info h3 { transition: color 0.22s ease; }
+.player-card:hover .player-info h3,
+.player-card:focus-within .player-info h3 { color: var(--orange-hot); }
+.roster-grid .st { border: 1px solid transparent; }
+.player-card[data-group="offense"] .st { border-color: rgba(255, 90, 31, 0.45); color: #ffb49a; }
+.player-card[data-group="defense"] .st { border-color: rgba(111, 168, 216, 0.45); color: #bcd9f2; }
+.player-card[data-group="special"] .st { border-color: rgba(224, 164, 55, 0.45); color: #ecc06a; }
+.favorite-button {
+  transition: transform 0.2s var(--ease-out), color 0.2s ease,
+    border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.favorite-button:hover { transform: scale(1.12); }
+.favorite-button:focus-visible { outline: 2px solid var(--orange-hot); outline-offset: 2px; }
+.favorite-button[aria-pressed="true"] {
+  color: #ffb49a;
+  border-color: var(--orange-hot);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.5);
+}
+@keyframes cfRosterIn {
+  from { opacity: 0; transform: translateY(14px); filter: blur(3px); }
+}
+.player-card.cf-enter {
+  animation: cfRosterIn 0.5s var(--ease-out) backwards;
+  animation-delay: calc(var(--ni, 0) * 35ms);
+}
+/* Skeleton player card mirroring .player-card while the roster loads. */
+.skel-player {
+  overflow: hidden;
+  border: 1px solid #d6eaff22;
+  border-radius: 13px;
+  background: linear-gradient(140deg, #192e44, #0a1729);
+  box-shadow: inset 0 0 0 1px rgba(159, 184, 204, 0.06);
+}
+.skel-player .skel-art { height: 170px; border-radius: 0; }
+.skel-player .skel-copy { padding: 18px; display: grid; gap: 10px; }

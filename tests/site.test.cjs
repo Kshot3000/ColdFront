@@ -362,3 +362,32 @@ test('NFC North matchup cards glow up: our-game treatment, identity chip, and re
   assert.deepEqual(q.errors,[]);
  }finally{q.close();}
 });
+test('roster player cards carry the group identity thread, entrance stagger, and skeleton loading',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.player-card\[data-group="offense"\]\s*\{\s*--group-accent:\s*var\(--orange-hot\)/s,'offense cards thread orange');
+ assert.match(css,/\.player-card\[data-group="defense"\]\s*\{\s*--group-accent:\s*#6fa8d8/s,'defense cards thread ice blue');
+ assert.match(css,/\.player-card\[data-group="special"\]\s*\{\s*--group-accent:\s*var\(--warn\)/s,'special teams cards thread gold');
+ assert.match(css,/\.player-card:hover,\s*\.player-card:focus-within\s*\{[^}]*transform:\s*translateY\(-4px\)/s,'hover and keyboard focus share the card lift');
+ assert.match(css,/\.favorite-button\[aria-pressed="true"\]\s*\{[^}]*box-shadow:\s*0 0 14px rgba\(255, 90, 31, 0\.5\)/s,'a saved favorite star glows');
+ assert.match(css,/@keyframes cfRosterIn/,'roster entrance keyframes exist');
+ assert.match(css,/\.player-card\.cf-enter\s*\{[^}]*animation-delay:\s*calc\(var\(--ni, 0\) \* 35ms\)/s,'the entrance staggers on a --ni cascade');
+ assert.match(css,/\.skel-player \.skel-art\s*\{\s*height:\s*170px/s,'skeleton player cards mirror the card shape');
+ const html=fs.readFileSync(path.join(__dirname,'../team.html'),'utf8');
+ assert.match(html,/class="skel-player"/,'team page opens with skeleton player cards');
+ assert.match(html,/role="status">Loading the Bears roster/,'the loading state announces to screen readers');
+ const p=await page('team');try{
+  const d=p.w.document;
+  const cards=[...d.querySelectorAll('#roster-cards .player-card')];
+  assert.ok(cards.length>=2,'the roster renders player cards');
+  const qb=cards.find(c=>/Test Bears QB/.test(c.textContent));
+  const lb=cards.find(c=>/Test Bears LB/.test(c.textContent));
+  assert.equal(qb.getAttribute('data-group'),'offense','the QB threads offense orange');
+  assert.equal(lb.getAttribute('data-group'),'defense','the LB threads defense ice');
+  assert.ok(qb.classList.contains('cf-enter'),'first paint staggers the entrance');
+  assert.equal(qb.style.getPropertyValue('--ni'),'0','the stagger index cascades');
+  assert.equal(cards[1].style.getPropertyValue('--ni'),'1','the second card follows the cascade');
+  const fav=qb.querySelector('.favorite-button');
+  assert.equal(fav.getAttribute('aria-pressed'),'false','the favorite star starts unpressed');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
