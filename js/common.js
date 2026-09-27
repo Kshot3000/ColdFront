@@ -663,6 +663,37 @@ const WMO = {
 
 CF.weatherCode = (c) => WMO[c] || "—";
 
+/* ---- Condition-aware weather glyph (weather strip brand mark) ----
+   v1.46.0 — the strip's brand glyph used to be a hard-coded ⛈ even on a
+   clear September afternoon. It now follows the live sky: WMO code when
+   Open-Meteo answers, phrase keywords when the NWS fallback answers. */
+CF.wxIcon = (w) => {
+  const raw = w && w.code;
+  const code = (raw === null || raw === undefined || raw === "") ? NaN : Number(raw);
+  if (Number.isFinite(code)) {
+    if (code === 0) return "☀️";
+    if (code === 1) return "🌤️";
+    if (code === 2) return "⛅";
+    if (code === 3) return "☁️";
+    if (code === 45 || code === 48) return "🌫️";
+    if (code >= 51 && code <= 57) return "🌦️";
+    if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "🌧️";
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄️";
+    if ([95, 96, 99].includes(code)) return "🌩️";
+  }
+  const phrase = (w && w.phrase) || "";
+  if (/snow|flurr/i.test(phrase)) return "❄️";
+  if (/thunder|tstorm|hail/i.test(phrase)) return "🌩️";
+  if (/freezing rain|ice storm|sleet/i.test(phrase)) return "🌧️";
+  if (/rain|shower/i.test(phrase)) return "🌧️";
+  if (/drizzle/i.test(phrase)) return "🌦️";
+  if (/fog|mist|haze/i.test(phrase)) return "🌫️";
+  if (/overcast|cloud/i.test(phrase)) return "☁️";
+  if (/clear|sun/i.test(phrase)) return "☀️";
+  if (/partly/i.test(phrase)) return "⛅";
+  return "⛅";
+};
+
 CF.windChill = (tempC, kmh) => {
   if (tempC > 10 || kmh < 4.8) return tempC;
   const wind = Math.pow(kmh, 0.16);
@@ -925,7 +956,7 @@ CF.renderWeatherStrip = (root) => {
   const el = root || CF.$("[data-cf-weather]");
   if (!el) return;
   el.innerHTML =
-    '<span class="wx-brand">⛈ Chicago Field Conditions</span>' +
+    '<span class="wx-brand"><span class="wx-icon" id="wx-icon" aria-hidden="true">⛈</span> Chicago Field Conditions</span>' +
     '<span class="wx-item" id="wx-now">warming up…</span>' +
     '<span class="wx-item"><span class="wx-dot"></span><b>Soldier Field · Chicago</b></span>' +
     '<span class="wx-cfi" id="wx-cfi">' +
@@ -935,6 +966,8 @@ CF.renderWeatherStrip = (root) => {
   const update = () => CF.loadWeather().then((wx) => {
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
+    const icon = CF.$("#wx-icon", el);
+    if (wx && icon) icon.textContent = CF.wxIcon(wx);
     if (!wx) {
       now.innerHTML = '<span class="wx-offline">offline — last reading unavailable</span>';
       gauge.innerHTML = '<span class="wx-offline" style="font-size:11px">no data</span>';

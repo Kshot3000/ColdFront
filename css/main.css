@@ -264,6 +264,22 @@ h1, h2, h3, h4, .display {
   gap: 8px;
   white-space: nowrap;
 }
+.wx-icon { font-style: normal; line-height: 1; }
+
+/* v1.46.0 — weather strip glow-up: the family identity thread now runs across
+   the top of the page's first band (dim at rest — the strip carries no hover
+   surface), tying the signature strip into the site's orange/ice language. */
+.weather-strip::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-hot) 45%, rgba(159,184,204,0.35) 80%, transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
 .wx-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .wx-item b { color: var(--snow); font-weight: 600; }
 .wx-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--steel); display: inline-block; }

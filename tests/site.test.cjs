@@ -768,3 +768,23 @@ test('wire ticker items get the glow-up: warm hover, ignited source chip, focus 
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('weather strip glow-up: condition-aware sky glyph and the identity thread',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','main.css'),'utf8');
+ assert.match(css,/\.weather-strip::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange\)/s,'the strip carries the orange identity thread');
+ assert.match(css,/\.wx-icon\s*\{/s,'the condition glyph has its own class');
+ const p=await page('index');try{const w=p.w,d=w.document;
+  const icon=d.querySelector('#wx-icon');
+  assert.ok(icon,'the brand carries a condition icon slot');
+  assert.equal(icon.textContent,'☀️','the fixture clear sky renders a sun glyph');
+  assert.ok(!/⛈/.test(d.querySelector('.wx-brand').textContent),'the hard-coded storm glyph is gone');
+  assert.equal(w.CF.wxIcon({code:3}),'☁️','overcast maps to clouds');
+  assert.equal(w.CF.wxIcon({code:71}),'❄️','light snow maps to snow');
+  assert.equal(w.CF.wxIcon({code:95}),'🌩️','thunder maps to a storm');
+  assert.equal(w.CF.wxIcon({code:null,phrase:'Snow Likely'}),'❄️','the NWS fallback reads snow from the phrase');
+  assert.equal(w.CF.wxIcon({code:null,phrase:'Chance Showers And Thunderstorms'}),'🌩️','thunder wins over showers in the fallback phrase');
+  assert.equal(w.CF.wxIcon({code:null,phrase:'Mostly Sunny'}),'☀️','the fallback reads sunny');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('[data-cf-weather]').textContent));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
