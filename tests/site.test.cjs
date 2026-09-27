@@ -337,3 +337,28 @@ test('injury report rows carry severity treatment and the availability snapshot 
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('NFC North matchup cards glow up: our-game treatment, identity chip, and result tint',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/#north-games \.mini-game\.our-game\s*\{[^}]*border-left:\s*3px solid var\(--orange\)/s,'our game carries the orange leading-edge thread');
+ assert.match(css,/#north-games \.mini-game:hover,\s*#north-games \.mini-game:focus-visible/s,'hover and keyboard focus share the treatment');
+ assert.match(css,/#north-games \.mini-status strong\s*\{[^}]*font-variant-numeric:\s*tabular-nums/s,'scores use tabular numerals');
+ assert.match(css,/#north-games \.mini-game\.bears-loss\s*\{[^}]*opacity:\s*0\.62/s,'a Bears loss recedes the row');
+ assert.match(css,/#north-games \.mini-game\.bears-win \.mini-status strong\s*\{[^}]*color:\s*var\(--orange-hot\)/s,'a Bears win warms the score');
+ const p=await page('index');try{
+  const ours=p.w.document.querySelector('#north-games .mini-game.our-game');
+  assert.ok(ours,'the Bears game is marked our-game');
+  assert.equal(ours.querySelector('.our-chip').textContent.trim(),'🐻 Our game','the identity chip renders');
+  assert.ok(!ours.classList.contains('bears-win')&&!ours.classList.contains('bears-loss'),'a pre-game carries no result tint');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const win=event('301','CHI','DET','post','2026-09-21T17:00:00Z',31,17);
+ const loss=event('302','GB','CHI','post','2026-09-21T21:25:00Z',27,20);
+ const q=await page('index',{fetch:async(u)=>{if(u.href.includes('scoreboard')){const body={events:[win,loss]};return{ok:true,text:async()=>JSON.stringify(body),json:async()=>body};}}});try{
+  const cards=[...q.w.document.querySelectorAll('#north-games .mini-game.our-game')];
+  assert.equal(cards.length,2,'both Bears games are marked');
+  assert.ok(cards[0].classList.contains('bears-win'),'the Bears win warms the score');
+  assert.ok(cards[1].classList.contains('bears-loss'),'the Bears loss recedes');
+  assert.ok(cards.every(c=>c.querySelector('.our-chip')),'every Bears game carries the chip');
+  assert.deepEqual(q.errors,[]);
+ }finally{q.close();}
+});

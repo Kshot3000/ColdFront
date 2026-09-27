@@ -102,7 +102,16 @@
       show("#north-pill", CF.sourceLabel(result.source));
       CF.$("#north-games").innerHTML = games.length ? games.map((game) => {
         const ours = [game.home.abbr, game.away.abbr].includes("CHI");
-        return '<a class="mini-game ' + (ours ? 'our-game' : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD")) + '</span></div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
+        // v1.30.0 — final-result treatment for our game: a Bears win warms the
+        // score, a Bears loss recedes the row (mirroring the game cards).
+        let resultCls = "";
+        if (ours && game.state === "post" && game.home.score != null && game.away.score != null) {
+          const bears = game.home.abbr === "CHI" ? Number(game.home.score) : Number(game.away.score);
+          const opp = game.home.abbr === "CHI" ? Number(game.away.score) : Number(game.home.score);
+          if (Number.isFinite(bears) && Number.isFinite(opp)) resultCls = bears > opp ? "bears-win" : (bears < opp ? "bears-loss" : "");
+        }
+        const chip = ours ? '<span class="our-chip">🐻 Our game</span>' : "";
+        return '<a class="mini-game ' + (ours ? ("our-game " + resultCls).trim() : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD")) + '</span>' + chip + '</div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
       }).join("") : '<div class="empty">No NFC North games in this week’s feed. <a href="games.html">Explore the schedule ↗</a></div>';
     } catch (_) {
       show("#north-pill", "Unavailable");
