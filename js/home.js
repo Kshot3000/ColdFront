@@ -17,6 +17,10 @@
       }
     }
     clearInterval(countdown);
+    const card = CF.$("#next-game");
+    /* v1.37.0 — reset the hero card's Bears identity and result state on each paint. */
+    card.classList.remove("final", "bears-won");
+    card.querySelectorAll(".side").forEach((s) => s.classList.remove("is-bears", "winner", "loser"));
     if (!game) {
       show("#ng-title", "Waiting for the next Bears matchup");
       show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");
@@ -28,11 +32,36 @@
     if (CF.paintKickoffBanner) CF.paintKickoffBanner({ id: game.id, date: game.date,
       home: game.home.abbr === "CHI", oppAbbr: game.home.abbr === "CHI" ? game.away.abbr : game.home.abbr });
     const status = game.state === "in" ? "Live now" : game.state === "post" ? "Final" : "Next kickoff";
-    show("#ng-pill", status + (source !== "live" ? " · cached" : ""));
-    CF.$("#ng-pill").className = "pill " + (game.state === "in" ? "live" : "");
     show("#ng-title", game.name);
     show("#ng-away-abbr", game.away.abbr);
     show("#ng-home-abbr", game.home.abbr);
+    /* v1.37.0 — the orange identity follows the Bears, not the home team. */
+    const bearsHome37 = game.home.abbr === "CHI";
+    const bearSide37 = CF.$("#ng-" + (bearsHome37 ? "home" : "away") + "-abbr").closest(".side");
+    const oppSide37 = CF.$("#ng-" + (bearsHome37 ? "away" : "home") + "-abbr").closest(".side");
+    if (bearSide37) bearSide37.classList.add("is-bears");
+    /* v1.37.0 — finals carry the family winner treatment on the hero card. */
+    const num37 = (v) => (v == null || v === "" ? NaN : Number(v));
+    const bs37 = num37(bearsHome37 ? game.home.score : game.away.score);
+    const os37 = num37(bearsHome37 ? game.away.score : game.home.score);
+    const cachedSuffix = source !== "live" ? " · cached" : "";
+    let pillCls37 = "pill" + (game.state === "in" ? " live" : "");
+    let pillText37 = status + cachedSuffix;
+    if (game.state === "post" && Number.isFinite(bs37) && Number.isFinite(os37)) {
+      card.classList.add("final");
+      if (bs37 > os37) {
+        if (bearSide37) bearSide37.classList.add("winner");
+        if (oppSide37) oppSide37.classList.add("loser");
+        card.classList.add("bears-won");
+        pillCls37 += " won";
+        pillText37 = "BEARS WIN · Final" + cachedSuffix;
+      } else if (bs37 < os37) {
+        if (bearSide37) bearSide37.classList.add("loser");
+        if (oppSide37) oppSide37.classList.add("winner");
+      }
+    }
+    show("#ng-pill", pillText37);
+    CF.$("#ng-pill").className = pillCls37;
     for (const side of ["home", "away"]) show("#ng-" + side + "-score", game.state === "pre" ? "" : (game[side].score ?? "—"));
     show("#ng-mid", game.venue);
     show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD") + (game.tv ? " · " + game.tv : ""));

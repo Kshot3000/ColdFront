@@ -527,3 +527,40 @@ test('wire story cards get the glow-up: identity thread, focus parity, source ch
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('hero match-card speaks Bears: identity follows the team, finals carry the winner treatment',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.match-card \.side\.is-bears \.abbr\s*\{[^}]*color:\s*#ff7941/s,'the orange identity follows the Bears side');
+ assert.match(css,/\.match-card \.side\.is-bears \.bears-chip\s*\{\s*display:\s*block/s,'the Bears side reveals the identity chip');
+ assert.match(css,/\.match-card\.final \.side\.winner \.score/s,'finals glow the winner score');
+ assert.match(css,/\.match-card\.final \.side\.loser\s*\{\s*opacity:\s*0\.55/s,'finals recede the loser');
+ assert.match(css,/\.match-card\.bears-won\s*\{[^}]*border-top-color:\s*var\(--orange-hot\)/s,'a Bears win floods the card thread');
+ const p=await page('index');try{
+  const d=p.w.document;
+  const away=d.querySelector('#ng-away-abbr').closest('.side');
+  const home=d.querySelector('#ng-home-abbr').closest('.side');
+  assert.ok(away.classList.contains('is-bears'),'the away Bears carry the identity (fixture: CHI at PHI)');
+  assert.ok(!home.classList.contains('is-bears'),'the home opponent recedes');
+  assert.ok(!d.querySelector('#next-game').classList.contains('final'),'a pre-game card is not a final');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const q=await page('index',{fetch:async(u)=>{
+  if(u.pathname.endsWith('/scoreboard')){
+   const data={events:[event('100','CHI','MIN','post','2026-09-20T17:00:00Z',24,17)]};
+   return {ok:true,text:async()=>JSON.stringify(data),json:async()=>data};
+  }
+ }});try{
+  const d=q.w.document;
+  const card=d.querySelector('#next-game');
+  assert.ok(card.classList.contains('final'),'the final card carries the result state');
+  assert.ok(card.classList.contains('bears-won'),'a Bears win floods the thread');
+  const homeSide=d.querySelector('#ng-home-abbr').closest('.side');
+  const awaySide=d.querySelector('#ng-away-abbr').closest('.side');
+  assert.ok(homeSide.classList.contains('is-bears'),'the home Bears carry the identity');
+  assert.ok(homeSide.classList.contains('winner'),'the Bears side wins');
+  assert.ok(awaySide.classList.contains('loser'),'the opponent recedes');
+  const pill=d.querySelector('#ng-pill');
+  assert.ok(pill.classList.contains('won'),'the status pill warms');
+  assert.match(pill.textContent,/BEARS WIN/,'the pill names the win');
+  assert.deepEqual(q.errors,[]);
+ }finally{q.close();}
+});
