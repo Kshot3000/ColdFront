@@ -11,9 +11,14 @@
   const statLabel = (n) => STAT_LABELS[n] || String(n).replace(/([A-Z])/g, " $1").trim();
 
   /* ---------- season pulse from the schedule ---------- */
+  let pulseEntered = false; // .cf-enter only on first paint; refresh re-renders stay instant
+
   async function loadPulse() {
     const pill = CF.$("#pulse-pill");
     const tiles = CF.$("#pulse");
+    let cells = [
+      ["—", "Record", ""], ["—", "Points / game", ""], ["—", "Allowed / game", ""], ["—", "Differential", ""],
+    ];
     try {
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
@@ -28,19 +33,33 @@
       pill.textContent = r.source === "live" ? "live" : "snapshot";
       if (!counted) {
         pill.textContent = "Season not started";
-        tiles.innerHTML=tile("0–0", "Record")+tile("—","Points / game")+tile("—","Allowed / game")+tile("—","Differential");return;
+        cells = [
+          ["0–0", "Record", ""], ["—", "Points / game", ""], ["—", "Allowed / game", ""], ["—", "Differential", ""],
+        ];
+      } else {
+        const diff = pf - pa;
+        cells = [
+          // v1.34.0 — the record number warms on a winning record and recedes
+          // on a losing one; the differential tints with the story.
+          [W + "–" + L + (T ? "–" + T : ""), T ? "Record (W–L–T)" : "Record (W–L)",
+           W > L ? "record-win" : (W < L ? "record-loss" : "")],
+          [(pf / counted).toFixed(1), "Points / game", ""],
+          [(pa / counted).toFixed(1), "Allowed / game", ""],
+          [(diff > 0 ? "+" : "") + diff, "Differential",
+           diff > 0 ? "diff-pos" : (diff < 0 ? "diff-neg" : "")],
+        ];
       }
-      tiles.innerHTML =
-        tile(W + "–" + L + (T ? "–" + T : ""), T ? "Record (W–L–T)" : "Record (W–L)") +
-        tile((pf / counted).toFixed(1), "Points / game") +
-        tile((pa / counted).toFixed(1), "Allowed / game") +
-        tile((pf - pa > 0 ? "+" : "") + (pf - pa), "Differential");
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      tiles.innerHTML = tile("—", "Record") + tile("—", "Points / game") + tile("—", "Allowed / game") + tile("—", "Differential");
     }
-    function tile(v, l) { return '<div class="stat-tile"><b>' + CF.esc(v) + "</b><span>" + CF.esc(l) + "</span></div>"; }
+    const entered = !pulseEntered;
+    pulseEntered = true;
+    tiles.innerHTML = cells.map((c, i) => tile(c[0], c[1], c[2], entered, i)).join("");
+    function tile(v, l, cls, enter, i) {
+      return '<div class="stat-tile' + (cls ? " " + cls : "") + (enter ? " cf-enter" : "") +
+        '" style="--ni:' + i + '"><b>' + CF.esc(v) + "</b><span>" + CF.esc(l) + "</span></div>";
+    }
   }
 
   /* ---------- player leaders ----------

@@ -425,3 +425,43 @@ main:focus { outline: none; }
   .bx-card.cf-enter { animation: none; }
   .bx-team { transition: none; }
 }
+
+/* v1.34.0 — stats page season-pulse tiles become real stat cards. Frosted
+   glass with the orange identity leading-edge thread; the record number
+   glows warm on a winning record and recedes on a losing one (mirroring the
+   season-log W/L row treatment), while the differential number tints
+   ice-green when positive and recedes cool when negative. Staggered
+   frost-fade entrance on first paint only — the 2-minute refresh re-renders
+   stay instant (stats.js only adds .cf-enter on the first load).
+   Reduced-motion snaps. */
+@keyframes tileRise {
+  from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
+}
+.stat-tile { position: relative; overflow: hidden; }
+.stat-tile::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 55%, rgba(255,180,140,0.35) 100%);
+  box-shadow: 0 0 18px rgba(255,90,31,0.5);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.stat-tile b { font-variant-numeric: tabular-nums; }
+.stat-tile.cf-enter { animation: tileRise 0.4s var(--ease-out) backwards; animation-delay: calc(var(--ni, 0) * 0.07s); }
+/* Winning record warms the number; losing record recedes until hovered. */
+.stat-tile.record-win b { color: #ffa76b; text-shadow: 0 0 14px rgba(255,90,31,0.5); }
+.stat-tile.record-loss b { opacity: 0.55; transition: opacity 0.18s ease; }
+.stat-tile.record-loss:hover b { opacity: 1; }
+/* Differential carries the story: ice-green when ahead, cool-dim when behind. */
+.stat-tile.diff-pos b { color: #b9e3c6; text-shadow: 0 0 14px rgba(76,175,125,0.45); }
+.stat-tile.diff-neg b { opacity: 0.6; }
+@media (max-width: 560px) {
+  .stat-tile { padding: 14px 10px; }
+  .stat-tile b { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stat-tile.cf-enter { animation: none; }
+  .stat-tile.record-loss b { transition: none; }
+}

@@ -450,3 +450,29 @@ test('last-game box score renders a final scorecard with the winner glow and the
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('season-pulse tiles render as stat cards with the identity thread, record glow, and differential tint',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.stat-tile::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the tiles carry the orange identity thread');
+ assert.match(css,/\.stat-tile\.record-win b\s*\{[^}]*text-shadow:\s*0 0 14px rgba\(255,\s*90,\s*31,\s*0\.5\)/s,'a winning record glows warm');
+ assert.match(css,/\.stat-tile\.record-loss b\s*\{[^}]*opacity:\s*0\.55/s,'a losing record recedes');
+ assert.match(css,/\.stat-tile\.record-loss:hover b\s*\{[^}]*opacity:\s*1/s,'hover restores the receding record');
+ assert.match(css,/\.stat-tile\.diff-pos b\s*\{[^}]*color:\s*#b9e3c6/s,'a positive differential tints ice-green');
+ assert.match(css,/\.stat-tile\.diff-neg b\s*\{[^}]*opacity:\s*0\.6/s,'a negative differential recedes cool');
+ assert.match(css,/@keyframes tileRise/,'tile entrance keyframes exist');
+ assert.match(css,/\.stat-tile\.cf-enter\s*\{[^}]*animation:\s*tileRise/s,'first paint frost-fades the tiles in');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.stat-tile\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ assert.match(css,/@media \(max-width: 560px\) \{[\s\S]*?\.stat-tile b\s*\{\s*font-size:\s*24px/s,'the tiles compact on small screens');
+ const p=await page('stats');try{
+  const d=p.w.document;
+  const tiles=[...d.querySelectorAll('#pulse .stat-tile')];
+  assert.equal(tiles.length,4,'all four pulse tiles render');
+  assert.ok(tiles.every(t=>t.classList.contains('cf-enter')),'first paint carries the entrance class');
+  assert.deepEqual(tiles.map((t,i)=>t.style.getPropertyValue('--ni')),['0','1','2','3'],'entrance staggers across the tiles');
+  const rec=tiles[0],diff=tiles[3];
+  assert.ok(rec.classList.contains('record-win'),'the 1–0 record glows as a win');
+  assert.equal(rec.querySelector('b').textContent,'1–0','the record reads');
+  assert.ok(diff.classList.contains('diff-pos'),'the +7 differential tints positive');
+  assert.equal(diff.querySelector('b').textContent,'+7','the differential reads');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
