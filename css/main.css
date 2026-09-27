@@ -2277,7 +2277,19 @@ body:not(.prefers-reduced-motion) #snow {
 }
 .nav-toggle:focus-visible { border-radius: 10px; }
 
-/* Week clock strip */
+/* ============================================================
+   v1.38.0 — week-clock glow-up.
+   The four week phases get the family treatment: each phase
+   carries a top identity thread (dim steel at rest, igniting
+   orange on hover or keyboard focus, full orange on the active
+   phase), the active phase reveals a NOW chip and warms its
+   label, hover lift gains :focus-visible keyboard parity with a
+   visible focus ring, and the strip enters with a staggered
+   frost-fade on first paint (the 60-second refresh only toggles
+   .is-active, so re-paints stay instant). aria-current="step"
+   stays on the active phase. Reduced motion snaps the entrance
+   and every transition.
+   ============================================================ */
 .week-clock {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2290,6 +2302,8 @@ body:not(.prefers-reduced-motion) #snow {
   box-shadow: var(--shadow);
 }
 .week-clock-phase {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2299,21 +2313,67 @@ body:not(.prefers-reduced-motion) #snow {
   color: var(--ice);
   text-decoration: none;
   background: rgba(10, 20, 36, 0.45);
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
   min-height: 88px;
+  animation: cfRosterIn 0.5s var(--ease-out) backwards;
+  animation-delay: calc(var(--ni, 0) * 40ms);
 }
-.week-clock-phase:hover {
+.week-clock-phase:nth-child(2) { --ni: 1; }
+.week-clock-phase:nth-child(3) { --ni: 2; }
+.week-clock-phase:nth-child(4) { --ni: 3; }
+.week-clock-phase::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(159,184,204,0.30), rgba(159,184,204,0.10) 60%, transparent);
+  transition: background 0.22s ease, box-shadow 0.22s ease, height 0.22s ease;
+  pointer-events: none;
+}
+.week-clock-phase:hover::before,
+.week-clock-phase:focus-visible::before {
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159,184,204,0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+}
+.week-clock-phase::after {
+  content: "NOW";
+  position: absolute;
+  top: 9px; right: 10px;
+  font-family: var(--display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #0a101c;
+  background: linear-gradient(180deg, var(--orange-hot), var(--orange));
+  border-radius: 999px;
+  padding: 2px 8px 1px;
+  box-shadow: 0 0 12px rgba(255, 90, 31, 0.6);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+.week-clock-phase:hover,
+.week-clock-phase:focus-visible {
   border-color: rgba(255, 90, 31, 0.35);
   background: rgba(200, 56, 3, 0.1);
   color: var(--snow);
   transform: translateY(-1px);
 }
+.week-clock-phase:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  box-shadow: 0 0 18px rgba(209, 58, 2, 0.35);
+}
+.week-clock-phase:hover .phase-label,
+.week-clock-phase:focus-visible .phase-label { color: var(--orange-hot); }
 .week-clock-phase .phase-label {
   font-family: var(--display);
   font-size: 15px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--snow);
+  transition: color 0.18s ease, text-shadow 0.18s ease;
 }
 .week-clock-phase .phase-hint {
   font-size: 12px;
@@ -2332,7 +2392,25 @@ body:not(.prefers-reduced-motion) #snow {
   background: rgba(200, 56, 3, 0.16);
   box-shadow: 0 0 24px rgba(209, 58, 2, 0.22);
 }
+.week-clock-phase.is-active::before {
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 60%, rgba(255, 180, 140, 0.4) 100%);
+  box-shadow: 0 0 20px rgba(255, 90, 31, 0.65);
+}
+.week-clock-phase.is-active::after { opacity: 1; transform: none; }
+.week-clock-phase.is-active .phase-label {
+  color: var(--orange-hot);
+  text-shadow: 0 0 14px rgba(255, 90, 31, 0.45);
+}
+.week-clock-phase.is-active .phase-hint { color: var(--ice); }
 .week-clock-phase.is-active .phase-meta { color: var(--orange-hot); }
+@media (prefers-reduced-motion: reduce) {
+  .week-clock-phase { animation: none; }
+  .week-clock-phase,
+  .week-clock-phase::before,
+  .week-clock-phase::after,
+  .week-clock-phase .phase-label { transition: none; }
+}
 .week-clock-note {
   margin-top: 10px;
   font-size: 12.5px;

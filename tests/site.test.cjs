@@ -564,3 +564,26 @@ test('hero match-card speaks Bears: identity follows the team, finals carry the 
   assert.deepEqual(q.errors,[]);
  }finally{q.close();}
 });
+test('week clock phases get the glow-up: identity thread, NOW chip, focus parity, first-paint entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.week-clock-phase::before\s*\{[^}]*background:\s*linear-gradient/s,'the phases carry an identity thread');
+ assert.match(css,/\.week-clock-phase\.is-active::before\s*\{[^}]*var\(--orange-hot\)/s,'the thread floods orange on the active phase');
+ assert.match(css,/\.week-clock-phase::after\s*\{[^}]*content:\s*"NOW"/s,'the active phase reveals a NOW chip');
+ assert.match(css,/\.week-clock-phase:hover,\s*\.week-clock-phase:focus-visible\s*\{[^}]*transform:\s*translateY\(-1px\)/s,'hover lift has :focus-visible keyboard parity');
+ assert.match(css,/\.week-clock-phase:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'keyboard focus carries a visible ring');
+ assert.match(css,/\.week-clock-phase\.is-active \.phase-label\s*\{[^}]*color:\s*var\(--orange-hot\)/s,'the active label warms');
+ assert.match(css,/\.week-clock-phase\s*\{[^}]*animation:\s*cfRosterIn/s,'first paint frost-fades the phases in');
+ assert.match(css,/\.week-clock-phase:nth-child\(3\)\s*\{\s*--ni:\s*2/s,'the entrance staggers across the strip');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.week-clock-phase\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ const p=await page('index');try{
+  const d=p.w.document;
+  const phases=[...d.querySelectorAll('#week-clock .week-clock-phase')];
+  assert.equal(phases.length,4,'the strip paints four phases');
+  const active=phases.filter(x=>x.classList.contains('is-active'));
+  assert.equal(active.length,1,'exactly one phase is active against the fixture schedule');
+  assert.equal(active[0].getAttribute('data-phase'),'media','the fixture kickoff lands in media week');
+  assert.equal(active[0].getAttribute('aria-current'),'step','the active phase is exposed as the current step');
+  assert.equal(d.querySelector('#week-clock-pill').textContent,'media','the pill names the active phase');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
