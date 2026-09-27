@@ -14,7 +14,7 @@
       '<div class="addr" data-addr="' + CF.esc(d.address) + '" title="Click to copy">' + CF.esc(d.address) + "</div>" +
       '<div class="acts">' +
       '<button class="btn small" data-copy="' + CF.esc(d.address) + '" type="button">⧉ Copy</button>' +
-      '<a class="btn small" href="' + CF.esc(d.view) + '" target="_blank" rel="noopener">Explorer ↗</a>' +
+      (d.view ? '<a class="btn small" href="' + CF.esc(d.view) + '" target="_blank" rel="noopener">Explorer ↗</a>' : "") +
       "</div>" +
       '<img class="qr" loading="lazy" alt="QR code for ' + CF.esc(d.label) + ' donation address" ' +
       'src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=2&data=' + encodeURIComponent(d.address) + '"' +

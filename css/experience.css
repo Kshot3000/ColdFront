@@ -30,8 +30,9 @@ body { overflow-x: clip; }
 .motion-paused .reveal { opacity: 1; transform: none; }
 .skip-link { position: fixed; left: 16px; top: -70px; padding: 12px 18px; background: #fff; color: #071426; z-index: 200; border-radius: 8px; }
 .skip-link:focus { top: 12px; color: #071426; }
-:focus-visible { outline: 3px solid var(--ice-bright); outline-offset: 4px; }
 main:focus { outline: none; }
+
+/* v1.13.0 — hero headline stays inside narrow phones (was min 65px, clipped on 360px screens) */
 [hidden] { display: none !important; }
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
 .reveal.is-visible { opacity: 1; transform: none; }
@@ -128,7 +129,7 @@ main:focus { outline: none; }
 @media (max-width:960px) { .nav { max-height: calc(100dvh - 120px); overflow-y: auto; } .nav a { padding: 13px 16px; } .nav a.nav-x { margin-left: 0; } .weather-strip { gap: 5px 12px; } .wx-gauge { display: none; } }
 @media (max-width:760px) {
   .hero { padding: 44px 0 28px; } .hero-layout,.north-layout { grid-template-columns: 1fr; gap: 30px; }
-  .hero h1 { font-size: clamp(65px,12vw,94px); } .hero .sub { max-width: 530px; font-size: 15px; }
+  .hero h1 { font-size: clamp(42px, 12.5vw, 68px); } .hero .sub { max-width: 530px; font-size: 15px; }
   .hero-photo { background-position: center,center,62% top; }
   .season-strip { margin-top: 28px; grid-template-columns: repeat(3,1fr); gap: 14px; }
   .season-strip .season-brand { display: none; } .season-strip > div + div { padding-left: 15px; } .season-strip > div:nth-child(2) { border-left: 0; padding-left: 0; }
@@ -139,6 +140,7 @@ main:focus { outline: none; }
 }
 @media (max-width:440px) {
   .wrap { width: 92%; } .match-card { padding: 21px; } .match-card .abbr { font-size: 41px; }
+  .hero h1 { font-size: clamp(36px, 13vw, 52px); line-height: 0.96; }
   .front-news { grid-template-columns: 1fr; } .story-image { height: 200px; }
   .hero-actions .btn { flex: 1; justify-content: center; padding: 12px 10px; }
   .player-portrait { height: 136px; } .player-info { padding: 13px; } .player-info h3 { font-size: 14px; }

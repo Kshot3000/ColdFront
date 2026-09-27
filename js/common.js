@@ -14,7 +14,7 @@ CF.CONFIG = {
     name: "THE COLD FRONT",
     tagline: "Chicago Bears × Midwest Winter Football",
     blurb: "The all-in-one Chicago Bears fan hub — live news, injuries, odds, stats, schedule, roster & practice intel.",
-    version: "1.12.0",
+    version: "1.13.0",
   },
 
   author: {
@@ -24,8 +24,17 @@ CF.CONFIG = {
     github: "https://github.com/Kshot3000",
   },
 
-  // Donation wallets (same addresses as EUTXO.DEX / NightDream).
+  // Donation wallets (same addresses as EUTXO.DEX / NightDream + Pearl).
   donations: [
+    {
+      chain: "PRL",
+      label: "Pearl (PRL)",
+      symbol: "◆",
+      color: "#E8541E",
+      address: "prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d",
+      // No public explorer URL wired yet — about.js only shows the
+      // Explorer button when `view` is present.
+    },
     {
       chain: "BTC",
       label: "Bitcoin (BTC)",
@@ -1040,6 +1049,47 @@ CF.kickoffWeatherHTML = async (isHome) => {
   }
 };
 
+/* Scroll progress thread + back-to-top button (v1.13.0 polish).
+   Both are injected chrome — no per-page markup needed, styled in
+   css/main.css (.cf-progress, .cf-top). */
+CF.initScrollChrome = () => {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const bar = document.createElement("div");
+  bar.className = "cf-progress";
+  bar.setAttribute("aria-hidden", "true");
+  document.body.appendChild(bar);
+  const top = document.createElement("button");
+  top.type = "button";
+  top.className = "cf-top";
+  top.setAttribute("aria-label", "Back to top");
+  top.innerHTML = "↑";
+  document.body.appendChild(top);
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
+    bar.style.transform = "scaleX(" + p.toFixed(4) + ")";
+    bar.classList.toggle("is-on", y > 24);
+    top.classList.toggle("is-on", y > 600);
+  };
+  // Timer throttle (not rAF) — paint-friendly enough for a 3px bar,
+  // and it fires under the repo's jsdom test harness too.
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    setTimeout(update, 16);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  top.addEventListener("click", () => {
+    try { window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" }); }
+    catch (e) { window.scrollTo(0, 0); }
+  });
+  update();
+};
+
 /* ---------------- nav + chrome ---------------- */
 CF.injectAtmosphere = () => {
   if (document.querySelector(".cf-atmosphere")) return;
@@ -1107,6 +1157,7 @@ CF.openNav = (nav, toggle) => {
 CF.initChrome = () => {
   CF.injectAtmosphere();
   CF.ensureSkipLink();
+  CF.initScrollChrome();
 
   const wxEl = CF.$("[data-cf-weather]");
   if (wxEl) {

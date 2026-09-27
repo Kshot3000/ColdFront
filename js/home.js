@@ -50,11 +50,16 @@
         show("#prediction-status", "Your pick: CHI " + saved.bears + " · " + opponent + " " + saved.other + ". Saved on this device.");
       }
     }
+    let lastCountdown = null;
     const renderCountdown = () => {
       const remaining = Math.max(0, Date.parse(game.date) - Date.now());
       if (!remaining) { show("#ng-countdown", "Kickoff time — waiting for the live board"); clearInterval(countdown); return; }
       const values = [Math.floor(remaining / 86400000), Math.floor(remaining / 3600000) % 24, Math.floor(remaining / 60000) % 60, Math.floor(remaining / 1000) % 60];
-      CF.$("#ng-countdown").innerHTML = values.map((n, i) => '<div class="unit"><b>' + String(n).padStart(2, "0") + '</b><span>' + ["days", "hours", "min", "sec"][i] + '</span></div>').join("");
+      // v1.13.0 — tick the changed day/hour/minute units with a gentle pop.
+      CF.$("#ng-countdown").innerHTML = values.map((n, i) =>
+        '<div class="unit' + (i < 3 && lastCountdown && lastCountdown[i] !== n ? " tick" : "") + '"><b>' +
+        String(n).padStart(2, "0") + '</b><span>' + ["days", "hours", "min", "sec"][i] + "</span></div>").join("");
+      lastCountdown = values;
     };
     if (game.state === "pre" && game.timeValid) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
     else show("#ng-countdown", game.state === "in" ? game.display : "");
