@@ -587,3 +587,35 @@ test('week clock phases get the glow-up: identity thread, NOW chip, focus parity
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('player leaders render as leaderboards with the identity thread, glyph chips, and glowing lines',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.tbl-wrap\.ld::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the leaders wrapper carries the orange identity thread');
+ assert.match(css,/\.ld-line\s*\{[^}]*font-family:\s*var\(--display\)/s,'the line number gets display typography');
+ assert.match(css,/\.tbl\.ld tr\.ld-row:hover td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'rows warm on hover');
+ assert.match(css,/\.tbl\.ld tr\.ld-row:focus-within td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'keyboard focus warms rows too');
+ assert.match(css,/\.tbl\.ld \.ld-leader a:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the leader link gets a visible focus ring');
+ assert.match(css,/@keyframes ldRise/,'leaderboard entrance keyframes exist');
+ assert.match(css,/\.tbl-wrap\.ld\.cf-enter\s*\{[^}]*animation:\s*ldRise/s,'first paint frost-fades the table in');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.tbl-wrap\.ld\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ assert.match(css,/@media \(max-width: 560px\) \{[\s\S]*?\.ld-line\s*\{\s*font-size:\s*15px/s,'the lines compact on small screens');
+ const p=await page('stats');try{
+  const d=p.w.document;
+  const wrap=d.querySelector('#leaders .tbl-wrap.ld');
+  assert.ok(wrap,'the leaders table carries the family wrapper');
+  assert.ok(wrap.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const rows=[...wrap.querySelectorAll('tr.ld-row')];
+  assert.ok(rows.length>=1,'leader rows render');
+  const cat=rows[0].querySelector('.ld-cat');
+  assert.ok(cat.querySelector('.ld-glyph'),'the category carries a glyph chip');
+  assert.equal(cat.querySelector('.ld-glyph').textContent,'🏈','passing maps to the football glyph');
+  assert.ok(/Passing/.test(cat.textContent),'the category label survives');
+  const line=rows[0].querySelector('.ld-line');
+  assert.equal(line.textContent,'250 YDS','the line reads as the headline stat');
+  const box=d.querySelector('#lastbox .tbl-wrap.ld');
+  assert.ok(box,'the box-score leaders sub-table gets the same treatment');
+  assert.ok(box.classList.contains('cf-enter'),'the sub-table also frost-fades on first paint');
+  const bcat=box.querySelector('.ld-cat .ld-glyph');
+  assert.ok(bcat && /Passing/.test(bcat.parentElement.textContent),'the sub-table keeps category glyphs');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

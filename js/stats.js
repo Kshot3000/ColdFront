@@ -71,6 +71,28 @@
     return name + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span>";
   }
 
+  /* Category glyph chips for the leaderboard treatment. */
+  function ldGlyph(category) {
+    const s = String(category || "").toLowerCase();
+    if (/intercept/.test(s)) return "🎯";
+    if (/sack/.test(s)) return "💥";
+    if (/tackle/.test(s)) return "🛡";
+    if (/fumble/.test(s)) return "🤲";
+    if (/receiv/.test(s)) return "🙌";
+    if (/rush/.test(s)) return "💨";
+    if (/pass/.test(s)) return "🏈";
+    if (/kick|punt|field/.test(s)) return "🦵";
+    if (/return/.test(s)) return "🏃";
+    return "❄";
+  }
+
+  function leaderCatCell(l) {
+    return '<td class="strong ld-cat"><span class="ld-glyph" aria-hidden="true">' +
+      ldGlyph(l.category || l.label) + "</span>" + CF.esc(l.label) + "</td>";
+  }
+
+  let leadersEntered = false; // .cf-enter only on first paint; the 5-min refresh re-renders stay instant
+
   async function loadLeaders() {
     const pill = CF.$("#leaders-pill");
     const box = CF.$("#leaders");
@@ -83,13 +105,15 @@
         if (d && d.top.length) {
           pill.className = "pill ok";
           pill.textContent = "live · API-Sports · top 15 by " + d.cols[0];
+          const entered = !leadersEntered;
+          leadersEntered = true;
           box.innerHTML =
-            '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>Pos</th>' +
-            d.cols.map((c) => '<th class="num">' + CF.esc(c) + "</th>").join("") +
+            '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears season leaders</caption><thead><tr><th scope="col">Player</th><th scope="col">Pos</th>' +
+            d.cols.map((c) => '<th scope="col" class="num">' + CF.esc(c) + "</th>").join("") +
             "</tr></thead><tbody>" +
             d.top.map((p) =>
-              "<tr><td class=\"strong\">" + CF.esc(p.name) + "</td><td>" + CF.esc(p.pos || "—") + "</td>" +
-              d.cols.map((c) => '<td class="num">' + CF.esc(p.stats[c] != null ? p.stats[c] : "·") + "</td>").join("") +
+              '<tr class="ld-row"><td class="strong">' + CF.esc(p.name) + '</td><td class="ld-cat">' + CF.esc(p.pos || "—") + "</td>" +
+              d.cols.map((c) => '<td class="num ld-line">' + CF.esc(p.stats[c] != null ? p.stats[c] : "·") + "</td>").join("") +
               "</tr>"
             ).join("") +
             "</tbody></table></div>" +
@@ -126,13 +150,15 @@
       if (!rowsOut.length) throw new Error("no leaders");
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
       pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · recent game leaders · " + gamesUsed + " game" + (gamesUsed === 1 ? "" : "s");
+      const entered = !leadersEntered;
+      leadersEntered = true;
       box.innerHTML =
-        '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th><th>When</th></tr></thead><tbody>' +
+        '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears per-game leaders, recent completed games</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th><th scope="col">When</th></tr></thead><tbody>' +
         rowsOut.map((l) =>
-          "<tr><td class=\"strong\">" + CF.esc(l.label) + "</td>" +
-          "<td>" + leaderCell(l) + "</td>" +
-          '<td class="num">' + CF.esc(l.display) + "</td>" +
-          '<td class="dim">' + CF.esc(l.when || "") + "</td></tr>"
+          '<tr class="ld-row">' + leaderCatCell(l) +
+          '<td class="ld-leader">' + leaderCell(l) + "</td>" +
+          '<td class="num ld-line">' + CF.esc(l.display) + "</td>" +
+          '<td class="dim ld-when">' + CF.esc(l.when || "") + "</td></tr>"
         ).join("") +
         "</tbody></table></div>" +
         '<p class="src-note">Per-game leaders from the league wire across the completed games so far. Full season stats land here the moment the feed exposes them — or set an <a href="about.html#data-sources">API-Sports key</a> on the About page.</p>';
@@ -222,11 +248,11 @@
         "<span>" + CF.esc(CF.fmtDate(ev.date)) + "</span></div>" +
         "</div>" +
         (leaders.length
-          ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
+          ? '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears leaders, last game</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead><tbody>' +
             leaders.map((l) =>
-              "<tr><td class=\"strong\">" + CF.esc(l.label) + "</td>" +
-              "<td>" + leaderCell(l) + "</td>" +
-              '<td class="num">' + CF.esc(l.display) + "</td></tr>"
+              '<tr class="ld-row">' + leaderCatCell(l) +
+              '<td class="ld-leader">' + leaderCell(l) + "</td>" +
+              '<td class="num ld-line">' + CF.esc(l.display) + "</td></tr>"
             ).join("") +
             "</tbody></table></div>"
           : "") +
