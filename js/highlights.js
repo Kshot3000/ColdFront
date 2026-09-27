@@ -1,5 +1,5 @@
 /* ============================================================
-   THE COLD FRONT — game highlights (v1.13.0)
+   THE COLD FRONT — game highlights (v1.57.0)
    Latest videos from the official Chicago Bears YouTube channel,
    pulled keyless through the raced fetch chain:
      YouTube channel RSS (Atom) → public CORS proxies → local snapshot.
@@ -8,6 +8,11 @@
    v1.32.0: frosted-glass card glow-up with identity thread, staggered
    frost-fade entrance on first paint, and skeleton video cards while
    the feed loads.
+   v1.57.0: the feature frame's now-playing strip gets the family
+   treatment — identity thread, display-type title, ❄ NOW PLAYING
+   eyebrow, igniting Highlight chip, :focus-visible parity on the
+   keyboard-operable poster, and a one-shot fade each time the
+   feature swaps videos.
    ============================================================ */
 "use strict";
 
@@ -120,6 +125,17 @@
       "</span></span></button>";
   }
 
+  // v1.57.0 — one-shot fade on the now-playing strip each time the
+  // feature swaps; remove/re-add around a reflow so re-renders
+  // re-trigger the animation (reduced motion snaps it).
+  function nowIn(box) {
+    var now = box.querySelector(".hl-now");
+    if (!now) return;
+    now.classList.remove("hl-now-in");
+    void now.offsetWidth;
+    now.classList.add("hl-now-in");
+  }
+
   function featureVideo(v, autoplay) {
     state.current = v.videoId;
     var box = CF.$("#hl-feature");
@@ -129,10 +145,12 @@
       '<iframe src="' + esc(embedURL(v.videoId, autoplay)) + '" title="' + esc(v.title) + '" ' +
       'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
       'allowfullscreen loading="lazy"></iframe></div>' +
-      '<div class="hl-now"><h2>' + esc(v.title) + '</h2>' +
+      '<div class="hl-now"><span class="hl-eyebrow">❄ Now playing</span>' +
+      '<h2>' + esc(v.title) + '</h2>' +
       '<span class="meta dim">' + esc(CF.timeAgo(v.published)) +
       (kind === "highlight" ? ' · <span class="hl-kind">Highlight</span>' : "") + "</span>" +
       '<a class="btn small" href="' + esc(CF.safeURL(v.link)) + '" target="_blank" rel="noopener">YouTube ↗</a></div>';
+    nowIn(box);
     Array.prototype.forEach.call(document.querySelectorAll(".hl-card"), function (c) {
       c.classList.toggle("is-active", c.getAttribute("data-vid") === v.videoId);
     });
@@ -146,9 +164,11 @@
       'aria-label="Play: ' + esc(v.title) + '" ' +
       'style="background-image:url(\'' + esc(CF.safeURL(v.thumb)) + '\')">' +
       '<span class="hl-play" aria-hidden="true"></span></div></div>' +
-      '<div class="hl-now"><h2>' + esc(v.title) + '</h2>' +
+      '<div class="hl-now"><span class="hl-eyebrow">❄ Now playing</span>' +
+      '<h2>' + esc(v.title) + '</h2>' +
       '<span class="meta dim">' + esc(CF.timeAgo(v.published)) + "</span>" +
       '<a class="btn small" href="' + esc(CF.safeURL(v.link)) + '" target="_blank" rel="noopener">YouTube ↗</a></div>';
+    nowIn(box);
     var play = function () { featureVideo(v, true); };
     CF.$("#hl-poster").addEventListener("click", play);
     CF.$("#hl-poster").addEventListener("keydown", function (e) {

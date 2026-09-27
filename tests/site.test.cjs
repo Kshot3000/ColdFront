@@ -416,6 +416,34 @@ test('highlights video cards carry the identity thread, entrance stagger, and sk
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('highlights feature frame carries the identity thread, display-type title, and poster keyboard parity',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/highlights.css'),'utf8');
+ assert.match(css,/\.hl-now::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the now-playing strip carries the orange identity thread');
+ assert.match(css,/\.hl-feature:focus-within \.hl-now::before/,'the thread ignites when the frame holds keyboard focus');
+ assert.match(css,/\.hl-now h2\s*\{[^}]*font-family:\s*var\(--display\)/s,'the featured title sets in the display typeface');
+ assert.match(css,/\.hl-eyebrow\s*\{[^}]*letter-spacing:\s*0\.28em/s,'the ❄ NOW PLAYING eyebrow carries the tape-room identity');
+ assert.match(css,/\.hl-poster:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the keyboard-operable poster shows the family focus ring');
+ assert.match(css,/\.hl-poster:focus-visible \.hl-play/s,'the big play badge answers keyboard focus like hover');
+ assert.match(css,/@keyframes hlNowIn/,'the swap fade keyframes exist');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.hl-now\.hl-now-in\s*\{\s*animation:\s*none/s,'reduced motion snaps the swap fade');
+ const p=await page('highlights');try{
+  const d=p.w.document;
+  const now=d.querySelector('#hl-feature .hl-now');
+  assert.ok(now,'the feature frame renders a now-playing strip');
+  assert.match(now.querySelector('.hl-eyebrow').textContent,/Now playing/,'the strip opens with the eyebrow');
+  assert.ok(now.querySelector('h2').textContent.length>3,'the strip shows the featured title');
+  assert.ok(now.classList.contains('hl-now-in'),'the strip fades in on load');
+  const cards=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(cards.length>=2,'the feed renders video cards');
+  const second=cards.find(c=>!c.classList.contains('is-active'))||cards[1];
+  second.click();await settle();
+  const swapped=d.querySelector('#hl-feature .hl-now');
+  assert.ok(swapped.classList.contains('hl-now-in'),'the strip re-fades when a new video loads');
+  assert.equal(swapped.querySelector('h2').textContent,second.querySelector('.hl-title').textContent,'the strip follows the chosen video');
+  assert.ok(d.querySelector('#hl-feature iframe'),'the swap loads the real player');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
 test('last-game box score renders a final scorecard with the winner glow and the Bears chip',async()=>{
  const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
  assert.match(css,/\.bx-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the scorecard carries the orange identity thread');

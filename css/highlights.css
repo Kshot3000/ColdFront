@@ -1,5 +1,6 @@
 /* THE COLD FRONT — game highlights page
-   (v1.13.0 feature frame; v1.15.0 poly bars; v1.32.0 video-card glow-up) */
+   (v1.13.0 feature frame; v1.15.0 poly bars; v1.32.0 video-card glow-up;
+    v1.57.0 feature-frame glow-up) */
 
 /* Featured player: cinematic 16:9 frame with frost border + orange glow. */
 .hl-feature {
@@ -274,4 +275,81 @@
   .hl-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .hl-title { font-size: 12.5px; }
   .hl-play { width: 68px; height: 68px; }
+}
+
+/* ============================================================
+   v1.57.0 — feature-frame glow-up: the now-playing strip gets the
+   family treatment. It was the last surface on this page without
+   the orange identity thread: the strip gains one across its top
+   (dim at rest, igniting when the frame holds hover or keyboard
+   focus), the featured title moves into the display typeface with
+   a warm glow, a ❄ NOW PLAYING eyebrow gives the strip its
+   tape-room identity, and the Highlight chip ignites under
+   attention. The poster is keyboard-operable (role=button) but
+   had no visible focus — it now carries the family ring, and the
+   big play badge answers keyboard focus like it does hover.
+   Swapping videos fades the strip in; reduced motion snaps
+   everything.
+   ============================================================ */
+.hl-now { position: relative; }
+.hl-now::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0.35;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.hl-feature:hover .hl-now::before,
+.hl-feature:focus-within .hl-now::before { opacity: 1; }
+.hl-eyebrow {
+  flex: 1 1 100%;
+  font-family: var(--display);
+  font-size: 11.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--orange-hot);
+  text-shadow: 0 0 18px rgba(255, 90, 31, 0.5), 0 0 6px rgba(255, 90, 31, 0.3);
+}
+.hl-now h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 21px;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+  text-shadow: 0 0 24px rgba(255, 90, 31, 0.28);
+}
+.hl-now .hl-kind {
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.hl-feature:hover .hl-now .hl-kind,
+.hl-feature:focus-within .hl-now .hl-kind {
+  background: rgba(255, 90, 31, 0.18);
+  color: #ffd9c7;
+  box-shadow: 0 0 12px rgba(255, 90, 31, 0.35);
+}
+.hl-poster:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px rgba(255, 90, 31, 0.6), 0 0 34px rgba(255, 90, 31, 0.35);
+}
+.hl-poster:hover .hl-play,
+.hl-poster:focus-visible .hl-play { transform: translate(-50%, -50%) scale(1.07); }
+/* video-swap fade on the info strip, re-triggered by JS on every swap */
+@keyframes hlNowIn {
+  from { opacity: 0; transform: translateY(8px); }
+}
+.hl-now.hl-now-in { animation: hlNowIn 0.32s var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-now::before,
+  .hl-now .hl-kind,
+  .hl-poster,
+  .hl-poster .hl-play { transition: none; }
+  .hl-now.hl-now-in { animation: none; }
+  .hl-poster:hover .hl-play,
+  .hl-poster:focus-visible .hl-play { transform: translate(-50%, -50%); }
 }
