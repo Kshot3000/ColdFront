@@ -7,6 +7,9 @@
   let wireEntered = false;
   // v1.43.0 — .cf-enter on the Polymarket board only at first paint; the 60s refresh re-renders stay instant
   let polyEntered = false;
+  // v1.49.0 — previous Polymarket prices per market (event slug + question),
+  // so the next render can flag line movement with ▲/▼ chips
+  const polyPrev = {};
 
   /* ---------- 1) league-wire line for the next Bears game ---------- */
   async function loadWireOdds() {
@@ -154,8 +157,14 @@
         return;
       }
       let n = 0; // per-card stagger index for the first-paint entrance
-      box.innerHTML = bears.slice(0, 8).map((ev) =>
-        (ev.markets || []).map((m) => {
+      box.innerHTML = bears.slice(0, 8).map((ev) => {
+        const kpre = (ev.slug || ev.url || ev.title) + "::";
+        return (ev.markets || []).map((m) => {
+          // v1.49.0 — line-movement chips vs the previous render
+          const kY = kpre + m.question + "::yes", kN = kpre + m.question + "::no";
+          const yesChip = CF.polyMoveChip(polyPrev[kY], m.yes);
+          const noChip = CF.polyMoveChip(polyPrev[kN], m.no);
+          polyPrev[kY] = m.yes; polyPrev[kN] = m.no;
           // Implied-probability bar: one segmented strip (yes green / no orange)
           // so the crowd's lean reads at a glance next to the cent prices.
           const yesPct = m.yes != null ? Math.max(0, Math.min(100, Math.round(m.yes * 100))) : null;
@@ -167,8 +176,8 @@
           return '<div class="poly-card' + (polyEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(n++, 12) + '">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +
           '<span class="pr">' +
-          (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢</span>" : "") +
-          (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">' + CF.esc(m.noLabel) + ' ' + Math.round(m.no * 100) + "¢</span>" : "") +
+          (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢" + yesChip + "</span>" : "") +
+          (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">' + CF.esc(m.noLabel) + ' ' + Math.round(m.no * 100) + "¢" + noChip + "</span>" : "") +
           "</span>" +
           bar +
           '<span class="sub">' +
@@ -176,8 +185,8 @@
           (m.endDate ? " · ends " + CF.fmtDate(m.endDate) : "") +
           ' · <a href="' + CF.esc(CF.safeURL(m.url)) + '" target="_blank" rel="noopener">market ↗</a>' +
           "</span></div>";
-        }).join("")
-      ).join("");
+        }).join("");
+      }).join("");
       polyEntered = true;
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';

@@ -832,3 +832,26 @@ test('donation cards get the family treatment: identity thread, keyboard copy, e
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('polymarket line-movement chips: pure helper and first-paint silence',async()=>{
+ const p=await page('odds');try{const CF=p.w.CF;
+  const up=CF.polyMoveChip(0.60,0.63);
+  assert.match(up,/class="mv up"/,'an upward move earns the up chip');
+  assert.ok(up.includes('▲3¢'),'the up chip shows the cent delta');
+  assert.match(up,/aria-label="up 3 cents since your last check"/,'the chip announces itself to screen readers');
+  const down=CF.polyMoveChip(0.63,0.60);
+  assert.match(down,/class="mv down"/,'a downward move earns the down chip');
+  assert.ok(down.includes('▼3¢'),'the down chip shows the cent delta');
+  const one=CF.polyMoveChip(0.60,0.61);
+  assert.match(one,/class="mv up"/,'a single-cent move still chips');
+  assert.equal(CF.polyMoveChip(0.60,0.604),'','sub-cent jitter stays silent');
+  assert.equal(CF.polyMoveChip(0.60,0.60),'','an unchanged price stays silent');
+  assert.equal(CF.polyMoveChip(null,0.60),'','the first render (no previous price) stays silent');
+  assert.equal(CF.polyMoveChip(undefined,null),'','missing prices stay silent');
+  const d=p.w.document;
+  assert.equal(d.querySelectorAll('#poly-board .mv').length,0,'first paint shows no movement chips');
+  assert.ok(d.querySelector('.mv.up'),'the legend shows the up glyph');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#poly-board').textContent));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

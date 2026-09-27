@@ -199,6 +199,22 @@ CF.fmtTime = (iso) => {
   catch (e) { return ""; }
 };
 
+/* v1.49.0 — Polymarket line-movement chip: compares this render's price
+   against the previous render and returns a tiny ▲/▼ chip when the price
+   moved at least one cent, otherwise an empty string. Prices are 0..1. */
+CF.polyMoveChip = (prev, cur) => {
+  const a = Number(prev), b = Number(cur);
+  if (prev == null || cur == null || !Number.isFinite(a) || !Number.isFinite(b)) return "";
+  const cents = Math.round((b - a) * 100);
+  if (cents === 0) return "";
+  const up = cents > 0;
+  const n = Math.abs(cents);
+  const dir = up ? "up" : "down";
+  return '<span class="mv ' + dir + '" role="img" aria-label="' + dir + " " + n +
+    " cent" + (n === 1 ? "" : "s") + ' since your last check">' +
+    (up ? "▲" : "▼") + n + "¢</span>";
+};
+
 CF.toast = (msg) => {
   let t = CF.$("#toast");
   if (!t) {
