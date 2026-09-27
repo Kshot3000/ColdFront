@@ -223,10 +223,10 @@ test('footer glow-up: bottom bar with PRL tip chip that copies the donation addr
  for(const name of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const p=await page(name);try{
    const q=p.w.document.querySelector.bind(p.w.document);
-   const chip=q('.foot-bottom .prl-chip[data-cf-copy="prl"]');
-   assert.ok(chip,name+' footer has the PRL tip chip in the bottom bar');
-   assert.equal(chip.getAttribute('aria-label'),'Copy Pearl (PRL) donation address to clipboard');
-   assert.equal(p.w.CF.CONFIG.donations.find(d=>d.chain==='PRL').address,'prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d');
+   const chip=q('.foot-bottom .prl-chip[data-cf-copy="btc"]');
+   assert.ok(chip,name+' footer has the BTC tip chip in the bottom bar');
+   assert.equal(chip.getAttribute('aria-label'),'Copy Bitcoin (BTC) donation address to clipboard');
+   assert.equal(p.w.CF.CONFIG.donations.find(d=>d.chain==='BTC').address,'3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK');
    const status=chip.querySelector('.prl-status');
    assert.equal(status.textContent,'Copy');
    chip.click();await settle(100);

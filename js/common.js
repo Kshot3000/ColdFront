@@ -1336,10 +1336,10 @@ CF.initChrome = () => {
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
 
-  // v1.24.0 — PRL tip chip: copies the Pearl donation address from config.
-  const prlWallet = (CF.CONFIG.donations || []).find((d) => d && d.chain === "PRL");
-  if (prlWallet && prlWallet.address) {
-    const prlAddr = prlWallet.address;
+  // Tip chip: copies the Bitcoin donation address from config (2026-09-27: switched from PRL).
+  const btcWallet = (CF.CONFIG.donations || []).find((d) => d && d.chain === "BTC");
+  if (btcWallet && btcWallet.address) {
+    const btcAddr = btcWallet.address;
     const fallbackCopy = (text) => {
       try {
         const ta = document.createElement("textarea");
@@ -1355,8 +1355,8 @@ CF.initChrome = () => {
       } catch (e) { return false; }
     };
     CF.$$("[data-cf-copy]").forEach((btn) => {
-      if (btn.getAttribute("data-cf-copy") !== "prl") return;
-      btn.setAttribute("aria-label", "Copy Pearl (PRL) donation address to clipboard");
+      if (btn.getAttribute("data-cf-copy") !== "btc") return;
+      btn.setAttribute("aria-label", "Copy Bitcoin (BTC) donation address to clipboard");
       const status = btn.querySelector(".prl-status");
       let t = null;
       btn.addEventListener("click", () => {
@@ -1367,8 +1367,8 @@ CF.initChrome = () => {
           t = setTimeout(() => { btn.classList.remove("copied"); if (status) status.textContent = "Copy"; }, 1800);
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(prlAddr).then(done, () => { if (fallbackCopy(prlAddr)) done(); });
-        } else if (fallbackCopy(prlAddr)) {
+          navigator.clipboard.writeText(btcAddr).then(done, () => { if (fallbackCopy(btcAddr)) done(); });
+        } else if (fallbackCopy(btcAddr)) {
           done();
         }
       });
