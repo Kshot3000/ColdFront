@@ -154,3 +154,36 @@ main:focus { outline: none; }
 /* Snow floats over the stadium imagery without intercepting controls. */
 #snow { z-index: 4; }
 .hero-photo[data-cf-hero-rotator] { background-image: none; }
+
+/* v1.14.0 — "The Wire" headlines ticker: full-bleed divider under the hero.
+   CSS-driven marquee; pauses on hover/focus; static wrap list for reduced motion. */
+.wire-ticker {
+  display: flex; align-items: stretch;
+  border-top: 1px solid #d5eaff22; border-bottom: 1px solid #d5eaff22;
+  background: linear-gradient(90deg, #0a1626f2, #0d1e33f2 40%, #0a1626f2);
+  overflow: hidden;
+}
+.wire-ticker-label {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 11px 18px; background: #f36a25; color: #071423;
+  font: 700 11px var(--display); letter-spacing: .18em; white-space: nowrap;
+}
+.wire-ticker-label .wt-snow { font-size: 13px; }
+.wire-ticker-viewport { flex: 1; overflow: hidden; position: relative; mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+.wire-ticker-track { display: inline-flex; align-items: center; width: max-content; min-height: 44px; animation: wire-scroll 60s linear infinite; }
+.wire-ticker:hover .wire-ticker-track, .wire-ticker:focus-within .wire-ticker-track { animation-play-state: paused; }
+@keyframes wire-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.wt-group { display: inline-flex; align-items: center; }
+.wt-item { display: inline-flex; align-items: baseline; gap: 8px; padding: 0 6px; color: #d7e6f2; font-size: 12.5px; white-space: nowrap; text-decoration: none; }
+.wt-item:hover { color: #fff; text-decoration: underline; text-decoration-color: #f36a25; text-underline-offset: 3px; }
+.wt-src { flex: none; color: #ff945f; font: 600 9.5px var(--body); letter-spacing: .14em; text-transform: uppercase; }
+.wt-sep { color: #88bddf; font-size: 11px; margin: 0 18px; opacity: .7; }
+.wire-ticker-standby { color: #7f9bb1; font-size: 12px; padding-left: 18px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .wire-ticker-track { animation: none; width: auto; flex-wrap: wrap; row-gap: 6px; padding: 8px 0; }
+  .wire-ticker-viewport { mask-image: none; -webkit-mask-image: none; }
+}
+@media (max-width: 760px) {
+  .wire-ticker-label { padding: 10px 12px; font-size: 10px; letter-spacing: .12em; }
+  .wt-sep { margin: 0 12px; }
+}

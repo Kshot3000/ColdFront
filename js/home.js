@@ -114,19 +114,36 @@
     const photo = CF.safeURL(item.images?.[0]?.url, "img/soldier-field.webp");
     return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener"><img class="story-image" loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.onerror=null;this.src=\'img/soldier-field.webp\'"><div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
   }
+  function tickerGroup(items, hidden) {
+    return '<span class="wt-group"' + (hidden ? ' aria-hidden="true"' : "") + ">" + items.map((item) => {
+      const title = item.heading || item.title || "Bears news";
+      const url = CF.safeURL(item.links?.web?.href || item.link, "https://www.chicagobears.com/news");
+      return '<a class="wt-item" href="' + CF.esc(url) + '" target="_blank" rel="noopener"' + (hidden ? ' tabindex="-1"' : "") + '><span class="wt-src">' + CF.esc(item.source || "Wire") + "</span>" + CF.esc(title) + '</a><span class="wt-sep" aria-hidden="true">❄</span>';
+    }).join("") + "</span>";
+  }
+  function paintTicker(items) {
+    const track = CF.$("#wire-ticker-track");
+    if (!track || !items.length) return;
+    const slice = items.slice(0, 8);
+    track.innerHTML = tickerGroup(slice, false) + tickerGroup(slice, true);
+  }
   async function loadNews() {
     try {
       const items = await CF.API.getNews();
       if (!items.length) throw new Error("No news");
       CF.$("#home-news").innerHTML = items.slice(0, 4).map(story).join("");
+      paintTicker(items);
       show("#wire-pill", CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN");
     } catch (_) {
       try {
         const items = await CF.API.getGoogleNews("Chicago Bears", 4);
         CF.$("#home-news").innerHTML = items.map(story).join("");
+        paintTicker(items);
         show("#wire-pill", CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire");
       } catch (_) {
         show("#wire-pill", "Feed unavailable");
+        const ticker = CF.$("#wire-ticker");
+        if (ticker) ticker.hidden = true;
         CF.$("#home-news").innerHTML = '<div class="empty">The wire is temporarily quiet. <a href="https://www.chicagobears.com/news" target="_blank" rel="noopener">Read the latest on Bears.com ↗</a></div>';
       }
     }
