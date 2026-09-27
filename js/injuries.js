@@ -4,6 +4,9 @@
 (function () {
   const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
 
+  // v1.36.0 — .cf-enter on first paint only; the 5-minute refresh re-renders stay instant.
+  let wireEntered = false;
+
   function sevCls(row) {
     return CF.injStatusCls(row.status || row.statusCls);
   }
@@ -143,8 +146,8 @@
     }
   }
 
-  function wireItem(title, date, extra) {
-    return '<div class="news-item" style="grid-template-columns:1fr;padding:12px 14px">' +
+  function wireItem(title, date, extra, i) {
+    return '<div class="news-item' + (wireEntered ? "" : " cf-enter") + '" style="grid-template-columns:1fr;padding:12px 14px;--ni:' + Math.min(i, 12) + '">' +
       '<p class="headline" style="font-size:13.5px;margin:0">' + CF.esc(title) + "</p>" +
       '<div class="meta"><span>' + CF.esc(extra || "") + "</span><span>" + CF.timeAgo(date) + "</span></div></div>";
   }
@@ -167,8 +170,8 @@
       const r = await CF.API.getLeagueInjuries();
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
-      rows.forEach((row) => parts.push(wireItem(row.name + " — " + row.comment, row.date, row.status)));
-      (x.notes || []).forEach((n) => parts.push(wireItem(n, null, "league note")));
+      rows.forEach((row) => parts.push(wireItem(row.name + " — " + row.comment, row.date, row.status, parts.length)));
+      (x.notes || []).forEach((n) => parts.push(wireItem(n, null, "league note", parts.length)));
     } catch (e) { /* league notes unavailable */ }
 
     // 2) ESPN league wire headlines that mention a body part or a status.
@@ -177,7 +180,7 @@
       (news || []).forEach((n) => {
         if (INJURY_RE.test(n.heading || "") || INJURY_RE.test(n.description || "")) {
           const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
-          parts.push('<div class="news-item" style="grid-template-columns:1fr;padding:12px 14px">' +
+          parts.push('<div class="news-item' + (wireEntered ? "" : " cf-enter") + '" style="grid-template-columns:1fr;padding:12px 14px;--ni:' + Math.min(parts.length, 12) + '">' +
             '<a class="headline" style="font-size:13.5px" href="' + CF.esc(CF.safeURL(href)) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "") + "</a>" +
             '<div class="meta"><span>' + CF.timeAgo(n.published) + "</span></div></div>");
         }
@@ -189,7 +192,7 @@
       const items = await CF.API.getGoogleNews("Chicago Bears injury report", 10);
       items.forEach((it) => {
         if (INJURY_RE.test(it.title || "") || INJURY_RE.test(it.desc || "")) {
-          parts.push('<div class="news-item" style="grid-template-columns:1fr;padding:12px 14px">' +
+          parts.push('<div class="news-item' + (wireEntered ? "" : " cf-enter") + '" style="grid-template-columns:1fr;padding:12px 14px;--ni:' + Math.min(parts.length, 12) + '">' +
             '<a class="headline" style="font-size:13.5px" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
             '<div class="meta"><span>' + CF.esc(it.source || "wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div></div>");
         }
@@ -198,6 +201,7 @@
 
     if (parts.length) {
       box.innerHTML = parts.slice(0, 12).join("");
+      wireEntered = true; // first paint done — refreshes stay instant
       return;
     }
     box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">No injury headlines are available from the connected feeds right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';

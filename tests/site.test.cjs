@@ -504,3 +504,26 @@ test('sunday desk renders a matchup duel card with countdown, thread, and first-
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('wire story cards get the glow-up: identity thread, focus parity, source chip, first-paint entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.news-item::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the wire cards carry the orange identity thread');
+ assert.match(css,/\.news-item:hover::before,\s*\.news-item:focus-within::before\s*\{\s*opacity:\s*1/s,'the thread ignites on hover and keyboard focus');
+ assert.match(css,/\.news-item:hover,\s*\.news-item:focus-within\s*\{[^}]*transform:\s*translateY\(-3px\)/s,'hover lift has :focus-within keyboard parity');
+ assert.match(css,/\.news-item:hover \.headline,\s*\.news-item:focus-within \.headline\s*\{\s*color:\s*var\(--orange-hot\)/s,'the headline warms under hover and keyboard focus');
+ assert.match(css,/\.news-item \.headline:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'headline links carry a visible focus ring');
+ assert.match(css,/\.news-item \.meta span:first-child\s*\{[^}]*border-radius:\s*999px/s,'the source renders as a chip');
+ assert.match(css,/\.news-item\.cf-enter\s*\{[^}]*animation:\s*cfRosterIn/s,'first paint frost-fades the cards in');
+ assert.match(css,/\.news-item\.cf-enter\s*\{[^}]*animation-delay:\s*calc\(var\(--ni, 0\) \* 35ms\)/s,'the entrance staggers on a --ni cascade');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.news-item\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ const p=await page('news');try{
+  const d=p.w.document;
+  const cards=[...d.querySelectorAll('#news-list .news-item')];
+  assert.ok(cards.length>0,'the wire paints story cards');
+  assert.ok(cards.every(c=>c.classList.contains('cf-enter')),'first paint carries the entrance class');
+  assert.equal(cards[0].style.getPropertyValue('--ni'),'0','the first card leads the stagger cascade');
+  assert.ok(cards[0].querySelector('.headline'),'cards carry a headline link');
+  const rail=[...d.querySelectorAll('#injury-news .news-item')];
+  assert.ok(rail.every(c=>c.classList.contains('cf-enter')),'the injury rail enters on first paint too');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

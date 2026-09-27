@@ -930,13 +930,7 @@ body.nav-open .site-head {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
   transition: border-color 0.2s var(--ease-out), transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
 }
-.news-item:hover {
-  border-color: var(--glass-border-hot);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lift), var(--rim-glow);
-}
 .news-item a { color: var(--snow); }
-.news-item a:hover { color: var(--orange-hot); }
 .news-item .headline { font-size: 15px; font-weight: 600; line-height: 1.35; }
 .news-item .meta { font-size: 12px; color: var(--text-dim); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
 .news-item .thumb {
@@ -970,6 +964,78 @@ body.nav-open .site-head {
   padding-left: 14px;
 }
 .rail h3 { font-size: 14px; }
+
+/* ============================================================
+   v1.36.0 — wire story-card glow-up.
+   The league/wide/injury wire cards (.news-item, used on
+   news.html and the injuries page rail) get the family
+   treatment: an orange identity thread across the top that
+   ignites on hover or keyboard focus, :focus-within parity for
+   the hover lift so keyboard users get the same response, the
+   headline warms under attention, the source becomes a proper
+   chip, the thumb edge warms under attention, and a staggered
+   frost-fade entrance on first paint only (the wire re-renders
+   on a 5-minute clock and those refreshes stay instant).
+   Reduced motion snaps the entrance and every transition.
+   ============================================================ */
+.news-item { position: relative; overflow: hidden; }
+.news-item::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.news-item:hover::before,
+.news-item:focus-within::before { opacity: 1; }
+.news-item:hover,
+.news-item:focus-within {
+  border-color: var(--glass-border-hot);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift), var(--rim-glow);
+}
+.news-item .headline { transition: color 0.2s ease; }
+.news-item a:hover { color: var(--orange-hot); }
+.news-item:hover .headline,
+.news-item:focus-within .headline { color: var(--orange-hot); }
+.news-item .headline:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.news-item .meta { align-items: center; }
+.news-item .meta span:first-child {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 2px 9px;
+  background: rgba(11, 22, 38, 0.5);
+}
+.news-item .thumb, .news-item .thumb-fallback { transition: border-color 0.2s ease; }
+.news-item:hover .thumb,
+.news-item:focus-within .thumb,
+.news-item:hover .thumb-fallback,
+.news-item:focus-within .thumb-fallback { border-color: rgba(255, 90, 31, 0.45); }
+.news-item.cf-enter {
+  animation: cfRosterIn 0.55s var(--ease-out) backwards;
+  animation-delay: calc(var(--ni, 0) * 35ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-item.cf-enter { animation: none; }
+  .news-item, .news-item::before, .news-item .headline,
+  .news-item .thumb, .news-item .thumb-fallback { transition: none; }
+}
 
 /* ---------- Tables ---------- */
 .tbl-wrap {
