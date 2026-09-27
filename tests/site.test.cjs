@@ -1066,3 +1066,16 @@ test('v1.59.0: social grids render safe external links on index and practice',as
   assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector(sel).textContent));
  }finally{p.close();}}
 });
+
+test('v1.60.0: odds-board cards join the family — identity thread, keyboard parity, focus ring',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.odds-card::before,\s*\.poly-card::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the cards carry the orange identity thread across the top');
+ assert.match(css,/\.odds-card::before,\s*\.poly-card::before\s*\{[^}]*opacity:\s*0\.35/s,'the thread sits dim at rest');
+ assert.match(css,/\.odds-card:hover::before,\s*\.odds-card:focus-within::before,\s*\.poly-card:hover::before,\s*\.poly-card:focus-within::before\s*\{\s*opacity:\s*1/s,'the thread ignites on hover and keyboard focus');
+ assert.match(css,/\.odds-card:focus-within,\s*\.poly-card:focus-within\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'the card shows the family focus ring while it holds focus');
+ assert.match(css,/\.odds-card:hover \.book,\s*\.odds-card:focus-within \.book\s*\{[^}]*text-shadow:/s,'the book label warms under attention');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.odds-card::before,\s*\.poly-card::before,\s*\.poly-price\s*\{\s*transition:\s*none/,'reduced motion snaps the odds-card transitions');
+ const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
+ assert.ok(odds.includes('css/main.css?v=1.60.0'),'odds.html busts the stylesheet cache');
+ assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+});
