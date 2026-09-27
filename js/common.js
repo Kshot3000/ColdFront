@@ -163,7 +163,7 @@ CF.CONFIG = {
   // so nothing shows until you're set up.
   referrals: {
     polymarket: "https://polymarket.us/squad/join/vLoDh9A8ch54gJmkbqrE?referrer=fancyjaguar1280", // Kyle's Polymarket squad referral link
-    kalshi: "",     // your Kalshi "Invite Friends" link (Menu -> Invite Friends, unlocked after $25 traded)
+    kalshi: "https://kalshi.com/t/9g8izs5o", // Kyle's Kalshi referral link
   },
   ads: {
     client: "ca-pub-3316742664595468", // live — Kyle's AdSense

@@ -913,24 +913,17 @@ test('referral slots stay hidden until your links are set, then render sponsored
  // No links configured -> slots removed entirely.
  {
   const p=await page('odds');try{const w=p.w;
+   w.CF.CONFIG.referrals.polymarket='';w.CF.CONFIG.referrals.kalshi='';w.CF.initReferrals();
    assert.equal(w.document.querySelectorAll('[data-ref-slot]').length,0,'ref slots removed when no referral links are set');
   }finally{p.close();}
  }
- // With links set -> tasteful sponsored cards with safe outbound attrs.
+ // With links set (live defaults) -> the page's own slots render as sponsored cards.
  {
   const p=await page('odds');try{const w=p.w;
-   for(const key of ['polymarket','kalshi']){
-    const host=w.document.createElement('div');
-    host.setAttribute('data-ref-slot',key);
-    w.document.body.appendChild(host);
-   }
-   w.CF.CONFIG.referrals.polymarket='https://polymarket.com/?r=TESTCODE';
-   w.CF.CONFIG.referrals.kalshi='https://kalshi.com/test-ref';
-   w.CF.initReferrals();
    const cards=w.document.querySelectorAll('.ref-card');
    assert.equal(cards.length,2,'both referral cards render');
    const links=[...w.document.querySelectorAll('.ref-card a.ref-link')];
-   assert.equal(links[0].getAttribute('href'),'https://polymarket.com/?r=TESTCODE');
+   assert.equal(links[0].getAttribute('href'),w.CF.CONFIG.referrals.polymarket);
    assert.equal(links[0].target,'_blank');
    assert.ok(links[0].rel.includes('sponsored')&&links[0].rel.includes('nofollow'),'outbound referral link is marked sponsored+nofollow');
    assert.ok(links[0].textContent.includes('18+'),'referral CTA carries the 18+ note');
