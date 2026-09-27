@@ -188,7 +188,9 @@ CF.fmt = (n) => {
   const v = Number(n);
   if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(v % 1e6 === 0 ? 0 : 1) + "M";
   if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(v % 1e3 === 0 ? 0 : 1) + "K";
-  return String(v);
+  // v1.60.1 — a stray float volume (e.g. Polymarket's 268.18067599999995)
+  // rendered raw on the odds board; round sub-1K non-integers to 1 decimal.
+  return Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10);
 };
 
 CF.timeAgo = (iso) => {

@@ -1079,3 +1079,27 @@ test('v1.60.0: odds-board cards join the family — identity thread, keyboard pa
  assert.ok(odds.includes('css/main.css?v=1.60.0'),'odds.html busts the stylesheet cache');
  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
+
+test('v1.60.1: CF.fmt rounds stray float volumes instead of printing them raw',async()=>{
+ const p=await page('odds'); try{
+  const fmt=p.w.CF.fmt;
+  assert.equal(fmt(268.18067599999995),'268.2','Polymarket float volume rounds to one decimal');
+  assert.equal(fmt(42),'42','integers stay exact');
+  assert.equal(fmt(1500),'1.5K','thousands keep the K form');
+  assert.equal(fmt(2500000),'2.5M','millions keep the M form');
+  assert.equal(fmt(null),'—','null stays an em dash');
+ }finally{p.close();}
+});
+
+test('v1.60.1: RSS titles decode double-escaped entities before render',async()=>{
+ const p=await page('news'); try{
+  const xml='<rss><channel><item><title>Patrick Beverley on the season: &amp;quot;What is going on, man?&amp;quot;</title><link>https://example.com/story</link><pubDate>Sun, 27 Sep 2026 12:00:00 GMT</pubDate></item></channel></rss>';
+  const items=p.w.CF.API.parseRss(xml);
+  assert.equal(items.length,1,'one item parses');
+  assert.equal(items[0].title,'Patrick Beverley on the season: "What is going on, man?"','double-escaped quotes decode to real quotes');
+  // The render path then escapes once, so the card shows quotes, not entities.
+  const html=p.w.CF.esc(items[0].title);
+  assert.ok(!html.includes('&amp;quot;'),'rendered HTML carries no double-escaped entity');
+  assert.ok(html.includes('&quot;'),'quotes are safely escaped exactly once');
+ }finally{p.close();}
+});

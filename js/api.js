@@ -163,6 +163,10 @@ CF.API = {
     const doc = new DOMParser().parseFromString(xml, "text/xml");
     const items = Array.from(doc.querySelectorAll("item")).map((el) => {
       const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
+      // v1.60.1 — Google News double-escapes entities in titles (the XML
+      // carries &amp;quot;), which rendered as literal "&quot;" on cards.
+      // Decode once more so headlines show real quotes.
+      const unesc = (s) => s ? new DOMParser().parseFromString(s, "text/html").body.textContent : s;
       // Bing wraps the source in a namespace: <News:Source>.
       const srcEl = el.getElementsByTagName("source")[0] || el.getElementsByTagNameNS("*", "Source")[0];
       let link = t("link") || null;
@@ -174,7 +178,7 @@ CF.API = {
         } catch (e) { /* keep the redirect link */ }
       }
       return {
-        title: t("title"),
+        title: unesc(t("title")),
         link,
         source: srcEl ? srcEl.textContent.trim() : null,
         date: t("pubDate"),
