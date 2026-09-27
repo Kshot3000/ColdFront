@@ -666,3 +666,43 @@ test('division standings glow up: identity thread, Bears chip, leader crown, and
   assert.deepEqual(g.errors,[]);
  }finally{g.close();}
 });
+test('odds board glow up: identity thread, focus parity, warm best rows, first-paint entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.odds-card::before[,\s][\s\S]{0,200}?background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the wire odds card carries the orange identity thread');
+ assert.match(css,/\.poly-card:hover::before,\s*\.poly-card:focus-within::before\s*\{\s*opacity:\s*1;\s*\}/s,'the thread ignites on keyboard focus too');
+ assert.match(css,/\.odds-card:focus-within\s*\{[\s\S]{0,120}?transform:\s*translateY\(-3px\)/s,'keyboard focus lifts the odds card like hover does');
+ assert.match(css,/\.odds-card a:focus-visible,\s*\.poly-card a:focus-visible\s*\{[\s\S]{0,120}?outline:\s*2px solid var\(--orange-hot\)/s,'the details links get a visible focus ring');
+ assert.match(css,/\.odds-row:has\(b\.best\)\s*\{[\s\S]{0,120}?background:\s*rgba\(255,\s*90,\s*31,\s*0\.08\)/s,'the row holding the BEST chip warms');
+ assert.match(css,/@keyframes oddsRise/,'the odds entrance keyframes exist');
+ assert.match(css,/\.odds-card\.cf-enter[\s\S]{0,200}?animation:\s*oddsRise/s,'first paint frost-fades the odds cards in');
+ assert.match(css,/\.odds-card\.cf-enter[\s\S]{0,200}?animation-delay:\s*calc\(var\(--ni,\s*0\)\s*\*\s*0\.06s\)/s,'the entrance staggers across cards');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.odds-card\.cf-enter[\s\S]*?animation:\s*none/s,'reduced motion snaps the odds entrance');
+ const p=await page('odds');try{const w=p.w,d=w.document;
+  let poly=d.querySelector('#poly-board .poly-card');
+  assert.ok(poly,'a Polymarket card renders on first paint');
+  assert.ok(poly.classList.contains('cf-enter'),'the first paint carries the entrance class');
+  assert.ok(poly.style.getPropertyValue('--ni')!=='' ,'the card carries a stagger index');
+  // Mock the league wire like the best-price test, then re-render: the wire
+  // cards should enter on this first successful paint too.
+  w.CF.API.getSchedule=async()=>({source:'live',data:{season:{displayName:'2026'},events:[event('200','PHI','CHI')]}});
+  const payload=[{id:'200',name:'Chicago Bears at Philadelphia Eagles',competitions:[{odds:[
+   {provider:{name:'DraftKings'},pointSpread:{home:{close:{line:-3}},away:{close:{line:3}}},overUnder:47.5,moneyline:{home:{close:{odds:-160}},away:{close:{odds:140}}}},
+   {provider:{name:'FanDuel'},pointSpread:{home:{close:{line:-2.5}},away:{close:{line:2.5}}},overUnder:48,moneyline:{home:{close:{odds:-150}},away:{close:{odds:130}}}}
+  ]}]}];
+  w.CF.API.getOdds=async()=>({source:'live',data:payload});
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await settle(500);
+  const cards=[...d.querySelectorAll('#odds-board .odds-card')];
+  assert.equal(cards.length,2,'both book cards render');
+  assert.ok(cards.every(c=>c.classList.contains('cf-enter')),'every wire card enters on first paint');
+  assert.ok(cards[0].style.getPropertyValue('--ni')==='0' && cards[1].style.getPropertyValue('--ni')==='1','the stagger index climbs per card');
+  assert.ok(d.querySelector('.best-strip.cf-enter'),'the best-price strip enters with the board');
+  const warm=d.querySelector('#odds-board .odds-row:has(b.best)');
+  assert.ok(warm,'the winning row exists');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#odds-board').textContent));
+  // One more render simulates the 60-second auto-refresh: it must stay instant.
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await settle(500);
+  assert.ok(!d.querySelector('#odds-board .odds-card.cf-enter'),'refresh re-renders stay instant on the wire board');
+  assert.ok(!d.querySelector('#poly-board .poly-card.cf-enter'),'refresh re-renders stay instant on the Polymarket board');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

@@ -831,3 +831,66 @@ main:focus { outline: none; }
   .race-bars.stnd.cf-enter { animation: none; }
   .tbl.stnd tr.stnd-row { transition: none; }
 }
+
+/* ============================================================
+   v1.43.0 — odds board glow-up.
+   The league-wire odds cards (.odds-card) and the Polymarket
+   cards (.poly-card) get the family treatment: an orange identity
+   leading-edge thread across the top that ignites on hover or
+   keyboard focus, :focus-within parity for the hover lift with a
+   visible :focus-visible ring on the details links, a warm tint on
+   the odds row carrying the BEST chip so the winning line reads
+   at a glance, and a staggered frost-fade entrance on first paint
+   only — the 60-second auto-refreshes re-render instantly.
+   Reduced-motion snaps the entrance and the transitions.
+   ============================================================ */
+@keyframes oddsRise {
+  from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
+}
+.odds-card, .poly-card { position: relative; overflow: hidden; }
+.odds-card::before, .poly-card::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.odds-card:hover::before, .odds-card:focus-within::before,
+.poly-card:hover::before, .poly-card:focus-within::before { opacity: 1; }
+.odds-card:hover, .odds-card:focus-within {
+  border-color: var(--glass-border-hot);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift), var(--rim-glow);
+}
+.poly-card:hover, .poly-card:focus-within {
+  border-color: var(--glass-border-hot);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift), var(--rim-glow);
+}
+.odds-card a:focus-visible, .poly-card a:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* The row holding the BEST chip warms so the winning line reads at a glance. */
+.odds-row:has(b.best) {
+  background: rgba(255, 90, 31, 0.08);
+  border-radius: 6px;
+  padding: 3px 8px;
+  margin: 0 -8px;
+}
+.best-strip.cf-enter, .odds-card.cf-enter, .poly-card.cf-enter {
+  animation: oddsRise 0.45s var(--ease-out) backwards;
+  animation-delay: calc(var(--ni, 0) * 0.06s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .best-strip.cf-enter, .odds-card.cf-enter, .poly-card.cf-enter { animation: none; }
+  .odds-card, .poly-card, .odds-card::before, .poly-card::before { transition: none; }
+  .odds-card:hover, .odds-card:focus-within { transform: none; }
+  .poly-card:hover, .poly-card:focus-within { transform: none; }
+}

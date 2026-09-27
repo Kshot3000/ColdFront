@@ -3,6 +3,10 @@
 
 (function () {
   const KEY_LS = "cf.oddskey";
+  // v1.43.0 — .cf-enter on the wire board only at first paint; the 60s refresh re-renders stay instant
+  let wireEntered = false;
+  // v1.43.0 — .cf-enter on the Polymarket board only at first paint; the 60s refresh re-renders stay instant
+  let polyEntered = false;
 
   /* ---------- 1) league-wire line for the next Bears game ---------- */
   async function loadWireOdds() {
@@ -37,8 +41,8 @@
       pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + gameName;
       const side = bearsSideOf(nextGame);
       const best = side ? bestBearsPrices(line.lines, side) : null;
-      box.innerHTML = (best ? bestStrip(best, line.lines) : "") + line.lines.map((l, i) =>
-        '<div class="odds-card">' +
+      box.innerHTML = (best ? bestStrip(best, line.lines, !wireEntered) : "") + line.lines.map((l, i) =>
+        '<div class="odds-card' + (wireEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(i, 12) + '">' +
         '<span class="book">' + CF.esc(l.book) + "</span>" +
         (l.spread && l.spread.home != null ? spreadRow(l, side, best, i) : "") +
         (l.total != null ? totalRow(l, best, i) : "") +
@@ -46,6 +50,7 @@
         (l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener" style="font-size:12px">details ↗</a>' : "") +
         "</div>"
       ).join("");
+      wireEntered = true;
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "wire line unavailable";
@@ -94,7 +99,7 @@
   function isBest(pick, l, i, v) {
     return pick && i === pick.i && Number(v) === pick.v;
   }
-  function bestStrip(best, lines) {
+  function bestStrip(best, lines, enter) {
     const parts = [];
     if (best.spread) parts.push("Spread " + fmtSigned(best.spread.v) + " @ " + best.spread.book);
     if (best.ml) parts.push("ML " + fmtSigned(best.ml.v) + " @ " + best.ml.book);
@@ -104,7 +109,7 @@
       if (best.under) parts.push("Under " + best.under.v + " @ " + best.under.book);
     }
     if (!parts.length) return "";
-    return '<div class="best-strip" role="note"><span class="best-strip-hed">🐻 Best Bears prices</span>' +
+    return '<div class="best-strip' + (enter ? " cf-enter" : "") + '" role="note"><span class="best-strip-hed">🐻 Best Bears prices</span>' +
       "<span>across " + lines.length + " " + (lines.length === 1 ? "book" : "books") + ":</span> " +
       "<b>" + parts.map(CF.esc).join("</b> · <b>") + "</b></div>";
   }
@@ -148,6 +153,7 @@
         box.innerHTML = '<div class="empty"><div class="big">🔮</div>No Bears markets found in the current feed. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">Browse all NFL markets ↗</a></div>';
         return;
       }
+      let n = 0; // per-card stagger index for the first-paint entrance
       box.innerHTML = bears.slice(0, 8).map((ev) =>
         (ev.markets || []).map((m) => {
           // Implied-probability bar: one segmented strip (yes green / no orange)
@@ -158,7 +164,7 @@
               '<i class="yes" style="width:' + yesPct + '%"></i>' +
               '<i class="no" style="width:' + (100 - yesPct) + '%"></i></span>'
             : "";
-          return '<div class="poly-card">' +
+          return '<div class="poly-card' + (polyEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(n++, 12) + '">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +
           '<span class="pr">' +
           (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢</span>" : "") +
@@ -172,6 +178,7 @@
           "</span></div>";
         }).join("")
       ).join("");
+      polyEntered = true;
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';
     }
