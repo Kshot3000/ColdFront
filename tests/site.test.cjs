@@ -909,6 +909,41 @@ test('ad slots stay invisible until a publisher ID is set, then fill correctly',
  assert.ok(about.includes('id="privacy"'),'about page has the privacy section');
 });
 
+test('referral slots stay hidden until your links are set, then render sponsored CTAs',async()=>{
+ // No links configured -> slots removed entirely.
+ {
+  const p=await page('odds');try{const w=p.w;
+   assert.equal(w.document.querySelectorAll('[data-ref-slot]').length,0,'ref slots removed when no referral links are set');
+  }finally{p.close();}
+ }
+ // With links set -> tasteful sponsored cards with safe outbound attrs.
+ {
+  const p=await page('odds');try{const w=p.w;
+   for(const key of ['polymarket','kalshi']){
+    const host=w.document.createElement('div');
+    host.setAttribute('data-ref-slot',key);
+    w.document.body.appendChild(host);
+   }
+   w.CF.CONFIG.referrals.polymarket='https://polymarket.com/?r=TESTCODE';
+   w.CF.CONFIG.referrals.kalshi='https://kalshi.com/test-ref';
+   w.CF.initReferrals();
+   const cards=w.document.querySelectorAll('.ref-card');
+   assert.equal(cards.length,2,'both referral cards render');
+   const links=[...w.document.querySelectorAll('.ref-card a.ref-link')];
+   assert.equal(links[0].getAttribute('href'),'https://polymarket.com/?r=TESTCODE');
+   assert.equal(links[0].target,'_blank');
+   assert.ok(links[0].rel.includes('sponsored')&&links[0].rel.includes('nofollow'),'outbound referral link is marked sponsored+nofollow');
+   assert.ok(links[0].textContent.includes('18+'),'referral CTA carries the 18+ note');
+   assert.ok(w.document.querySelector('.ref-card').getAttribute('aria-label').includes('Sponsored'),'card is labelled as sponsored for screen readers');
+  }finally{p.close();}
+ }
+ // CSS carries the family treatment: identity thread ignites on hover/focus.
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.ref-card:hover::before,\s*\.ref-card:focus-within::before\s*\{[^}]*linear-gradient\(180deg,\s*var\(--orange-hot\)/s,'ref card identity thread ignites on hover and keyboard focus');
+ assert.match(css,/\.ref-link:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'ref link has a visible keyboard focus ring');
+ assert.match(css,/prefers-reduced-motion:\s*reduce[\s\S]*?\.ref-card[\s\S]*?transition:\s*none/s,'reduced motion snaps ref card transitions');
+});
+
 test('whiteout 404 page carries the family treatment: identity thread, frost numeral, reduced motion',()=>{
  const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
  assert.match(css,/\.whiteout-card::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the whiteout card carries the orange identity thread across its top');

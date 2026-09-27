@@ -158,6 +158,13 @@ CF.CONFIG = {
   // Display ads (AdSense) — paste your publisher ID to go live.
   // While `client` is "" the ad slots are removed from the page entirely,
   // so the site stays clean until you're approved and ready to earn.
+  // Prediction-market referral links — paste YOUR links to earn.
+  // While a link is "" its slot is removed from the page entirely,
+  // so nothing shows until you're set up.
+  referrals: {
+    polymarket: "", // your Polymarket referral link, e.g. "https://polymarket.com/?r=YOURCODE"
+    kalshi: "",     // your Kalshi "Invite Friends" link (Menu -> Invite Friends, unlocked after $25 traded)
+  },
   ads: {
     client: "ca-pub-3316742664595468", // live — Kyle's AdSense
     slots: {
@@ -1346,11 +1353,49 @@ CF.initAds = () => {
   });
 };
 
+/* ---------- v1.55.0 — prediction-market referral slots ----------
+   Slots marked [data-ref-slot] render a small sponsored CTA only when
+   CF.CONFIG.referrals holds your link for that partner; otherwise the
+   slot is removed so the page stays clean until you're earning. */
+CF.initReferrals = () => {
+  const META = {
+    polymarket: { label: "Polymarket", blurb: "Trade Bears markets with the crowd", cta: "Trade on Polymarket" },
+    kalshi: { label: "Kalshi", blurb: "Regulated US prediction market", cta: "Trade on Kalshi" },
+  };
+  CF.$$("[data-ref-slot]").forEach((el) => {
+    const key = el.getAttribute("data-ref-slot");
+    const meta = META[key];
+    const href = (((CF.CONFIG && CF.CONFIG.referrals) || {})[key] || "").trim();
+    if (!meta || !href) { el.remove(); return; }
+    el.classList.add("ref-card");
+    el.setAttribute("role", "complementary");
+    el.setAttribute("aria-label", "Sponsored link: " + meta.label);
+    const a = document.createElement("a");
+    a.className = "ref-link";
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "sponsored noopener nofollow";
+    const badge = document.createElement("span");
+    badge.className = "ref-badge";
+    badge.textContent = "Partner";
+    const t = document.createElement("span");
+    t.className = "ref-text";
+    const cta = document.createElement("strong");
+    cta.textContent = meta.cta + " \u2197";
+    const sub = document.createElement("small");
+    sub.textContent = meta.blurb + " \u00b7 18+";
+    t.append(cta, sub);
+    a.append(badge, t);
+    el.appendChild(a);
+  });
+};
+
 CF.initChrome = () => {
   CF.injectAtmosphere();
   CF.ensureSkipLink();
   CF.initScrollChrome();
   CF.initAds();
+  CF.initReferrals();
 
   const wxEl = CF.$("[data-cf-weather]");
   if (wxEl) {
