@@ -1,5 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
 const {page,settle,event,standings}=require('./helpers.cjs');
 
 test('all ten pages initialize, render data, and never request location or the local network',async(t)=>{
@@ -175,5 +177,24 @@ test('homepage story cards wrap art in a zoom target and chip the source',async(
   assert.ok(card.querySelector('.story-art > .story-image'),'image is wrapped in .story-art');
   assert.ok(card.querySelector('.story-copy .story-source'),'source element present for the tag chip');
   assert.equal(card.querySelector('.story-copy h3').textContent,'Bears prepare for Monday night');
+ }finally{p.close();}
+});
+
+test('hero entrance choreography staggers the load-in and stays off for reduced motion',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/@keyframes cf-hero-rise\s*\{[^}]*opacity:\s*0/s,'entrance keyframes start hidden');
+ const guard=css.indexOf('@media (prefers-reduced-motion: no-preference)');
+ assert.ok(guard>0,'entrance is gated on no-preference');
+ const block=css.slice(guard);
+ const order=['.hero-copy .eyebrow','.hero-copy h1','.hero-copy .sub','.hero-actions','.hero-layout .match-card','.hero-note','.season-strip','.wire-ticker'];
+ const delays=order.map(sel=>{
+  const m=block.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[^}]*?animation:[^;]*?([\\d.]+)s both'));
+  assert.ok(m,sel+' gets a staggered entrance delay');
+  return parseFloat(m[1]);
+ });
+ assert.deepEqual([...delays].sort((a,b)=>a-b),delays,'entrance delays increase through the hero sequence');
+ const p=await page('index');try{
+  const q=p.w.document.querySelector.bind(p.w.document);
+  assert.ok(q('.hero-copy .eyebrow')&&q('.hero-copy h1')&&q('.hero-copy .sub')&&q('.hero-actions')&&q('.hero-note')&&q('.hero-layout .match-card')&&q('.season-strip')&&q('.wire-ticker'),'every entrance target renders on the homepage');
  }finally{p.close();}
 });

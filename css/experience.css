@@ -225,3 +225,23 @@ main:focus { outline: none; }
   background: linear-gradient(90deg, #e8541e, #8f2d05);
   opacity: 0.6;
 }
+
+/* v1.22.0 — hero entrance choreography: the front rolls in piece by piece.
+   Frost-fade load-in staggered eyebrow → headline → sub → CTAs → note →
+   matchup card → season strip → wire ticker. Gated on no-preference so
+   reduced-motion users (and the global motion kill-switches) see the hero
+   instantly, and `both` fill-mode holds the pre-delay state while the page paints. */
+@keyframes cf-hero-rise {
+  from { opacity: 0; transform: translateY(26px); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy .eyebrow       { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.05s both; }
+  .hero-copy h1            { animation: cf-hero-rise 0.9s cubic-bezier(0.22,0.61,0.21,1) 0.15s both; }
+  .hero-copy .sub          { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.28s both; }
+  .hero-actions            { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.40s both; }
+  .hero-note               { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.50s both; }
+  .hero-layout .match-card { animation: cf-hero-rise 1.0s cubic-bezier(0.22,0.61,0.21,1) 0.48s both; }
+  .season-strip            { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.66s both; }
+  .wire-ticker             { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.78s both; }
+}
