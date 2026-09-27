@@ -232,14 +232,23 @@ main:focus { outline: none; }
 .wire-ticker:hover .wire-ticker-track, .wire-ticker:focus-within .wire-ticker-track { animation-play-state: paused; }
 @keyframes wire-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .wt-group { display: inline-flex; align-items: center; }
-.wt-item { display: inline-flex; align-items: baseline; gap: 8px; padding: 0 6px; color: #d7e6f2; font-size: 12.5px; white-space: nowrap; text-decoration: none; }
-.wt-item:hover { color: #fff; text-decoration: underline; text-decoration-color: #f36a25; text-underline-offset: 3px; }
-.wt-src { flex: none; color: #ff945f; font: 600 9.5px var(--body); letter-spacing: .14em; text-transform: uppercase; }
-.wt-sep { color: #88bddf; font-size: 11px; margin: 0 18px; opacity: .7; }
+/* v1.45.0 — ticker item glow-up: headlines warm to snow with a soft orange glow
+   under attention (mirroring the wire-card headline treatment), the source chip
+   ignites, and the snowflake separator sparkles as each headline passes. A real
+   :focus-visible ring closes the keyboard gap on the moving marquee (focus
+   already pauses the scroll). Reduced-motion snaps every transition. */
+.wt-item { display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 8px; color: #d7e6f2; font-size: 12.5px; white-space: nowrap; text-decoration: none; border-radius: 6px; transition: color 0.22s var(--ease-out), text-shadow 0.22s var(--ease-out); }
+.wt-item:hover, .wt-item:focus-visible { color: #fff; text-shadow: 0 0 14px rgba(255, 122, 40, 0.55); text-decoration: underline; text-decoration-color: #f36a25; text-underline-offset: 3px; }
+.wt-item:focus-visible { outline: 2px solid var(--orange-hot); outline-offset: 2px; }
+.wt-src { flex: none; color: #ff945f; font: 600 9.5px var(--body); letter-spacing: .14em; text-transform: uppercase; transition: color 0.22s var(--ease-out), text-shadow 0.22s var(--ease-out); }
+.wt-item:hover .wt-src, .wt-item:focus-visible .wt-src { color: #ffd9bd; text-shadow: 0 0 10px rgba(255, 122, 40, 0.7); }
+.wt-sep { color: #88bddf; font-size: 11px; margin: 0 18px; opacity: .7; transition: color 0.22s var(--ease-out), opacity 0.22s var(--ease-out), text-shadow 0.22s var(--ease-out); }
+.wt-item:hover + .wt-sep, .wt-item:focus-visible + .wt-sep { color: #cfeaff; opacity: 1; text-shadow: 0 0 10px rgba(136, 189, 223, 0.9); }
 .wire-ticker-standby { color: #7f9bb1; font-size: 12px; padding-left: 18px; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .wire-ticker-track { animation: none; width: auto; flex-wrap: wrap; row-gap: 6px; padding: 8px 0; }
   .wire-ticker-viewport { mask-image: none; -webkit-mask-image: none; }
+  .wt-item, .wt-src, .wt-sep { transition: none; }
 }
 @media (max-width: 760px) {
   .wire-ticker-label { padding: 10px 12px; font-size: 10px; letter-spacing: .12em; }

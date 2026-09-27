@@ -750,3 +750,21 @@ test('practice tracker becomes a week-intel table: identity thread, intensity ed
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('wire ticker items get the glow-up: warm hover, ignited source chip, focus ring',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','css','experience.css'),'utf8');
+ assert.match(css,/\.wt-item:hover,\s*\.wt-item:focus-visible\s*\{[^}]*text-shadow:\s*0 0 14px rgba\(255,\s*122,\s*40/s,'headlines glow warm on hover and keyboard focus');
+ assert.match(css,/\.wt-item:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the moving marquee gives keyboard users a visible focus ring');
+ assert.match(css,/\.wt-item:hover \.wt-src,\s*\.wt-item:focus-visible \.wt-src/s,'the source chip ignites under attention');
+ assert.match(css,/\.wt-item:hover \+ \.wt-sep,\s*\.wt-item:focus-visible \+ \.wt-sep/s,'the snowflake separator sparkles as a headline passes');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.wt-item,\s*\.wt-src,\s*\.wt-sep\s*\{\s*transition:\s*none/s,'reduced motion snaps the item transitions');
+ const p=await page('index');try{const d=p.w.document;
+  const items=[...d.querySelectorAll('#wire-ticker-track .wt-item')];
+  assert.ok(items.length>0,'ticker items render from the wire fixture');
+  const first=items[0];
+  assert.ok(first.querySelector('.wt-src'),'each item carries a source chip');
+  assert.ok(/^https:\/\//.test(first.getAttribute('href')),'items link out to real stories');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#wire-ticker').textContent));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
