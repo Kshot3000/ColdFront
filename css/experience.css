@@ -187,3 +187,26 @@ main:focus { outline: none; }
   .wire-ticker-label { padding: 10px 12px; font-size: 10px; letter-spacing: .12em; }
   .wt-sep { margin: 0 12px; }
 }
+
+/* v1.15.0 — Polymarket implied-probability bars: the crowd's lean at a glance.
+   Static render (no animation), so it stays honest under prefers-reduced-motion. */
+.poly-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  height: 7px;
+  margin: 2px 0 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(7, 14, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.poly-bar i { display: block; height: 100%; min-width: 0; }
+.poly-bar .yes {
+  background: linear-gradient(90deg, #2e7d52, #7fd6a4);
+  box-shadow: 0 0 12px rgba(76, 175, 125, 0.5);
+}
+.poly-bar .no {
+  background: linear-gradient(90deg, #e8541e, #8f2d05);
+  opacity: 0.6;
+}

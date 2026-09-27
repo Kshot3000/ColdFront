@@ -75,19 +75,28 @@
         return;
       }
       box.innerHTML = bears.slice(0, 8).map((ev) =>
-        (ev.markets || []).map((m) =>
-          '<div class="poly-card">' +
+        (ev.markets || []).map((m) => {
+          // Implied-probability bar: one segmented strip (yes green / no orange)
+          // so the crowd's lean reads at a glance next to the cent prices.
+          const yesPct = m.yes != null ? Math.max(0, Math.min(100, Math.round(m.yes * 100))) : null;
+          const bar = yesPct != null
+            ? '<span class="poly-bar" role="img" aria-label="Implied probability: ' + yesPct + "% yes, " + (100 - yesPct) + '% no">' +
+              '<i class="yes" style="width:' + yesPct + '%"></i>' +
+              '<i class="no" style="width:' + (100 - yesPct) + '%"></i></span>'
+            : "";
+          return '<div class="poly-card">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +
           '<span class="pr">' +
           (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢</span>" : "") +
           (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">' + CF.esc(m.noLabel) + ' ' + Math.round(m.no * 100) + "¢</span>" : "") +
           "</span>" +
+          bar +
           '<span class="sub">' +
           (m.volume != null ? "Vol " + CF.fmt(m.volume) : "") +
           (m.endDate ? " · ends " + CF.fmtDate(m.endDate) : "") +
           ' · <a href="' + CF.esc(CF.safeURL(m.url)) + '" target="_blank" rel="noopener">market ↗</a>' +
-          "</span></div>"
-        ).join("")
+          "</span></div>";
+        }).join("")
       ).join("");
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';
