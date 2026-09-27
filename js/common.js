@@ -1145,6 +1145,15 @@ CF.initScrollChrome = () => {
     bar.style.transform = "scaleX(" + p.toFixed(4) + ")";
     bar.classList.toggle("is-on", y > 24);
     top.classList.toggle("is-on", y > 600);
+    // Compact the sticky header once the page moves: the chrome shrinks and
+    // deepens so more content stays in view. Keep --cf-head-h (mobile nav
+    // offset + anchor scroll-margin) honest when the state flips.
+    const scrolled = y > 40;
+    if (scrolled !== document.body.classList.contains("is-scrolled")) {
+      document.body.classList.toggle("is-scrolled", scrolled);
+      const head = document.querySelector(".site-head");
+      if (head) document.documentElement.style.setProperty("--cf-head-h", head.offsetHeight + "px");
+    }
   };
   // Timer throttle (not rAF) — paint-friendly enough for a 3px bar,
   // and it fires under the repo's jsdom test harness too.

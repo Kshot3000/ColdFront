@@ -365,12 +365,27 @@ h1, h2, h3, h4, .display {
   -webkit-backdrop-filter: blur(20px) saturate(1.35);
   border-bottom: 1px solid rgba(255, 90, 31, 0.18);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 90, 31, 0.12);
+  transition: background-color 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
 .site-head .wrap {
   display: flex;
   align-items: center;
   gap: 18px;
   padding: 11px 0;
+  transition: padding 0.28s ease;
+}
+/* v1.26.0 — condensed chrome: once the page scrolls, the sticky header
+   tightens so more content stays in view. */
+body.is-scrolled .site-head {
+  background: rgba(2, 6, 14, 0.96);
+  border-bottom-color: rgba(255, 90, 31, 0.32);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.62), 0 1px 0 rgba(255, 90, 31, 0.2);
+}
+body.is-scrolled .site-head .wrap { padding: 5px 0; }
+body.is-scrolled .brand .mark { width: 30px; height: 30px; }
+body.is-scrolled .brand .name { font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .site-head, .site-head .wrap, .brand .mark, .brand .name { transition: none; }
 }
 .brand { display: flex; align-items: center; gap: 12px; color: var(--snow); }
 .brand:hover { color: var(--snow); }
@@ -379,7 +394,7 @@ h1, h2, h3, h4, .display {
   height: 40px;
   flex: 0 0 auto;
   filter: drop-shadow(0 0 10px rgba(200, 56, 3, 0.35));
-  transition: filter 0.2s ease, transform 0.2s ease;
+  transition: filter 0.2s ease, transform 0.2s ease, width 0.28s ease, height 0.28s ease;
 }
 .brand:hover .mark {
   filter: drop-shadow(0 0 14px rgba(232, 84, 30, 0.55));
@@ -391,6 +406,7 @@ h1, h2, h3, h4, .display {
   letter-spacing: 0.1em;
   line-height: 1.05;
   text-transform: uppercase;
+  transition: font-size 0.28s ease;
 }
 .brand .name small {
   display: block;

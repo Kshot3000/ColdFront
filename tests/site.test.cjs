@@ -262,3 +262,14 @@ test('odds board highlights the best Bears price across books',async()=>{
   assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#odds-board').textContent));
  }finally{p.close();}
 });
+
+test('sticky header compacts on scroll and restores at the top',async()=>{
+ const p=await page('index');try{const w=p.w,d=w.document;
+  assert.equal(d.body.classList.contains('is-scrolled'),false,'header starts uncompressed');
+  d.documentElement.scrollTop=500;w.dispatchEvent(new w.Event('scroll'));await settle(60);
+  assert.equal(d.body.classList.contains('is-scrolled'),true,'scrolling past the threshold compacts the header');
+  assert.ok(d.documentElement.style.getPropertyValue('--cf-head-h').endsWith('px'),'--cf-head-h is refreshed for the mobile nav offset');
+  d.documentElement.scrollTop=0;w.dispatchEvent(new w.Event('scroll'));await settle(60);
+  assert.equal(d.body.classList.contains('is-scrolled'),false,'returning to the top restores the header');
+ }finally{p.close();}
+});
