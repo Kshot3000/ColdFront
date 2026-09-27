@@ -1012,6 +1012,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .st.live { background: rgba(200, 56, 3, 0.25); color: #ffb49a; animation: pulse 1.4s ease-in-out infinite; }
 .st.final { background: rgba(92, 122, 153, 0.25); color: var(--ice); }
 
+/* Season log result treatment (games.html): wins carry the orange
+   thread and a brightened score; losses recede until hovered. */
+.tbl tr.result-w td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+.tbl tr.result-w .log-score { color: #ffa76b; font-weight: 700; }
+.tbl tr.result-l td { opacity: 0.62; transition: opacity 0.18s ease; }
+.tbl tr.result-l:hover td { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .tbl tr.result-l td { transition: none; }
+}
+
 /* ---------- Quick links (fan toolkit) ---------- */
 .quick a {
   position: relative;

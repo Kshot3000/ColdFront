@@ -273,3 +273,29 @@ test('sticky header compacts on scroll and restores at the top',async()=>{
   assert.equal(d.body.classList.contains('is-scrolled'),false,'returning to the top restores the header');
  }finally{p.close();}
 });
+
+test('season log rows carry the W/L result treatment',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.tbl tr\.result-w td:first-child\s*\{[^}]*inset 3px 0 0 var\(--orange\)/s,'wins carry an orange leading-edge thread');
+ assert.match(css,/\.tbl tr\.result-w \.log-score\s*\{[^}]*#ffa76b/s,'win scores are brightened and bolded');
+ assert.match(css,/\.tbl tr\.result-l td\s*\{[^}]*opacity:\s*0\.62/s,'losses recede');
+ assert.match(css,/\.tbl tr\.result-l:hover td\s*\{[^}]*opacity:\s*1/s,'losses restore on hover');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{[^}]*\.tbl tr\.result-l td\s*\{[^}]*transition:\s*none/s,'the recede transition is gated on reduced motion');
+ const p=await page('games');try{const w=p.w,d=w.document;
+  const win=event('100','CHI','MIN','post','2026-09-20T17:00:00Z',24,17);
+  const loss=event('101','CHI','GB','post','2026-09-13T17:00:00Z',17,24);
+  const tie=event('102','CHI','DET','post','2026-09-06T17:00:00Z',20,20);
+  w.CF.API.getSchedule=async()=>({source:'live',data:{season:{displayName:'2026'},events:[win,loss,tie]}});
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await settle(500);
+  const rows=[...d.querySelectorAll('#log-table tbody tr')];
+  const winRow=rows.find(r=>/Minnesota Vikings/.test(r.textContent));
+  assert.ok(winRow.classList.contains('result-w'),'win row is marked result-w');
+  assert.ok(winRow.classList.contains('boxrow'),'win row keeps its box-score hook');
+  assert.match(winRow.querySelector('.log-score').textContent,/24–17/,'win score cell is labeled log-score');
+  const lossRow=rows.find(r=>/Green Bay Packers/.test(r.textContent));
+  assert.ok(lossRow.classList.contains('result-l'),'loss row is marked result-l');
+  const tieRow=rows.find(r=>/Detroit Lions/.test(r.textContent));
+  assert.ok(!tieRow.classList.contains('result-w')&&!tieRow.classList.contains('result-l'),'ties stay neutral');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

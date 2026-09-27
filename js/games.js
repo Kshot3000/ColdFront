@@ -149,12 +149,14 @@
       else if (g.result) result = g.result;
     }
     const cls = played ? (result === "W" ? "active" : result === "L" ? "out" : "final") : "final";
+    // Row-level result treatment: wins carry the orange thread, losses recede.
+    const rcls = played ? (result === "W" ? " result-w" : result === "L" ? " result-l" : "") : "";
     const scoreTxt = played ? (g.scoreMe + "–" + g.scoreOpp) : "";
-    return '<tr' + (played ? ' class="boxrow" style="cursor:pointer" data-boxgame="' + g.id + '"' : "") + ">" +
+    return '<tr' + (played ? ' class="boxrow' + rcls + '" style="cursor:pointer" data-boxgame="' + g.id + '"' : "") + ">" +
       "<td>" + CF.fmtDate(g.date) + " <span class=\"dim\">" + (CF.fmtTime(g.date) || "") + "</span></td>" +
       '<td class="strong">' + (g.home ? "vs " : "@ ") + CF.esc(g.opp) + "</td>" +
       '<td class="num dim">' + (g.home ? "H" : "A") + "</td>" +
-      '<td class="num">' + CF.esc(scoreTxt) + "</td>" +
+      '<td class="num log-score">' + CF.esc(scoreTxt) + "</td>" +
       '<td><span class="st ' + cls + '">' + CF.esc(played ? (result || g.result) : (g.result || "UPCOMING")) + "</span></td>" +
       '<td class="dim">' + CF.esc(g.tv || "") + "</td>" +
       "<td>" + (played ? '<a href="#boxscore" class="boxlink" data-boxgame="' + g.id + '">box ↗</a>' : "") + "</td>" +
