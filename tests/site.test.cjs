@@ -905,3 +905,18 @@ test('ad slots stay invisible until a publisher ID is set, then fill correctly',
  const about=fs.readFileSync(path.join(__dirname,'../about.html'),'utf8');
  assert.ok(about.includes('id="privacy"'),'about page has the privacy section');
 });
+
+test('whiteout 404 page carries the family treatment: identity thread, frost numeral, reduced motion',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.whiteout-card::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the whiteout card carries the orange identity thread across its top');
+ assert.match(css,/\.whiteout-card:hover::before,\s*\.whiteout-card:focus-within::before\s*\{\s*opacity:\s*1/s,'the thread ignites on hover and keyboard focus');
+ assert.match(css,/\.whiteout-num\s*\{[^}]*background:\s*linear-gradient\(180deg,[^}]*background-clip:\s*text/s,'the 404 numeral renders in frost-gradient display type');
+ assert.match(css,/\.whiteout-actions \.btn:hover\s*\{[^}]*transform:\s*translateY\(-2px\)/s,'action buttons lift and warm under attention');
+ assert.match(css,/\.whiteout-card\s*\{[^}]*animation:\s*cfSnapIn/s,'the card enters with a frost-fade on first paint');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.whiteout-card,\s*\.whiteout-snow span\s*\{\s*animation:\s*none/s,'reduced motion snaps the whiteout animations');
+ const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
+ assert.ok(html.includes('css/main.css?v=1.52.0'),'404.html busts the stylesheet cache');
+ assert.ok(html.includes('class="whiteout-card"'),'the 404 page uses the whiteout card markup');
+ assert.ok(!html.includes('font-size:64px'),'inline snowflake styling is gone');
+ assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+});

@@ -4295,3 +4295,102 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   min-height: 90px;
 }
 .ad-slot .adsbygoogle { background: rgba(255, 255, 255, 0.015); }
+
+/* ============================================================
+   v1.52.0 — Whiteout 404 glow-up.
+   The 404 page was the last fully inline-styled surface: a flat
+   oversized headline, an unstyled snowflake emoji, and buttons
+   with only the default hover. It now arrives as a frosted
+   whiteout card carrying the orange identity leading-edge
+   thread across the top (dim at rest, igniting on hover or
+   keyboard focus), a giant frost-gradient 404 numeral in
+   display type, a softly swaying snowflake row, and action
+   buttons that lift and warm under attention — the card enters
+   with a frost-fade on first paint, and reduced-motion users
+   get every transition snapped off.
+   ============================================================ */
+.whiteout-card {
+  position: relative;
+  overflow: hidden;
+  max-width: 620px;
+  margin: 26px auto 0;
+  padding: 44px 30px 38px;
+  text-align: center;
+  border: 1px solid rgba(92,122,153,0.42);
+  border-radius: var(--radius, 16px);
+  background:
+    linear-gradient(160deg, rgba(16,31,51,0.92), rgba(4,10,20,0.9)),
+    radial-gradient(ellipse 60% 50% at 50% -10%, rgba(232,84,30,0.14), transparent 60%);
+  box-shadow:
+    var(--shadow-lift, 0 12px 40px rgba(0,0,0,0.35)),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  animation: cfSnapIn 0.5s var(--ease-out, ease) both;
+}
+.whiteout-card::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159,184,204,0.35) 85%, transparent);
+  opacity: 0.45;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.whiteout-card:hover::before,
+.whiteout-card:focus-within::before { opacity: 1; }
+.whiteout-num {
+  font-family: var(--display, 'Oswald', sans-serif);
+  font-weight: 700;
+  font-size: clamp(84px, 18vw, 150px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #f2f7fb 30%, #a9c3d8 62%, #5c7a99 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(169,195,216,0.25));
+  margin: 0 0 4px;
+}
+.whiteout-snow {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  font-size: 22px;
+  color: rgba(169,195,216,0.85);
+}
+.whiteout-snow span {
+  display: inline-block;
+  animation: cfWhiteoutSway 4.2s ease-in-out infinite;
+}
+.whiteout-snow span:nth-child(2) { animation-delay: -1.4s; }
+.whiteout-snow span:nth-child(3) { animation-delay: -2.8s; }
+@keyframes cfWhiteoutSway {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.75; }
+  50% { transform: translateY(-7px) rotate(14deg); opacity: 1; }
+}
+.whiteout-card h1 {
+  font-size: clamp(30px, 5vw, 44px);
+  margin: 10px 0;
+}
+.whiteout-copy { max-width: 460px; margin: 0 auto; }
+.whiteout-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+.whiteout-actions .btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,90,31,0.5);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.3);
+}
+.whiteout-actions .btn.primary:hover { box-shadow: 0 10px 24px rgba(209,58,2,0.35); }
+.whiteout-foot { margin-top: 26px; }
+@media (prefers-reduced-motion: reduce) {
+  .whiteout-card,
+  .whiteout-snow span { animation: none; }
+  .whiteout-card::before,
+  .whiteout-actions .btn { transition: none; }
+}
