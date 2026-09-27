@@ -159,7 +159,7 @@ CF.CONFIG = {
   // While `client` is "" the ad slots are removed from the page entirely,
   // so the site stays clean until you're approved and ready to earn.
   ads: {
-    client: "", // e.g. "ca-pub-1234567890123456"
+    client: "ca-pub-3316742664595468", // live — Kyle's AdSense
     slots: {
       homeLeaderboard: "", // index.html — below the wire ticker
       newsRail: "",        // news.html — bottom of the injury rail

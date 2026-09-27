@@ -50,7 +50,7 @@ async function page(name, options={}) {
     else if(u.pathname.includes('/rss/')||u.pathname.includes('/news/search'))return {ok:true,text:async()=>'<rss><channel><item><title>Bears injury news</title><link>https://www.chicagobears.com/news</link><description>Latest report</description></item></channel></rss>'};
     return {ok:true,text:async()=>JSON.stringify(data),json:async()=>data};
   };
-  for(const el of [...w.document.querySelectorAll('script[src]')])w.eval(fs.readFileSync(path.join(root,el.getAttribute('src').split('?')[0]),'utf8'));
+  for(const el of [...w.document.querySelectorAll('script[src]')]){const ssrc=el.getAttribute('src').split('?')[0];if(/^(https?:)?\/\//.test(ssrc))continue;w.eval(fs.readFileSync(path.join(root,ssrc),'utf8'));}
   w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
   await settle();
   return {w,dom,errors,requests,media,get geoCalls(){return geoCalls;},get frames(){return frames;},close(){w.close();}};

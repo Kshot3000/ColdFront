@@ -871,13 +871,16 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
 });
 
 test('ad slots stay invisible until a publisher ID is set, then fill correctly',async()=>{
- // Default: no publisher ID -> slots removed entirely, page stays clean.
+ // No publisher ID -> slots removed entirely, page stays clean.
  for(const [name,slot] of [['index','homeLeaderboard'],['news','newsRail'],['odds','oddsInline']]){
   const p=await page(name);try{const w=p.w;
+   w.CF.CONFIG.ads.client='';w.CF.initAds();
    assert.equal(w.document.querySelectorAll('[data-ad-slot]').length,0,name+' removes its ad slot when no publisher ID is set');
-   assert.equal((w.CF.CONFIG.ads||{}).client,'','default ads client is empty');
   }finally{p.close();}
  }
+ // Config default now carries the live publisher ID (Auto ads serve site-wide).
+ const commonSrc=fs.readFileSync(path.join(__dirname,'../js/common.js'),'utf8');
+ assert.ok(commonSrc.includes('client: "ca-pub-3316742664595468"'),'default ads client is the live publisher ID');
  // Live path: with a publisher ID + ad-unit ID the slot fills with an <ins>.
  const p=await page('index');try{const w=p.w;
   const host=w.document.createElement('div');
