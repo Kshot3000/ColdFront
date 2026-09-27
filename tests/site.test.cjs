@@ -198,3 +198,18 @@ test('hero entrance choreography staggers the load-in and stays off for reduced 
   assert.ok(q('.hero-copy .eyebrow')&&q('.hero-copy h1')&&q('.hero-copy .sub')&&q('.hero-actions')&&q('.hero-note')&&q('.hero-layout .match-card')&&q('.season-strip')&&q('.wire-ticker'),'every entrance target renders on the homepage');
  }finally{p.close();}
 });
+
+test('photo-band recomposition lifts the photo and anchors the art cluster',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.photo-band::before\s*\{[^}]*0\.22\) 100%/s,'overlay falls off to 0.22 on the right edge');
+ assert.match(css,/\.photo-band\.navy-pier \.photo-band-bg\s*\{[^}]*brightness\(0\.7\)/s,'navy-pier background lifted out of the crush');
+ assert.match(css,/\.photo-band\.marina-city \.photo-band-bg\s*\{[^}]*brightness\(0\.78\)/s,'marina-city background lifted out of the crush');
+ assert.match(css,/\.photo-band \.photo-band-art \.art-mark \+ \.art-mark\s*\{[^}]*margin-left:\s*-30px/s,'badges overlap into one emblem');
+ assert.match(css,/\.photo-band \.photo-band-art::before\s*\{[^}]*radial-gradient/s,'frost aura anchors the emblem');
+ const p=await page('games');try{
+  await settle(300);
+  const art=p.w.document.querySelector('.photo-band .photo-band-art');
+  assert.ok(art,'games band carries the art cluster');
+  assert.ok(art.querySelectorAll('.art-mark').length>=2,'band carries at least two art marks to compose');
+ }finally{p.close();}
+});
