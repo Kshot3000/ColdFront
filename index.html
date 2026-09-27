@@ -202,8 +202,10 @@
         <span class="rule"></span>
         <a class="btn small" href="odds.html">Full board →</a>
       </div>
-      <div class="odds-pulse" id="odds-pulse" aria-live="polite">
-        <div class="pulse-empty dim">Checking the wire and Polymarket…</div>
+      <div class="odds-pulse" id="odds-pulse" role="status" aria-live="polite"><span class="sr-only">Loading the odds pulse…</span>
+        <span class="skel lg" style="width:88%" aria-hidden="true"></span>
+        <span class="skel" style="width:72%" aria-hidden="true"></span>
+        <span class="skel" style="width:80%" aria-hidden="true"></span>
       </div>
     </div>
   </section>
@@ -211,17 +213,26 @@
   <section id="latest">
     <div class="wrap">
       <div class="section-head"><h2>Fresh off the wire</h2><span class="tag" id="wire-pill">connecting</span><span class="rule"></span><a href="news.html">All Bears stories ↗</a></div>
-      <div class="front-news" id="home-news"><div class="empty">Bringing you the latest from Chicago…</div></div>
+      <div class="front-news" id="home-news" role="status" aria-live="polite"><span class="sr-only">Loading the latest Bears stories…</span>
+        <div class="skel-card" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel" style="width:38%"></span><span class="skel lg" style="width:92%"></span><span class="skel" style="width:76%"></span><span class="skel" style="width:52%"></span></div></div>
+        <div class="skel-card" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel" style="width:44%"></span><span class="skel lg" style="width:86%"></span><span class="skel" style="width:69%"></span><span class="skel" style="width:58%"></span></div></div>
+        <div class="skel-card" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel" style="width:41%"></span><span class="skel lg" style="width:90%"></span><span class="skel" style="width:73%"></span><span class="skel" style="width:55%"></span></div></div>
+        <div class="skel-card" aria-hidden="true"><span class="skel skel-art"></span><div class="skel-copy"><span class="skel" style="width:36%"></span><span class="skel lg" style="width:88%"></span><span class="skel" style="width:71%"></span><span class="skel" style="width:50%"></span></div></div>
+      </div>
     </div>
   </section>
   <section>
     <div class="wrap">
       <div class="section-head"><h2>Keep your rivals close</h2><span class="tag">Around the NFC North</span><span class="rule"></span><a href="games.html">Game center ↗</a></div>
       <div class="north-layout">
-        <div><div class="badge-row" style="margin-bottom:14px"><h3 style="margin:0">This week's matchups</h3><span class="pill" id="north-pill">connecting</span></div><div id="north-games" class="north-games"><div class="empty">Checking the slate…</div></div></div>
+        <div><div class="badge-row" style="margin-bottom:14px"><h3 style="margin:0">This week's matchups</h3><span class="pill" id="north-pill">connecting</span></div><div id="north-games" class="north-games" role="status" aria-live="polite"><span class="sr-only">Loading this week's NFC North matchups…</span>
+          <div class="skel-game" aria-hidden="true"><div class="skel-col"><span class="skel lg" style="width:64%"></span><span class="skel" style="width:42%"></span></div><span class="skel skel-status"></span></div>
+          <div class="skel-game" aria-hidden="true"><div class="skel-col"><span class="skel lg" style="width:58%"></span><span class="skel" style="width:46%"></span></div><span class="skel skel-status"></span></div>
+          <div class="skel-game" aria-hidden="true"><div class="skel-col"><span class="skel lg" style="width:61%"></span><span class="skel" style="width:40%"></span></div><span class="skel skel-status"></span></div>
+        </div></div>
         <div class="card" id="division">
           <div class="badge-row" style="justify-content:space-between;margin-bottom:16px"><h3 style="margin:0">The North standings</h3><span class="pill" id="div-pill">connecting</span></div>
-          <div class="tbl-wrap" style="border:0"><table class="tbl" style="min-width:0" id="div-table"><thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead><tbody><tr><td colspan="4" class="dim">Reading the division…</td></tr></tbody></table></div>
+          <div class="tbl-wrap" style="border:0"><table class="tbl" style="min-width:0" id="div-table"><thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">Pct</th></tr></thead><tbody aria-busy="true"><tr><td colspan="4"><span class="sr-only">Loading the division standings…</span><span class="skel" style="width:82%" aria-hidden="true"></span></td></tr><tr><td colspan="4"><span class="skel" style="width:70%" aria-hidden="true"></span></td></tr><tr><td colspan="4"><span class="skel" style="width:76%" aria-hidden="true"></span></td></tr><tr><td colspan="4"><span class="skel" style="width:64%" aria-hidden="true"></span></td></tr></tbody></table></div>
           <div class="race-bars" id="div-race" hidden aria-label="NFC North win race"></div><p class="src-note">Four teams. One division. Every Sunday counts.</p>
           <a class="btn small" href="odds.html" style="margin-top:14px">Explore the odds board ↗</a>
         </div>
@@ -247,7 +258,7 @@
   <section>
     <div class="wrap">
       <div class="section-head"><h2>From the training room</h2><span class="tag" id="inj-home-pill">Checking report</span><span class="rule"></span><a href="injuries.html">Full injury report ↗</a></div>
-      <div id="home-inj-movement" class="inj-move-host" aria-live="polite"></div><div class="tbl-wrap"><table class="tbl" id="home-injuries"><thead><tr><th>Player</th><th>Pos</th><th>Latest update</th><th>Status</th></tr></thead><tbody><tr><td colspan="4" class="dim">Loading the report…</td></tr></tbody></table></div>
+      <div id="home-inj-movement" class="inj-move-host" aria-live="polite"></div><div class="tbl-wrap"><table class="tbl" id="home-injuries"><thead><tr><th>Player</th><th>Pos</th><th>Latest update</th><th>Status</th></tr></thead><tbody aria-busy="true"><tr><td colspan="4"><span class="sr-only">Loading the injury report…</span><span class="skel" style="width:78%" aria-hidden="true"></span></td></tr><tr><td colspan="4"><span class="skel" style="width:66%" aria-hidden="true"></span></td></tr><tr><td colspan="4"><span class="skel" style="width:72%" aria-hidden="true"></span></td></tr></tbody></table></div>
       <p class="src-note">League report and roster flags. Check the official pregame report for final availability.</p>
       <div class="city-strip" aria-label="Explore the Bears in Chicago">
         <a class="city-tile t-river" href="news.html"><div class="city-tile-bg"></div><span class="city-tile-label">City lights. Bears nights.<strong>Follow the story ↗</strong></span></a>
