@@ -155,3 +155,14 @@ test('Cold Front Index frost dial renders with the live score and settles at the
   assert.equal(g.querySelector('.cfi-num').textContent,String(score),'no animation under reduced motion, final reading shown');
  }finally{reduced.close();}
 });
+
+test('final game cards crown the winner and call out a Bears win',async()=>{
+ const p=await page('games',{query:'?date=2026-09-20'});try{
+  await settle(400);
+  const card=p.w.document.querySelector('#board .game-card.bears-won');
+  assert.ok(card,'Bears-win final gets the bears-won card');
+  assert.equal(card.querySelector('.pill.won').textContent,'BEARS WIN · Final');
+  assert.equal(card.querySelector('.side.winner .abbr').textContent,'CHI');
+  assert.equal(card.querySelector('.side.loser .abbr').textContent,'MIN');
+ }finally{p.close();}
+});

@@ -69,14 +69,32 @@
     const watch = (c.broadcasts && c.broadcasts[0] && c.broadcasts[0].links && c.broadcasts[0].links.web) ? c.broadcasts[0].links.web.href : null;
     const espn = "https://www.espn.com/nfl/game/_/gameId/" + e.id;
     const score = (t) => (t.score && t.score !== "–" ? t.score : "");
-    return '<div class="card game-card' + (bears ? " bears-game" : "") + '" style="margin-bottom:12px">' +
+    // Final-score winner emphasis: crown the winning side, dim the loser,
+    // and call out a Bears win on the card and the status pill.
+    let cardCls = "", winSide = null, bearsResult = null;
+    if (st.state === "post") {
+      const hs = parseInt(CF.API.score(home.score), 10), as_ = parseInt(CF.API.score(away.score), 10);
+      if (!isNaN(hs) && !isNaN(as_) && hs !== as_) {
+        winSide = hs > as_ ? "home" : "away";
+        cardCls += " final-w";
+        if (bears) {
+          const bearsHome = ((home.team || {}).abbreviation === "CHI");
+          bearsResult = (bearsHome && winSide === "home") || (!bearsHome && winSide === "away") ? "won" : "lost";
+          cardCls += bearsResult === "won" ? " bears-won" : " bears-lost";
+          pill = bearsResult === "won"
+            ? '<span class="pill won">BEARS WIN · ' + CF.esc(st.shortDetail || "final") + "</span>"
+            : '<span class="pill final">FINAL · L</span>';
+        }
+      }
+    }
+    return '<div class="card game-card' + (bears ? " bears-game" : "") + cardCls + '" style="margin-bottom:12px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
       "<div style=\"font-size:13.5px\" class=\"dim\">" + CF.esc(e.name || "") + " · " + CF.esc(e.season ? e.season.displayName : "") + "</div>" +
       pill + "</div>" +
       '<div class="vs" style="margin:12px 0">' +
-      side(away, false, st.state) +
+      side(away, false, st.state, winSide) +
       '<div class="mid">at ' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "field") + "</div>" +
-      side(home, true, st.state) +
+      side(home, true, st.state, winSide) +
       "</div>" +
       '<div class="game-meta">' +
       (CF.fmtDate(e.date) + " · " + (CF.fmtTime(e.date) || "TBD")) +
@@ -86,11 +104,13 @@
       (bears ? ' · <a href="#boxscore" data-boxgame="' + CF.esc(e.id) + '" class="boxlink">Box score ↓</a>' : "") +
       "</div></div>";
   }
-  function side(comp, isHome, state) {
+  function side(comp, isHome, state, winSide) {
     const abbr = (comp.team || {}).abbreviation || "?";
     const name = (comp.team || {}).displayName || "";
     const sc = state === "pre" ? null : CF.API.score(comp.score);
-    return '<div class="side"><div class="abbr">' + CF.esc(abbr) + '</div><div class="score">' + CF.esc(sc != null ? sc : "") + '</div><div class="dim" style="font-size:12px">' + CF.esc(name) + (isHome ? " (home)" : "") + "</div></div>";
+    const side = isHome ? "home" : "away";
+    const wcls = winSide ? (winSide === side ? " winner" : " loser") : "";
+    return '<div class="side' + wcls + '"><div class="abbr">' + CF.esc(abbr) + '</div><div class="score">' + CF.esc(sc != null ? sc : "") + '</div><div class="dim" style="font-size:12px">' + CF.esc(name) + (isHome ? " (home)" : "") + "</div></div>";
   }
 
   /* ---------- season log ---------- */
