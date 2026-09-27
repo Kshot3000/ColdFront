@@ -1394,6 +1394,91 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .foot-credit { margin-top: 16px; font-size: 12.5px; color: var(--text-dim); }
 .foot-credit a { color: var(--orange-hot); }
 
+/* ---------- v1.24.0 — footer glow-up ---------- */
+.site-foot::before {
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(232, 84, 30, 0.06) 20%, rgba(232, 84, 30, 0.85) 50%, rgba(232, 84, 30, 0.06) 80%, transparent 100%);
+  box-shadow: 0 1px 16px rgba(232, 84, 30, 0.35);
+}
+.site-foot h4 { display: flex; align-items: center; gap: 8px; }
+.site-foot h4::before {
+  content: "";
+  flex: none;
+  width: 3px;
+  height: 13px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--orange-hot), rgba(232, 84, 30, 0.2));
+  box-shadow: 0 0 8px rgba(232, 84, 30, 0.5);
+}
+.site-foot .foot-grid ul a {
+  padding-bottom: 2px;
+  background: linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat;
+  transition: color 0.2s var(--ease-out), background-size 0.24s var(--ease-out);
+}
+.site-foot .foot-grid ul a:hover,
+.site-foot .foot-grid ul a:focus-visible {
+  color: var(--snow);
+  background-size: 100% 1px;
+}
+.site-foot .foot-grid ul a .dim { transition: color 0.2s var(--ease-out); }
+.site-foot .foot-grid ul a:hover .dim,
+.site-foot .foot-grid ul a:focus-visible .dim { color: var(--orange-hot); }
+.foot-bottom {
+  margin-top: 26px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(159, 184, 204, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 22px;
+  flex-wrap: wrap;
+}
+.foot-credit { margin: 0; }
+.prl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(200, 56, 3, 0.10);
+  border: 1px solid rgba(232, 84, 30, 0.45);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.prl-chip:hover {
+  background: rgba(200, 56, 3, 0.24);
+  border-color: var(--orange-hot);
+  color: var(--snow);
+  box-shadow: 0 0 20px rgba(232, 84, 30, 0.35), inset 0 1px 0 rgba(255, 180, 140, 0.18);
+  transform: translateY(-1px);
+}
+.prl-chip:active { transform: translateY(0); }
+.prl-gem { color: var(--orange-hot); font-size: 11px; line-height: 1; }
+.prl-chip .prl-label { white-space: nowrap; }
+.prl-chip .prl-addr {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.prl-chip:hover .prl-addr { color: var(--ice); }
+.prl-chip .prl-status {
+  min-width: 52px;
+  text-align: center;
+  color: var(--orange-hot);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+}
+.prl-chip.copied { border-color: rgba(110, 220, 150, 0.65); box-shadow: 0 0 20px rgba(110, 220, 150, 0.25); }
+.prl-chip.copied .prl-status,
+.prl-chip.copied .prl-gem { color: #7ee2a0; }
+
 /* ---------- Form controls (games day picker etc.) ---------- */
 input[type="date"] {
   background: rgba(5, 11, 22, 0.7);

@@ -1323,6 +1323,45 @@ CF.initChrome = () => {
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
 
+  // v1.24.0 — PRL tip chip: copies the Pearl donation address from config.
+  const prlWallet = (CF.CONFIG.donations || []).find((d) => d && d.chain === "PRL");
+  if (prlWallet && prlWallet.address) {
+    const prlAddr = prlWallet.address;
+    const fallbackCopy = (text) => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    CF.$$("[data-cf-copy]").forEach((btn) => {
+      if (btn.getAttribute("data-cf-copy") !== "prl") return;
+      btn.setAttribute("aria-label", "Copy Pearl (PRL) donation address to clipboard");
+      const status = btn.querySelector(".prl-status");
+      let t = null;
+      btn.addEventListener("click", () => {
+        const done = () => {
+          btn.classList.add("copied");
+          if (status) status.textContent = "Copied";
+          clearTimeout(t);
+          t = setTimeout(() => { btn.classList.remove("copied"); if (status) status.textContent = "Copy"; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(prlAddr).then(done, () => { if (fallbackCopy(prlAddr)) done(); });
+        } else if (fallbackCopy(prlAddr)) {
+          done();
+        }
+      });
+    });
+  }
+
   if (CF.initHeroRotator) CF.initHeroRotator();
   if (CF.initReveal) CF.initReveal();
 };

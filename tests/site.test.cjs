@@ -213,3 +213,26 @@ test('photo-band recomposition lifts the photo and anchors the art cluster',asyn
   assert.ok(art.querySelectorAll('.art-mark').length>=2,'band carries at least two art marks to compose');
  }finally{p.close();}
 });
+
+test('footer glow-up: bottom bar with PRL tip chip that copies the donation address',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.site-foot::before\s*\{[^}]*box-shadow:\s*0 1px 16px rgba\(232,\s*84,\s*30,\s*0\.35\)/s,'footer top edge glows orange');
+ assert.match(css,/\.site-foot h4::before\s*\{[^}]*width:\s*3px/s,'column headers carry an orange tick');
+ assert.match(css,/\.prl-chip:hover\s*\{[^}]*translateY\(-1px\)/s,'tip chip lifts on hover');
+ assert.match(css,/\.prl-chip\.copied\s*\{[^}]*rgba\(110,\s*220,\s*150,\s*0\.65\)/s,'copied state flashes green');
+ for(const name of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
+  const p=await page(name);try{
+   const q=p.w.document.querySelector.bind(p.w.document);
+   const chip=q('.foot-bottom .prl-chip[data-cf-copy="prl"]');
+   assert.ok(chip,name+' footer has the PRL tip chip in the bottom bar');
+   assert.equal(chip.getAttribute('aria-label'),'Copy Pearl (PRL) donation address to clipboard');
+   assert.equal(p.w.CF.CONFIG.donations.find(d=>d.chain==='PRL').address,'prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d');
+   const status=chip.querySelector('.prl-status');
+   assert.equal(status.textContent,'Copy');
+   chip.click();await settle(100);
+   assert.ok(chip.classList.contains('copied'),'chip shows the copied state after click');
+   assert.equal(status.textContent,'Copied');
+   assert.ok(q('.foot-credit a[data-cf-x-handle]').textContent.includes('@kshot9000'),name+' keeps the footer @kshot9000 branding');
+  }finally{p.close();}
+ }
+});
