@@ -1913,6 +1913,51 @@ input[type="date"]:focus {
   color: var(--snow);
   text-shadow: 0 0 16px rgba(255,90,31,0.35);
 }
+
+/* ============================================================
+   v1.50.0 — city-tile glow-up.
+   The Chicago photo tiles (.city-tile, the homepage explore
+   strip and the about page city band) get the family treatment:
+   an orange identity thread across the top that ignites on
+   hover or keyboard focus; :focus-within/:focus-visible parity
+   for the hover background zoom (it was mouse-only before, so
+   keyboard users get the same slow-zoom response); a visible
+   :focus-visible ring on the tile itself; and the label's call
+   to action warms to orange-hot under attention. Reduced motion
+   snaps the zoom and every transition.
+   ============================================================ */
+.city-tile::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange) 55%, rgba(159, 184, 204, 0.35) 85%, transparent);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.city-tile:hover::before,
+.city-tile:focus-within::before { opacity: 1; }
+.city-tile:focus-within .city-tile-bg,
+.city-tile:focus-visible .city-tile-bg {
+  transform: scale(1.06);
+  filter: brightness(0.78) saturate(1.05);
+}
+.city-tile:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+}
+.city-tile .city-tile-label strong { transition: color 0.2s ease; }
+.city-tile:hover .city-tile-label strong,
+.city-tile:focus-within .city-tile-label strong { color: var(--orange-hot); }
+@media (prefers-reduced-motion: reduce) {
+  .city-tile,
+  .city-tile::before,
+  .city-tile .city-tile-bg,
+  .city-tile .city-tile-label strong { transition: none; }
+}
 .city-tile.t-river .city-tile-bg { background-image: url("../img/chicago-river-night.webp"); }
 .city-tile.t-soldier .city-tile-bg { background-image: url("../img/soldier-field.webp"); background-position: center 30%; }
 .city-tile.t-winter .city-tile-bg { background-image: url("../img/chicago-winter-lakefront.webp"); }

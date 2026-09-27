@@ -855,3 +855,17 @@ test('polymarket line-movement chips: pure helper and first-paint silence',async
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced motion',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.city-tile::before\s*\{[^}]*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the tile carries the orange identity thread across its top');
+ assert.match(css,/\.city-tile:hover::before,\s*\.city-tile:focus-within::before\s*\{\s*opacity:\s*1/s,'the thread ignites on hover and keyboard focus');
+ assert.match(css,/\.city-tile:focus-within \.city-tile-bg,\s*\.city-tile:focus-visible \.city-tile-bg\s*\{[^}]*transform:\s*scale\(1\.06\)/s,'keyboard focus gets the same background zoom as hover');
+ assert.match(css,/\.city-tile:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible focus ring');
+ assert.match(css,/\.city-tile:hover \.city-tile-label strong,\s*\.city-tile:focus-within \.city-tile-label strong\s*\{\s*color:\s*var\(--orange-hot\)/s,'the call to action warms under attention');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
+ for(const f of ['index.html','about.html']){
+  const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
+  assert.ok(html.includes('css/main.css?v=1.50.0'),f+' busts the stylesheet cache');
+ }
+});
