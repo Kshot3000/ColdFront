@@ -416,3 +416,37 @@ test('highlights video cards carry the identity thread, entrance stagger, and sk
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('last-game box score renders a final scorecard with the winner glow and the Bears chip',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.bx-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the scorecard carries the orange identity thread');
+ assert.match(css,/\.bx-team\.winner \.bx-score\s*\{[^}]*text-shadow:\s*0 0 22px rgba\(255,\s*90,\s*31,\s*0\.65\)/s,'the winner score glows');
+ assert.match(css,/\.bx-team\.winner \.bx-abbr\s*\{[^}]*color:\s*var\(--orange-hot\)/s,'the winner abbr warms to orange');
+ assert.match(css,/\.bx-team\.loser\s*\{[^}]*opacity:\s*0\.55/s,'the loser recedes');
+ assert.match(css,/\.bx-team\.loser:hover\s*\{[^}]*opacity:\s*1/s,'hover restores the loser row');
+ assert.match(css,/\.bx-card:focus-within \.bx-team\.loser\s*\{[^}]*opacity:\s*1/s,'keyboard focus also restores the loser row');
+ assert.match(css,/@keyframes bxRise/,'scorecard entrance keyframes exist');
+ assert.match(css,/\.bx-card\.cf-enter\s*\{[^}]*animation:\s*bxRise/s,'first paint frost-fades the card in');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.bx-card\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
+ assert.match(css,/@media \(max-width: 560px\) \{[\s\S]*?\.bx-score\s*\{\s*font-size:\s*28px/s,'the card compacts on small screens');
+ const p=await page('stats');try{
+  const d=p.w.document;
+  const card=d.querySelector('#lastbox .bx-card');
+  assert.ok(card,'the last-game box renders a scorecard');
+  assert.ok(card.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const rows=[...card.querySelectorAll('.bx-team')];
+  assert.equal(rows.length,2,'both sides render');
+  const chi=rows.find(r=>/Chicago Bears/.test(r.textContent));
+  const min=rows.find(r=>/Minnesota Vikings/.test(r.textContent));
+  assert.ok(chi.classList.contains('winner'),'the 24-point Bears side glows as the winner');
+  assert.ok(chi.querySelector('.bx-chip'),'the Bears row carries the identity chip');
+  assert.ok(min.classList.contains('loser'),'the losing side recedes');
+  assert.equal(chi.querySelector('.bx-score').textContent,'24','the Bears score reads');
+  assert.equal(min.querySelector('.bx-score').textContent,'17','the opponent score reads');
+  const res=card.querySelector('.pill.won');
+  assert.ok(res,'a Bears win earns the bright result pill');
+  assert.match(res.textContent,/W 24–17/,'the result pill names the Bears win');
+  assert.ok(/Soldier Field/.test(card.querySelector('.bx-meta').textContent),'the venue and date line survives');
+  assert.ok(card.querySelector('.pill.final'),'the final pill survives');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

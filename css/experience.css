@@ -300,3 +300,128 @@ main:focus { outline: none; }
   .photo-band .photo-band-art .art-mark:last-child { transform: translateY(7px) rotate(5deg); }
   .photo-band .photo-band-art .art-mark + .art-mark { margin-left: -20px; }
 }
+
+/* v1.33.0 — stats page last-game box score: from inline-styled text to a real
+   final scorecard. Frosted glass with the orange identity leading-edge
+   thread; the winner's row glows (mirroring the game-card final treatment)
+   while the loser recedes until hovered; the Bears row carries the 🐻 chip.
+   Entrance frost-fades on first paint; the 2-minute refresh re-renders stay
+   instant (stats.js only adds .cf-enter on the first load). */
+@keyframes bxRise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(3px); }
+}
+.bx-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(165deg, rgba(255,255,255,0.035) 0%, transparent 45%),
+    var(--glass);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.06);
+  padding: 18px 20px 16px;
+  margin-bottom: 16px;
+}
+.bx-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 55%, rgba(255,180,140,0.35) 100%);
+  box-shadow: 0 0 18px rgba(255,90,31,0.5);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.bx-card.cf-enter { animation: bxRise 0.45s var(--ease-out) backwards; }
+.bx-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.pill.result-loss { color: var(--ice); border-color: var(--line-2); background: rgba(11,22,38,0.5); }
+.pill.result-tie { color: var(--snow); border-color: var(--glass-border-hot); background: rgba(25,46,68,0.5); }
+.bx-teams { display: grid; gap: 8px; }
+.bx-team {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: opacity 0.22s var(--ease-out), border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+.bx-abbr {
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--steel);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 3px 9px;
+  background: rgba(5,11,22,0.6);
+  white-space: nowrap;
+}
+.bx-name {
+  font-size: 15px;
+  color: var(--snow);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bx-chip {
+  display: inline-block;
+  vertical-align: 1px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange-hot);
+  border: 1px dashed rgba(255,90,31,0.55);
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.bx-score {
+  font-family: var(--display);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--snow);
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: right;
+}
+/* Winner glows like a final game-card side; the Bears win also tints the row. */
+.bx-team.winner { background: rgba(200,56,3,0.10); border-color: rgba(255,90,31,0.28); }
+.bx-team.winner .bx-abbr {
+  color: var(--orange-hot);
+  border-color: rgba(255,90,31,0.55);
+  text-shadow: 0 0 18px rgba(255,90,31,0.6);
+}
+.bx-team.winner .bx-score {
+  color: var(--snow);
+  text-shadow: 0 0 22px rgba(255,90,31,0.65), 0 2px 10px rgba(0,0,0,0.4);
+}
+/* Loser recedes until the fan comes back for a look. */
+.bx-team.loser { opacity: 0.55; }
+.bx-team.loser:hover { opacity: 1; }
+.bx-card:focus-within .bx-team.loser { opacity: 1; }
+.bx-meta {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.bx-meta .wx-dot { flex: 0 0 auto; }
+@media (max-width: 560px) {
+  .bx-card { padding: 14px 14px 12px; }
+  .bx-score { font-size: 28px; }
+  .bx-name { font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bx-card.cf-enter { animation: none; }
+  .bx-team { transition: none; }
+}

@@ -132,6 +132,16 @@
      /events/{id} is a 404 on both ESPN hosts, so the box is rebuilt from
      the scoreboard event: final score + the league wire's per-game leaders
      + a deep link to the ESPN game page for the full stat sheet. */
+  let boxEntered = false; // .cf-enter only on first paint; refresh re-renders stay instant
+
+  function bxSide(t, score, isBears, won, lost) {
+    const abbr = CF.esc((t.team || {}).abbreviation || "—");
+    const name = CF.esc((t.team || {}).displayName || "Team");
+    return '<div class="bx-team' + (won ? " winner" : "") + (lost ? " loser" : "") + '">' +
+      '<span class="bx-abbr">' + abbr + "</span>" +
+      '<span class="bx-name">' + name + (isBears ? '<span class="bx-chip">🐻 Bears</span>' : "") + "</span>" +
+      '<span class="bx-score">' + CF.esc(score != null ? score : "—") + "</span></div>";
+  }
   async function loadLastBox() {
     const pill = CF.$("#lastbox-pill");
     const box = CF.$("#lastbox");
@@ -166,15 +176,31 @@
       const leaders = CF.API.eventLeaders(ev);
       const espn = "https://www.espn.com/nfl/game/_/gameId/" + ev.id;
       const st = (ev.status && ev.status.type) || {};
+      const bearsWon = me != null && opp != null && Number(me) > Number(opp);
+      const bearsLost = me != null && opp != null && Number(me) < Number(opp);
+      const awayIsBears = !iAmHome;
+      const awayWon = as_ != null && hs != null && Number(as_) > Number(hs);
+      const awayLost = as_ != null && hs != null && Number(as_) < Number(hs);
+      const entered = !boxEntered;
+      boxEntered = true;
       pill.className = "pill ok";
       pill.textContent = ev.name || "last game";
       box.innerHTML =
-        '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
+        '<div class="bx-card' + (entered ? " cf-enter" : "") + '">' +
+        '<div class="bx-head">' +
         '<span class="pill final">' + CF.esc(st.shortDetail || st.detail || "final") + "</span>" +
-        '<span style="font-size:14.5px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
-        " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
-        ' <span class="dim">(' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "Soldier Field") + ", " + CF.fmtDate(ev.date) + ")</span></span>" +
-        (me != null && opp != null ? '<span class="st ' + (Number(me) > Number(opp) ? "active" : "out") + '">' + (Number(me) > Number(opp) ? "W" : Number(me) < Number(opp) ? "L" : "T") + " " + CF.esc(me) + "–" + CF.esc(opp) + " (CHI)</span>" : "") +
+        (me != null && opp != null
+          ? '<span class="pill ' + (bearsWon ? "won" : bearsLost ? "result-loss" : "result-tie") + '">' +
+            (bearsWon ? "W" : bearsLost ? "L" : "T") + " " + CF.esc(me) + "–" + CF.esc(opp) + " (CHI)</span>"
+          : "") +
+        "</div>" +
+        '<div class="bx-teams">' +
+        bxSide(away, as_, awayIsBears, awayWon, awayLost) +
+        bxSide(home, hs, iAmHome, awayLost, awayWon) +
+        "</div>" +
+        '<div class="bx-meta"><span>' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "Soldier Field") + "</span>" +
+        '<span class="wx-dot" aria-hidden="true"></span>' +
+        "<span>" + CF.esc(CF.fmtDate(ev.date)) + "</span></div>" +
         "</div>" +
         (leaders.length
           ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
