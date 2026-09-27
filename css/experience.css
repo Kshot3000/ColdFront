@@ -465,3 +465,147 @@ main:focus { outline: none; }
   .stat-tile.cf-enter { animation: none; }
   .stat-tile.record-loss b { transition: none; }
 }
+
+/* ============================================================
+   v1.35.0 — Sunday desk becomes a matchup duel card. The flat
+   "vs GB" line is replaced by a frosted duel: big CHI/OPP display
+   abbrs with the Bears 🐻 identity chip, a vs/@ mid carrying the
+   week number, a kickoff countdown chip in the card header, and
+   the orange identity leading-edge thread across the top. The
+   matchup survives as sr-only text so the card's polite live
+   region still announces it (the visual duel is aria-hidden).
+   Entrance frost-fades on first paint only — the 3-minute refresh
+   re-renders stay instant (games.js only adds .cf-enter once).
+   Reduced-motion snaps. */
+.next-opp-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(92, 122, 153, 0.42);
+  background: linear-gradient(165deg, rgba(18, 34, 56, 0.92), rgba(8, 18, 34, 0.95));
+  box-shadow: var(--shadow-lift), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.next-opp-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 55%, rgba(255, 180, 140, 0.35) 100%);
+  box-shadow: 0 0 18px rgba(255, 90, 31, 0.5);
+  opacity: 0.9;
+  pointer-events: none;
+}
+.desk-head-chips { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pill.desk-countdown {
+  border-color: rgba(232, 84, 30, 0.55);
+  color: #ffc79a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.pill.desk-countdown.today {
+  background: rgba(232, 84, 30, 0.18);
+  box-shadow: 0 0 16px rgba(255, 90, 31, 0.35);
+  color: #ffd9b8;
+}
+.next-opp-body { flex-direction: column; gap: 12px; }
+.desk-meta-row { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; }
+.duel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: stretch;
+  width: 100%;
+}
+.duel-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(8, 18, 34, 0.55);
+  min-width: 0;
+}
+.duel-side.bears {
+  border-color: rgba(232, 84, 30, 0.45);
+  background: linear-gradient(160deg, rgba(232, 84, 30, 0.14), rgba(8, 18, 34, 0.6) 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 200, 160, 0.12), 0 6px 18px rgba(209, 58, 2, 0.18);
+}
+.duel-side.opp {
+  border-color: rgba(140, 180, 220, 0.35);
+  background: linear-gradient(200deg, rgba(120, 170, 230, 0.1), rgba(8, 18, 34, 0.6) 70%);
+  text-align: right;
+}
+.duel-abbr {
+  font-family: var(--display);
+  font-size: clamp(28px, 4.6vw, 42px);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--snow);
+  font-variant-numeric: tabular-nums;
+}
+.duel-side.bears .duel-abbr { color: #ffa76b; text-shadow: 0 0 16px rgba(255, 90, 31, 0.45); }
+.duel-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  min-width: 0;
+}
+.duel-name > span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duel-side.opp .duel-name { justify-content: flex-end; }
+.duel-bear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  background: rgba(232, 84, 30, 0.2);
+  border: 1px solid rgba(232, 84, 30, 0.5);
+  font-size: 12px;
+}
+.duel-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 6px;
+  min-width: 64px;
+}
+.duel-vs {
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.duel-week {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--orange-hot);
+  border: 1px solid rgba(232, 84, 30, 0.4);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: rgba(232, 84, 30, 0.1);
+  white-space: nowrap;
+}
+@keyframes duelRise {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(2px); }
+}
+.duel.cf-enter .duel-side { animation: duelRise 0.45s var(--ease-out) backwards; animation-delay: calc(var(--ni, 0) * 0.08s); }
+.duel.cf-enter .duel-mid { animation: duelRise 0.45s var(--ease-out) backwards; animation-delay: 0.08s; }
+@media (max-width: 560px) {
+  .duel { gap: 8px; }
+  .duel-side { padding: 10px; }
+  .duel-mid { min-width: 52px; padding: 0 2px; }
+  .duel-name { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .duel.cf-enter .duel-side, .duel.cf-enter .duel-mid { animation: none; }
+}

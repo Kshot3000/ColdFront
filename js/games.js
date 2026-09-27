@@ -8,6 +8,7 @@
   let boardRequest = 0;
   let lastEvents = [];
   let lastPastGame = null; // most recent completed Bears game (season log)
+  let deskEntered = false; // .cf-enter on the duel only at first paint; refresh re-renders stay instant
 
   const isoDate = (offset) => {
     const value=CF.dayParam(offset);
@@ -388,11 +389,51 @@
     root.hidden = false;
   }
 
+  /* Kickoff countdown for the Sunday desk chip. Paints once per 3-minute
+     refresh — no per-second ticker, so it never fights the live region. */
+  function kickoffLabel(date) {
+    const ms = new Date(date).getTime() - Date.now();
+    if (!Number.isFinite(ms) || ms < -6 * 3600e3) return null;
+    if (ms <= 0) return { text: "Kickoff window", urgent: true };
+    const d = Math.floor(ms / 864e5), h = Math.floor((ms % 864e5) / 36e5), m = Math.floor((ms % 36e5) / 6e4);
+    if (d >= 2) return { text: "Kickoff in " + d + "d " + h + "h", urgent: false };
+    if (d === 1) return { text: "Kickoff tomorrow", urgent: false };
+    if (h >= 3) return { text: "Kickoff in " + h + "h " + m + "m", urgent: false };
+    if (h > 0 || m > 0) return { text: "Kickoff in " + (h ? h + "h " : "") + m + "m", urgent: true };
+    return { text: "Kickoff imminent", urgent: true };
+  }
+
+  /* Sunday desk duel card — Bears side with the 🐻 identity chip, a vs/@
+     mid carrying the week number, and the opponent side. The frost-fade
+     entrance class lands on the first paint only. */
+  function paintDuel(g) {
+    const duel = CF.$("#next-opp-duel");
+    if (!duel) return;
+    duel.innerHTML =
+      '<div class="duel-side bears" style="--ni:0">' +
+        '<span class="duel-abbr">CHI</span>' +
+        '<span class="duel-name"><span class="duel-bear" aria-hidden="true">🐻</span><span>Chicago Bears</span></span>' +
+      "</div>" +
+      '<div class="duel-mid">' +
+        '<span class="duel-vs">' + (g.home ? "vs" : "@") + "</span>" +
+        (g.week ? '<span class="duel-week">WK ' + CF.esc(String(g.week)) + "</span>" : "") +
+      "</div>" +
+      '<div class="duel-side opp" style="--ni:2">' +
+        '<span class="duel-abbr">' + CF.esc(String(g.oppAbbr || "OPP")) + "</span>" +
+        '<span class="duel-name"><span>' + CF.esc(g.opp || "Opponent") + "</span></span>" +
+      "</div>";
+    if (!deskEntered) duel.classList.add("cf-enter");
+    deskEntered = true;
+    duel.hidden = false;
+  }
+
   async function loadNextOpponent() {
     const vs = CF.$("#next-opp-vs");
     const meta = CF.$("#next-opp-meta");
     const chip = CF.$("#next-opp-chip");
     const pill = CF.$("#next-opp-pill");
+    const duel = CF.$("#next-opp-duel");
+    const cd = CF.$("#next-opp-countdown");
     const preview = CF.$("#next-opp-preview");
     if (!vs || !meta || !chip) return;
     let g = null, schedData = null;
@@ -403,6 +444,8 @@
     } catch (e) { /* schedule quiet */ }
     if (!g) {
       if (pill) { pill.className = "pill sample"; pill.textContent = "offline"; }
+      if (duel) duel.hidden = true;
+      if (cd) cd.hidden = true;
       vs.textContent = "Board is quiet";
       meta.textContent = "Next kickoff lands here when the schedule answers.";
       chip.innerHTML = '<span class="opp-chip dim">no opponent yet</span>';
@@ -411,12 +454,24 @@
       return;
     }
     const site = g.home ? "Home · Soldier Field" : "Away";
-    const matchup = (g.home ? "vs " : "@ ") + (g.opp || "opponent");
     if (pill) {
       pill.className = "pill ok";
       pill.textContent = g.home ? "home" : "away";
     }
-    vs.textContent = matchup;
+    paintDuel(g);
+    // Screen-reader matchup line — the card itself is aria-live="polite",
+    // and the visual duel is aria-hidden so the matchup isn't doubled.
+    vs.textContent = "Chicago Bears " + (g.home ? "vs" : "at") + " " + (g.opp || "opponent");
+    const cdText = kickoffLabel(g.date);
+    if (cd) {
+      if (cdText) {
+        cd.hidden = false;
+        cd.textContent = cdText.text;
+        cd.classList.toggle("today", cdText.urgent);
+      } else {
+        cd.hidden = true;
+      }
+    }
     meta.innerHTML =
       "<b>" + CF.fmtDate(g.date) + "</b> · " + (CF.fmtTime(g.date) || "TBD") +
       " · " + CF.esc(site) +

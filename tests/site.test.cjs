@@ -476,3 +476,31 @@ test('season-pulse tiles render as stat cards with the identity thread, record g
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('sunday desk renders a matchup duel card with countdown, thread, and first-paint entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.next-opp-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the desk carries the orange identity thread');
+ assert.match(css,/@keyframes duelRise/,'duel entrance keyframes exist');
+ assert.match(css,/\.duel\.cf-enter \.duel-side\s*\{[^}]*animation:\s*duelRise/s,'first paint frost-fades the duel in');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.duel\.cf-enter \.duel-side[\s\S]*?animation:\s*none/s,'reduced motion snaps the entrance');
+ assert.match(css,/@media \(max-width: 560px\) \{[\s\S]*?\.duel-side \{\s*padding:\s*10px/s,'the duel compacts on small screens');
+ assert.match(css,/\.duel-side\.bears \.duel-abbr\s*\{[^}]*text-shadow:\s*0 0 16px rgba\(255,\s*90,\s*31,\s*0\.45\)/s,'the Bears abbr glows warm');
+ const p=await page('games');try{
+  const d=p.w.document;
+  const duel=d.querySelector('#next-opp-duel');
+  assert.equal(duel.hidden,false,'the duel paints when the schedule answers');
+  assert.equal(duel.getAttribute('aria-hidden'),'true','the visual duel is hidden from assistive tech');
+  assert.ok(duel.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const abbrs=[...duel.querySelectorAll('.duel-abbr')].map(e=>e.textContent);
+  assert.deepEqual(abbrs,['CHI','PHI'],'the duel pits CHI against the fixture opponent');
+  assert.ok(duel.querySelector('.duel-side.bears .duel-bear'),'the Bears side carries the identity chip');
+  assert.equal(duel.querySelector('.duel-vs').textContent,'@','the mid names the away site');
+  const cd=d.querySelector('#next-opp-countdown');
+  assert.equal(cd.hidden,false,'the countdown chip shows');
+  assert.match(cd.textContent,/^Kickoff in 2d 20h$/,'the countdown reads to the fixture kickoff');
+  assert.ok(!cd.classList.contains('today'),'a two-day countdown is not flagged urgent');
+  const vs=d.querySelector('#next-opp-vs');
+  assert.ok(vs.classList.contains('sr-only'),'the matchup line is screen-reader only');
+  assert.equal(vs.textContent,'Chicago Bears at Philadelphia Eagles','the live region still announces the matchup');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

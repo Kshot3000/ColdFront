@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css?v=1.25.0">
-  <link rel="stylesheet" href="css/experience.css?v=1.33.0">
+  <link rel="stylesheet" href="css/experience.css?v=1.35.0">
 </head>
 <body>
 <canvas id="snow" aria-hidden="true"></canvas>
@@ -104,19 +104,23 @@
       </div>
     </div>
 
-    <!-- Next opponent -->
+    <!-- Next opponent — Sunday desk duel card -->
     <div class="card next-opp-card" id="next-opp" aria-live="polite">
       <div class="badge-row" style="justify-content:space-between;margin-bottom:10px">
         <h3 style="margin:0">Sunday desk</h3>
-        <span class="pill is-loading" id="next-opp-pill">loading</span>
+        <span class="desk-head-chips">
+          <span class="pill desk-countdown" id="next-opp-countdown" hidden></span>
+          <span class="pill is-loading" id="next-opp-pill">loading</span>
+        </span>
       </div>
       <div class="next-opp-body">
-        <div class="next-opp-match">
-          <div class="next-opp-vs" id="next-opp-vs">Reading the schedule…</div>
+        <div class="duel" id="next-opp-duel" hidden aria-hidden="true"></div>
+        <p class="sr-only" id="next-opp-vs">Reading the schedule…</p>
+        <div class="desk-meta-row">
           <div class="next-opp-meta" id="next-opp-meta"></div>
-        </div>
-        <div class="next-opp-chip-wrap" id="next-opp-chip">
-          <span class="opp-chip dim">warming up…</span>
+          <div class="next-opp-chip-wrap" id="next-opp-chip">
+            <span class="opp-chip dim">warming up…</span>
+          </div>
         </div>
       </div>
       <div class="matchup-preview sunday-desk" id="next-opp-preview" hidden aria-label="Sunday desk matchup fusion"></div>
@@ -238,6 +242,6 @@
 <script src="js/common.js?v=1.24.0"></script>
 <script src="js/snow.js?v=1.15.0"></script>
 <script src="js/api.js?v=1.15.0"></script>
-<script src="js/games.js?v=1.15.0"></script>
+<script src="js/games.js?v=1.35.0"></script>
 </body>
 </html>
