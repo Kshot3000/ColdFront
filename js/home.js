@@ -1,7 +1,7 @@
 /* The Cold Front — live fan headquarters. */
 "use strict";
 (function () {
-  let countdown = 0, predictionGame = null;
+  let countdown = 0, predictionGame = null, predictionOppAbbr = "OPP";
   let stndEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
   const show = (selector, text) => { CF.$(selector).textContent = text; };
 
@@ -71,13 +71,16 @@
     if (predictionGame?.id !== game.id) {
       predictionGame = game;
       const opponent = game.home.abbr === "CHI" ? game.away.abbr : game.home.abbr;
-      show("#prediction-opponent", opponent + " score");
+      predictionOppAbbr = opponent;
+      show("#prediction-opponent-name", opponent);
+      show("#prediction-opponent-abbr", opponent);
       let saved;
       try { saved = JSON.parse(localStorage.getItem("cf.pick." + game.id) || "null"); } catch (_) { /* optional preference */ }
       if (saved) {
         CF.$("#prediction-bears").value = saved.bears;
         CF.$("#prediction-other").value = saved.other;
         show("#prediction-status", "Your pick: CHI " + saved.bears + " · " + opponent + " " + saved.other + ". Saved on this device.");
+        updatePredictionDiff();
       }
     }
     let lastCountdown = null;
@@ -686,8 +689,24 @@
       const form = CF.$("#prediction-form");
       form.hidden = !form.hidden;
       CF.$("#prediction-toggle").setAttribute("aria-expanded", String(!form.hidden));
-      if (!form.hidden) CF.$("#prediction-bears").focus();
+      if (!form.hidden) { updatePredictionDiff(); CF.$("#prediction-bears").focus(); }
     });
+    // v1.58.0 — the live differential chip answers every keystroke.
+    const updatePredictionDiff = () => {
+      const diff = CF.$("#prediction-diff");
+      if (!diff) return;
+      const rawB = CF.$("#prediction-bears").value.trim(), rawO = CF.$("#prediction-other").value.trim();
+      const bears = Number(rawB), other = Number(rawO);
+      const ok = (raw, v) => raw !== "" && Number.isInteger(v) && v >= 0 && v <= 99;
+      diff.className = "prediction-diff";
+      if (!ok(rawB, bears) || !ok(rawO, other)) { diff.textContent = ""; return; }
+      if (bears > other) { diff.textContent = "BEARS BY " + (bears - other); diff.classList.add("is-bears"); }
+      else if (other > bears) { diff.textContent = predictionOppAbbr + " BY " + (other - bears); diff.classList.add("is-opp"); }
+      else { diff.textContent = "DEAD EVEN"; diff.classList.add("is-tie"); }
+    };
+    for (const id of ["#prediction-bears", "#prediction-other"]) {
+      CF.$(id).addEventListener("input", updatePredictionDiff);
+    }
     CF.$("#prediction-form").addEventListener("submit", (event) => {
       event.preventDefault();
       if (!predictionGame || !event.target.reportValidity()) return;

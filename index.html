@@ -26,7 +26,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css?v=1.54.0">
-  <link rel="stylesheet" href="css/experience.css?v=1.45.0">
+  <link rel="stylesheet" href="css/experience.css?v=1.58.0">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3316742664595468"
        crossorigin="anonymous"></script>
 </head>
@@ -118,13 +118,24 @@
           </div>
           <div class="game-meta" id="ng-meta"></div>
           <div class="countdown" id="ng-countdown" aria-label="Time until kickoff"></div>
-          <div class="match-footer"><a href="games.html" id="game-detail-link">Matchup &amp; schedule ↗</a><button class="text-button" id="prediction-toggle" type="button" aria-expanded="false" aria-controls="prediction-form" disabled>Make your call ＋</button></div>
+          <div class="match-footer"><a href="games.html" id="game-detail-link">Matchup &amp; schedule ↗</a><button class="text-button" id="prediction-toggle" type="button" aria-expanded="false" aria-controls="prediction-form" disabled>Make your call <span class="toggle-mark" aria-hidden="true">＋</span></button></div>
           <form class="prediction" id="prediction-form" hidden>
-            <div class="prediction-fields">
-              <label>Bears score<input id="prediction-bears" type="number" min="0" max="99" value="24" required></label>
-              <label><span id="prediction-opponent">Opponent score</span><input id="prediction-other" type="number" min="0" max="99" value="17" required></label>
-              <button class="btn small primary" type="submit">Save pick</button>
+            <div class="prediction-head">
+              <span class="prediction-eyebrow" aria-hidden="true">❄ Make your call</span>
+              <span class="prediction-diff" id="prediction-diff" aria-live="polite"></span>
             </div>
+            <div class="prediction-fields">
+              <label class="predict-well predict-bears">
+                <span class="predict-team"><span class="bears-chip" aria-hidden="true">🐻</span> Bears <abbr>CHI</abbr></span>
+                <input id="prediction-bears" type="number" min="0" max="99" value="24" required inputmode="numeric" aria-label="Bears score">
+              </label>
+              <span class="predict-vs" aria-hidden="true">VS</span>
+              <label class="predict-well predict-opp">
+                <span class="predict-team"><span id="prediction-opponent-name">Opponent</span> <abbr id="prediction-opponent-abbr">OPP</abbr></span>
+                <input id="prediction-other" type="number" min="0" max="99" value="17" required inputmode="numeric" aria-label="Opponent score">
+              </label>
+            </div>
+            <button class="btn primary predict-save" type="submit">Save my pick</button>
             <p class="src-note" id="prediction-status" role="status">Your prediction, saved only on this device.</p>
           </form>
         </div>
@@ -331,6 +342,6 @@
 <script src="js/common.js?v=1.56.0"></script>
 <script src="js/snow.js?v=1.15.0"></script>
 <script src="js/api.js?v=1.15.0"></script>
-<script src="js/home.js?v=1.42.0"></script>
+<script src="js/home.js?v=1.58.0"></script>
 </body>
 </html>

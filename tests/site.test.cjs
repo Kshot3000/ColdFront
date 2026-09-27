@@ -993,3 +993,45 @@ test('playbook quick-cards get keyboard parity and a staggered entrance',()=>{
  assert.ok(html.includes('css/main.css?v=1.54.0'),'index.html busts the stylesheet cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
+
+test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.prediction::before/,'the pick card carries the orange identity thread');
+ assert.match(css,/\.prediction:focus-within::before\s*\{\s*opacity:\s*1/s,'the thread ignites when the card holds keyboard focus');
+ assert.match(css,/\.predict-bears::before/,'the Bears well carries an orange leading edge');
+ assert.match(css,/\.predict-opp::before/,'the opponent well carries an ice leading edge');
+ assert.match(css,/\.predict-well input\s*\{[^}]*font-family:\s*var\(--display\)/s,'score inputs use display typography');
+ assert.match(css,/\.predict-well input:focus-visible\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'score inputs show the family focus ring');
+ assert.match(css,/#prediction-toggle\[aria-expanded="true"\] \.toggle-mark\s*\{\s*transform:\s*rotate\(45deg\)/s,'the toggle morphs ＋ into ✕');
+ assert.match(css,/\.prediction-diff\.is-bears\s*\{[^}]*box-shadow/s,'the Bears differential glows');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(html.includes('css/experience.css?v=1.58.0'),'index.html busts the experience.css cache');
+ assert.ok(html.includes('js/home.js?v=1.58.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
+ assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
+ assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
+ assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+});
+
+test('v1.58.0: the prediction differential answers every keystroke',async()=>{
+ const p=await page('index');try{const d=p.w.document;
+  d.querySelector('#prediction-toggle').click();
+  const diff=d.querySelector('#prediction-diff');
+  assert.equal(d.querySelector('#prediction-opponent-name').textContent,'PHI');
+  assert.equal(d.querySelector('#prediction-opponent-abbr').textContent,'PHI');
+  assert.equal(diff.textContent,'BEARS BY 7');
+  assert.ok(diff.classList.contains('is-bears'));
+  d.querySelector('#prediction-bears').value=10;
+  d.querySelector('#prediction-bears').dispatchEvent(new p.w.Event('input',{bubbles:true}));
+  assert.equal(diff.textContent,'PHI BY 7');
+  assert.ok(diff.classList.contains('is-opp'));
+  d.querySelector('#prediction-other').value=10;
+  d.querySelector('#prediction-other').dispatchEvent(new p.w.Event('input',{bubbles:true}));
+  assert.equal(diff.textContent,'DEAD EVEN');
+  assert.ok(diff.classList.contains('is-tie'));
+  d.querySelector('#prediction-bears').value='';
+  d.querySelector('#prediction-bears').dispatchEvent(new p.w.Event('input',{bubbles:true}));
+  assert.equal(diff.textContent,'');
+ }finally{p.close();}
+});

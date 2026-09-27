@@ -109,11 +109,169 @@ main:focus { outline: none; }
 .match-card .countdown span { font-size: 9px; letter-spacing: .14em; }
 .match-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffffff12; font-size: 12px; }
 .text-button { background: none; color: #bcdff5; border: 0; cursor: pointer; padding: 9px 0; font: inherit; }
-.prediction { margin-top: 12px; padding-top: 14px; border-top: 1px solid #ffffff12; }
-.prediction-fields { display: flex; align-items: end; gap: 10px; }
-.prediction label { display: grid; gap: 7px; flex: 1; color: #a6bed1; font-size: 11px; }
-.prediction input { width: 100%; }
-.prediction .src-note { font-size: 11px; margin: 10px 0 0; }
+/* ---------- v1.58.0 — "Make your call" prediction glow-up ----------
+   The score-prediction widget was the last plain form on the site. It becomes
+   a tape-room pick card: an orange identity thread across the top (dim at rest,
+   igniting when the card holds keyboard focus), team-tinted score wells with
+   big display numerals, a live "BEARS BY N" differential that answers every
+   keystroke, and a ＋→✕ morph on the toggle. Reduced motion snaps it all. */
+.prediction {
+  margin-top: 14px;
+  padding: 16px 16px 14px;
+  border: 1px solid #d4eaff1c;
+  border-radius: 14px;
+  background: #0c1c30cc;
+  position: relative;
+  overflow: hidden;
+}
+.prediction::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(232, 84, 30, 0.85), transparent);
+  opacity: 0.25;
+  transition: opacity 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+.prediction:focus-within::before {
+  opacity: 1;
+  box-shadow: 0 1px 14px rgba(232, 84, 30, 0.55);
+}
+.prediction-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.prediction-eyebrow {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ice);
+}
+.prediction-diff {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #d4eaff2a;
+  color: var(--ice);
+  background: #0a1626aa;
+  transition: color 0.2s var(--ease-out), border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+  white-space: nowrap;
+}
+.prediction-diff.is-bears {
+  color: #ffd9c2;
+  border-color: rgba(232, 84, 30, 0.65);
+  background: rgba(200, 56, 3, 0.16);
+  box-shadow: 0 0 12px rgba(232, 84, 30, 0.4);
+  text-shadow: 0 0 10px rgba(255, 90, 31, 0.6);
+}
+.prediction-diff.is-tie {
+  color: #eaf3fa;
+  border-color: #9fb8cc55;
+}
+.prediction-diff.is-opp {
+  color: #b8cede;
+  border-color: #6b84a055;
+}
+.prediction-fields { display: flex; align-items: stretch; gap: 10px; }
+.predict-well {
+  position: relative;
+  flex: 1;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 13px;
+  border: 1px solid #d4eaff22;
+  border-radius: 12px;
+  background: #081426b8;
+  overflow: hidden;
+  transition: border-color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+.predict-well::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  opacity: 0.35;
+  transition: opacity 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+.predict-bears::before { background: linear-gradient(90deg, transparent, var(--orange-hot), transparent); }
+.predict-opp::before { background: linear-gradient(90deg, transparent, #9fc3e0, transparent); }
+.predict-well:focus-within { border-color: #d4eaff44; background: #0a1a30d0; }
+.predict-well:focus-within::before { opacity: 1; box-shadow: 0 1px 10px rgba(200, 160, 120, 0.35); }
+.predict-bears:focus-within::before { box-shadow: 0 1px 10px rgba(232, 84, 30, 0.6); }
+.predict-team {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a6bed1;
+}
+.predict-team abbr {
+  text-decoration: none;
+  font-family: var(--display);
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #d4eaff2e;
+  color: #eaf3fa;
+}
+.predict-bears .predict-team abbr {
+  border-color: rgba(232, 84, 30, 0.55);
+  color: #ffcfae;
+  background: rgba(200, 56, 3, 0.14);
+}
+.predict-well input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  color: #f4f8fc;
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  padding: 2px 0;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.predict-well input::-webkit-outer-spin-button,
+.predict-well input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.predict-well input:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.predict-vs {
+  align-self: center;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #7f9bb1;
+  padding-left: 4px;
+}
+.predict-save { width: 100%; margin-top: 12px; }
+.prediction .src-note { font-size: 11px; margin: 10px 0 0; color: #8fa9bd; }
+#prediction-toggle .toggle-mark { display: inline-block; transition: transform 0.25s var(--ease-out); }
+#prediction-toggle[aria-expanded="true"] .toggle-mark { transform: rotate(45deg); }
+#prediction-toggle:hover, #prediction-toggle:focus-visible { color: var(--orange-hot); }
+#prediction-toggle:focus-visible { outline: 2px solid var(--orange-hot); outline-offset: 3px; border-radius: 4px; }
+@media (max-width: 480px) {
+  .prediction-fields { gap: 8px; }
+  .predict-well input { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prediction::before, .predict-well, .predict-well::before, .prediction-diff,
+  .predict-well input, #prediction-toggle, #prediction-toggle .toggle-mark {
+    transition: none;
+  }
+}
 .season-strip { display: grid; grid-template-columns: 1.4fr repeat(3,1fr); margin-top: 52px; padding: 22px 0 0; border-top: 1px solid #d5eaff24; align-items: center; gap: 22px; }
 .season-strip > div + div { border-left: 1px solid #d5eaff1f; padding-left: 24px; }
 .season-strip .season-brand { display: flex; align-items: center; gap: 12px; }
