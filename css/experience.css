@@ -414,8 +414,14 @@ main:focus { outline: none; }
 }
 
 /* v1.15.0 — Polymarket implied-probability bars: the crowd's lean at a glance.
-   Static render (no animation), so it stays honest under prefers-reduced-motion. */
+   v1.61.0 — single fill against the track (the Polymarket/Kalshi convention).
+   The old two-segment yes/no strip read as a broken visual at the extreme
+   leans that are normal in these markets (a hairline yes sliver beside a
+   full-width no bar); the fill keeps every price readable, and a subtle
+   50/50 reference tick gives the lean its center to read against. Static
+   render (no animation), so it stays honest under prefers-reduced-motion. */
 .poly-bar {
+  position: relative;
   grid-column: 1 / -1;
   display: flex;
   height: 7px;
@@ -426,14 +432,24 @@ main:focus { outline: none; }
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
-.poly-bar i { display: block; height: 100%; min-width: 0; }
-.poly-bar .yes {
+/* The 50/50 reference tick — drawn above the fill and the track alike. */
+.poly-bar::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(214, 232, 246, 0.55);
+  pointer-events: none;
+}
+.poly-bar .fill {
+  display: block;
+  height: 100%;
+  min-width: 0;
   background: linear-gradient(90deg, #2e7d52, #7fd6a4);
   box-shadow: 0 0 12px rgba(76, 175, 125, 0.5);
-}
-.poly-bar .no {
-  background: linear-gradient(90deg, #e8541e, #8f2d05);
-  opacity: 0.6;
 }
 
 /* v1.22.0 — hero entrance choreography: the front rolls in piece by piece.

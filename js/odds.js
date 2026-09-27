@@ -165,13 +165,17 @@
           const yesChip = CF.polyMoveChip(polyPrev[kY], m.yes);
           const noChip = CF.polyMoveChip(polyPrev[kN], m.no);
           polyPrev[kY] = m.yes; polyPrev[kN] = m.no;
-          // Implied-probability bar: one segmented strip (yes green / no orange)
-          // so the crowd's lean reads at a glance next to the cent prices.
+          // Implied-probability bar: a single fill against the track — the
+          // convention every prediction-market fan already reads (Polymarket
+          // and Kalshi both fill to the yes price). The old two-segment strip
+          // (green yes sliver + full-width no bar) read as a broken visual at
+          // the extreme leans that are normal in these markets; the fill plus
+          // a 50/50 reference tick keeps the crowd's lean readable at any
+          // price, next to the cent prices.
           const yesPct = m.yes != null ? Math.max(0, Math.min(100, Math.round(m.yes * 100))) : null;
           const bar = yesPct != null
             ? '<span class="poly-bar" role="img" aria-label="Implied probability: ' + yesPct + "% yes, " + (100 - yesPct) + '% no">' +
-              '<i class="yes" style="width:' + yesPct + '%"></i>' +
-              '<i class="no" style="width:' + (100 - yesPct) + '%"></i></span>'
+              '<i class="fill" style="width:' + yesPct + '%"></i></span>'
             : "";
           return '<div class="poly-card' + (polyEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(n++, 12) + '">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +

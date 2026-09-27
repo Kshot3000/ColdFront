@@ -1103,3 +1103,26 @@ test('v1.60.1: RSS titles decode double-escaped entities before render',async()=
   assert.ok(html.includes('&quot;'),'quotes are safely escaped exactly once');
  }finally{p.close();}
 });
+
+test('v1.61.0: crowd probability bars use the single-fill convention with a 50/50 tick',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.poly-bar::after\s*\{[^}]*left:\s*50%/s,'the bar carries a 50/50 reference tick');
+ assert.ok(!/\.poly-bar\s+\.no\b/.test(css),'the old two-segment no-side rule is gone');
+ const p=await page('odds'); try{
+  // The harness mocks gamma-api.polymarket.com with a 60/40 Bears market.
+  p.w.document.dispatchEvent(new p.w.Event('DOMContentLoaded')); await settle(500);
+  const bar=p.w.document.querySelector('#poly-board .poly-card .poly-bar');
+  assert.ok(bar,'the probability bar renders on the crowd board');
+  const segs=[...bar.querySelectorAll('i')];
+  assert.equal(segs.length,1,'exactly one fill segment, not a yes/no strip');
+  assert.ok(segs[0].classList.contains('fill'),'the segment is the fill');
+  assert.equal(segs[0].style.width,'60%','the fill runs to the yes price');
+  assert.equal(bar.getAttribute('aria-label'),'Implied probability: 60% yes, 40% no','the bar still announces both sides');
+  const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
+  assert.ok(odds.includes('tick = the 50/50 line'),'the legend names the tick');
+  assert.ok(!odds.includes('bar = crowd is'),'the old two-bar legend copy is gone');
+  assert.ok(odds.includes('css/experience.css?v=1.61.0'),'odds.html busts the stylesheet cache');
+  assert.ok(odds.includes('js/odds.js?v=1.61.0'),'odds.html busts the odds script cache');
+  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+ }finally{p.close();}
+});
