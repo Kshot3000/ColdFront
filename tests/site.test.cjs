@@ -166,3 +166,14 @@ test('final game cards crown the winner and call out a Bears win',async()=>{
   assert.equal(card.querySelector('.side.loser .abbr').textContent,'MIN');
  }finally{p.close();}
 });
+
+test('homepage story cards wrap art in a zoom target and chip the source',async()=>{
+ const p=await page('index');try{
+  await settle(400);
+  const card=p.w.document.querySelector('#home-news .story-card');
+  assert.ok(card,'wire story card renders');
+  assert.ok(card.querySelector('.story-art > .story-image'),'image is wrapped in .story-art');
+  assert.ok(card.querySelector('.story-copy .story-source'),'source element present for the tag chip');
+  assert.equal(card.querySelector('.story-copy h3').textContent,'Bears prepare for Monday night');
+ }finally{p.close();}
+});

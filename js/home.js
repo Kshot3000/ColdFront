@@ -114,7 +114,7 @@
     const title = item.heading || item.title || "Bears news";
     const url = CF.safeURL(item.links?.web?.href || item.link, "https://www.chicagobears.com/news");
     const photo = CF.safeURL(item.images?.[0]?.url, "img/soldier-field.webp");
-    return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener"><img class="story-image" loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.onerror=null;this.src=\'img/soldier-field.webp\'"><div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
+    return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener"><span class="story-art"><img class="story-image" loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.onerror=null;this.src=\'img/soldier-field.webp\'"></span><div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
   }
   function tickerGroup(items, hidden) {
     return '<span class="wt-group"' + (hidden ? ' aria-hidden="true"' : "") + ">" + items.map((item) => {
