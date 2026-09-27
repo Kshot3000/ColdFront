@@ -162,7 +162,7 @@ CF.CONFIG = {
   // While a link is "" its slot is removed from the page entirely,
   // so nothing shows until you're set up.
   referrals: {
-    polymarket: "", // your Polymarket referral link, e.g. "https://polymarket.com/?r=YOURCODE"
+    polymarket: "https://polymarket.us/squad/join/vLoDh9A8ch54gJmkbqrE?referrer=fancyjaguar1280", // Kyle's Polymarket squad referral link
     kalshi: "",     // your Kalshi "Invite Friends" link (Menu -> Invite Friends, unlocked after $25 traded)
   },
   ads: {
