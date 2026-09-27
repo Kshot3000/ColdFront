@@ -319,3 +319,21 @@ test('mobile drawer staggers its links, highlights the active page, and the togg
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('injury report rows carry severity treatment and the availability snapshot counts them',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.tbl tr\.inj-sev-out td:first-child\s*\{\s*box-shadow:\s*inset 3px 0 0 var\(--orange\)/s,'out rows carry the orange leading edge');
+ assert.match(css,/\.tbl tr\.inj-sev-questionable td:first-child\s*\{\s*box-shadow:\s*inset 3px 0 0 var\(--warn\)/s,'questionable rows carry the amber leading edge');
+ assert.match(css,/#report-table \.st::before/,'report pills carry a severity dot');
+ assert.match(css,/@keyframes cfSnapIn/,'snapshot strip entrance keyframes exist');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.inj-snap-chip, \.inj-snap-clear \{ animation: none; \}/s,'snapshot entrance is gated on reduced-motion');
+ const p=await page('injuries');try{
+  const d=p.w.document;
+  const row=d.querySelector('#report-table tbody tr');
+  assert.ok(row && row.classList.contains('inj-sev-questionable'),'report row carries its severity class');
+  const snap=d.querySelector('#rep-snapshot');
+  assert.ok(snap,'snapshot strip exists');
+  assert.match(snap.innerHTML,/inj-snap-chip sev-questionable/,'snapshot renders a questionable chip');
+  assert.ok(snap.textContent.includes('1 listed'),'snapshot counts the listed players');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});

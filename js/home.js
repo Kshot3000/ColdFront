@@ -159,7 +159,7 @@
       const rows = report.rows.filter((row) => row.status?.toLowerCase() !== "active");
       show("#inj-home-pill", CF.sourceLabel(result.source) + " · league report");
       if (result.source === "live") await paintHomeInjuryMove(rows);
-      CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => '<tr><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.comment || "No additional detail") + '</td><td><span class="st ' + CF.injStatusCls(row.status) + '">' + CF.esc(row.status) + '</span></td></tr>').join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
+      CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.comment || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(row.status) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
     } catch (_) {
       show("#inj-home-pill", "Report unavailable");
       CF.$("#home-injuries tbody").innerHTML = '<tr><td colspan="4" class="dim">The league report did not answer. <a href="injuries.html">Check roster flags and the full report ↗</a></td></tr>';

@@ -4,13 +4,32 @@
 (function () {
   const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
 
-  function statusCls(s) {
-    const x = (s || "").toLowerCase();
-    if (x.includes("out")) return "out";
-    if (x.includes("questionable")) return "questionable";
-    if (x.includes("doubtful")) return "doubtful";
-    if (x.includes("day")) return "day-to-day";
-    return "active";
+  function sevCls(row) {
+    return CF.injStatusCls(row.status || row.statusCls);
+  }
+
+  /* Availability snapshot strip: at-a-glance severity counts above the table.
+     Rows unknown (failed fetch) clears the strip; zero rows is "full strength". */
+  function paintSnapshot(rows) {
+    const host = CF.$("#rep-snapshot");
+    if (!host) return;
+    if (!rows) { host.innerHTML = ""; return; }
+    const counts = { out: 0, questionable: 0, "day-to-day": 0, active: 0 };
+    rows.forEach((row) => {
+      const cls = sevCls(row);
+      counts[cls] = (counts[cls] || 0) + 1;
+    });
+    const total = Object.keys(counts).reduce((a, k) => a + counts[k], 0);
+    if (!total) {
+      host.innerHTML = '<span class="inj-snap-clear">\u2714 Full strength — nobody listed on the report.</span>';
+      return;
+    }
+    const labels = { out: "Out", questionable: "Questionable", "day-to-day": "Day-to-day", active: "Active" };
+    host.innerHTML = ["out", "questionable", "day-to-day", "active"]
+      .filter((k) => counts[k] > 0)
+      .map((k) => '<span class="inj-snap-chip sev-' + k + '"><b>' + counts[k] + '</b> ' + labels[k] + '</span>')
+      .join("") +
+      '<span class="inj-snap-total">' + total + ' listed</span>';
   }
 
   async function paintMovement(rows) {
@@ -31,12 +50,13 @@
   /* The table prefers live data: league report (per-player status +
      editorial notes) → roster flags → community JSON. */
   function reportRow(row, eta) {
-    return "<tr><td class=\"strong\">" + CF.esc(row.name) +
+    const sev = sevCls(row);
+    return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) +
       (row.url ? ' <a href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
       "</td>" +
       "<td>" + CF.esc(row.pos || "—") + "</td>" +
       "<td>" + CF.esc(row.comment || row.injury || "—") + "</td>" +
-      '<td><span class="st ' + CF.esc(CF.injStatusCls(row.status)) + '">' + CF.esc(row.status || "—") + "</span></td>" +
+      '<td><span class="st ' + sev + '">' + CF.esc(row.status || "—") + "</span></td>" +
       '<td class="dim">' + CF.esc(eta || (row.date ? CF.fmtDate(row.date) : "")) + "</td></tr>";
   }
 
@@ -55,6 +75,7 @@
           pill.textContent = "live · API-Sports";
           note.textContent = "Structured injury rows via API-Sports (key set on this device). Cross-check with the official pregame report.";
           body.innerHTML = rows.map((row) => reportRow(row, row.eta)).join("");
+          paintSnapshot(rows);
           await paintMovement(rows);
           return;
         }
@@ -71,6 +92,7 @@
         pill.textContent = CF.sourceLabel(r) + " · league report";
         note.textContent = "Check the official pregame report for final availability.";
         body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
+        paintSnapshot([]);
         return;
       }
       if (rows.length) {
@@ -78,6 +100,7 @@
         pill.textContent = CF.sourceLabel(r) + " · League report";
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        paintSnapshot(rows);
         await paintMovement(rows);
         return;
       }
@@ -92,6 +115,7 @@
         pill.textContent = CF.sourceLabel(r2) + " · Roster flags";
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        paintSnapshot(rows);
         await paintMovement(rows);
         return;
       }
@@ -105,16 +129,12 @@
       pill.textContent = "community report";
       if (data.updated) note.textContent = "Last updated in the repo: " + data.updated + ".";
       body.innerHTML = rows.length
-        ? rows.map((row) =>
-            "<tr><td class=\"strong\">" + CF.esc(row.name) + "</td>" +
-            "<td>" + CF.esc(row.pos || "—") + "</td>" +
-            "<td>" + CF.esc(row.injury || "—") + "</td>" +
-            '<td><span class="st ' + CF.esc(row.statusCls || statusCls(row.status)) + '">' + CF.esc(row.status || "—") + "</span></td>" +
-            "<td class=\"dim\">" + CF.esc(row.eta || "") + "</td></tr>"
-          ).join("")
+        ? rows.map((row) => reportRow(row, row.eta)).join("")
         : '<tr><td colspan="5" class="dim">No verified report is available. Check the official Bears injury report for current availability.</td></tr>';
+      paintSnapshot(rows.length ? rows : null);
     } catch (e3) {
       pill.className = "pill sample";
+      paintSnapshot(null);
       body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({
         icon: "🌫",
         title: "Report unavailable",
