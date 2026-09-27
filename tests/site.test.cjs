@@ -866,6 +866,42 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
  for(const f of ['index.html','about.html']){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.50.0'),f+' busts the stylesheet cache');
+  assert.ok(html.includes('css/main.css?v=1.51.0'),f+' busts the stylesheet cache');
  }
+});
+
+test('ad slots stay invisible until a publisher ID is set, then fill correctly',async()=>{
+ // Default: no publisher ID -> slots removed entirely, page stays clean.
+ for(const [name,slot] of [['index','homeLeaderboard'],['news','newsRail'],['odds','oddsInline']]){
+  const p=await page(name);try{const w=p.w;
+   assert.equal(w.document.querySelectorAll('[data-ad-slot]').length,0,name+' removes its ad slot when no publisher ID is set');
+   assert.equal((w.CF.CONFIG.ads||{}).client,'','default ads client is empty');
+  }finally{p.close();}
+ }
+ // Live path: with a publisher ID + ad-unit ID the slot fills with an <ins>.
+ const p=await page('index');try{const w=p.w;
+  const host=w.document.createElement('div');
+  host.className='ad-slot';host.setAttribute('data-ad-slot','homeLeaderboard');
+  w.document.body.appendChild(host);
+  w.CF.CONFIG.ads.client='ca-pub-1234567890123456';
+  w.CF.CONFIG.ads.slots.homeLeaderboard='9876543210';
+  w.CF.initAds();
+  const ins=host.querySelector('ins.adsbygoogle');
+  assert.ok(ins,'slot fills with an adsbygoogle <ins>');
+  assert.equal(ins.getAttribute('data-ad-client'),'ca-pub-1234567890123456');
+  assert.equal(ins.getAttribute('data-ad-slot'),'9876543210');
+  assert.equal(ins.getAttribute('data-ad-format'),'auto');
+  assert.equal(host.getAttribute('aria-label'),'Advertisement');
+  assert.ok(w.document.querySelector('script[src*="pagead2.googlesyndication.com"]'),'AdSense library loads once');
+  // Placement without an ad-unit ID stays empty.
+  const host2=w.document.createElement('div');
+  host2.setAttribute('data-ad-slot','newsRail');
+  w.document.body.appendChild(host2);
+  w.CF.initAds();
+  assert.equal(w.document.querySelectorAll('[data-ad-slot="newsRail"]').length,0,'slot without an ad-unit ID is removed');
+ }finally{p.close();}
+ // ads.txt exists for AdSense verification; about.html carries the privacy note.
+ assert.ok(fs.existsSync(path.join(__dirname,'../ads.txt')),'ads.txt exists at the site root');
+ const about=fs.readFileSync(path.join(__dirname,'../about.html'),'utf8');
+ assert.ok(about.includes('id="privacy"'),'about page has the privacy section');
 });

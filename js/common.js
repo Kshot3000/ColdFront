@@ -154,6 +154,18 @@ CF.CONFIG = {
   // snapshot can be when the network is down. Kept short so even the
   // fallback is fresh.
   ttl: { scoreboard: 10 * 60e3, news: 30 * 60e3, schedule: 3600e3, standings: 3600e3, roster: 3600e3, weather: 10 * 60e3, injuries: 5 * 60e3 },
+
+  // Display ads (AdSense) — paste your publisher ID to go live.
+  // While `client` is "" the ad slots are removed from the page entirely,
+  // so the site stays clean until you're approved and ready to earn.
+  ads: {
+    client: "", // e.g. "ca-pub-1234567890123456"
+    slots: {
+      homeLeaderboard: "", // index.html — below the wire ticker
+      newsRail: "",        // news.html — bottom of the injury rail
+      oddsInline: "",      // odds.html — under the Polymarket board
+    },
+  },
 };
 
 /* ---------------- tiny utilities ---------------- */
@@ -1288,10 +1300,57 @@ CF.openNav = (nav, toggle) => {
   if (first) setTimeout(() => first.focus(), 20);
 };
 
+/* ---------- v1.51.0 — display-ad slots (AdSense-ready) ----------
+   Slots marked [data-ad-slot] are filled only when CF.CONFIG.ads.client
+   holds a real publisher ID; otherwise they're removed so the page stays
+   clean until ad revenue is switched on. Fill is lazy: the AdSense library
+   loads once, then each slot gets an <ins> that AdSense sizes itself. */
+CF.initAds = () => {
+  const slots = CF.$$("[data-ad-slot]");
+  if (!slots.length) return;
+  const cfg = (CF.CONFIG && CF.CONFIG.ads) || {};
+  const client = (cfg.client || "").trim();
+  if (!client) {
+    slots.forEach((s) => s.remove());
+    return;
+  }
+  const nameFor = (el) => el.getAttribute("data-ad-slot");
+  const slotIdFor = (name) => ((cfg.slots || {})[name] || "").trim();
+  let libLoaded = false;
+  const ensureLib = () => {
+    if (libLoaded) return;
+    libLoaded = true;
+    const sc = document.createElement("script");
+    sc.async = true;
+    sc.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + encodeURIComponent(client);
+    sc.crossOrigin = "anonymous";
+    document.head.appendChild(sc);
+  };
+  ensureLib();
+  slots.forEach((el) => {
+    const name = nameFor(el);
+    const slotId = slotIdFor(name);
+    if (!slotId) { el.remove(); return; } // placement without an ad-unit ID stays empty
+    el.classList.add("is-live");
+    el.setAttribute("role", "complementary");
+    el.setAttribute("aria-label", "Advertisement");
+    const ins = document.createElement("ins");
+    ins.className = "adsbygoogle";
+    ins.style.display = "block";
+    ins.setAttribute("data-ad-client", client);
+    ins.setAttribute("data-ad-slot", slotId);
+    ins.setAttribute("data-ad-format", "auto");
+    ins.setAttribute("data-full-width-responsive", "true");
+    el.appendChild(ins);
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* ad-blocked or offline — slot stays quiet */ }
+  });
+};
+
 CF.initChrome = () => {
   CF.injectAtmosphere();
   CF.ensureSkipLink();
   CF.initScrollChrome();
+  CF.initAds();
 
   const wxEl = CF.$("[data-cf-weather]");
   if (wxEl) {
@@ -1384,6 +1443,7 @@ CF.initChrome = () => {
 
   const yr = CF.$("[data-cf-year]");
   if (yr) yr.textContent = new Date().getFullYear();
+
 
   // Tip chip: copies the Bitcoin donation address from config (2026-09-27: switched from PRL).
   const btcWallet = (CF.CONFIG.donations || []).find((d) => d && d.chain === "BTC");
