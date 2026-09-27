@@ -1176,7 +1176,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   opacity: 0;
   transition: opacity 0.22s ease, background 0.22s ease;
 }
-.quick a:hover {
+.quick a:hover,
+.quick a:focus-within {
   border-color: var(--glass-border-hot);
   transform: translateY(-5px) scale(1.01);
   box-shadow: var(--shadow-lift), var(--rim-glow);
@@ -1184,7 +1185,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
     linear-gradient(160deg, rgba(232, 84, 30, 0.08) 0%, transparent 50%),
     rgba(18, 34, 54, 0.72);
 }
-.quick a:hover::before {
+.quick a:hover::before,
+.quick a:focus-within::before {
   opacity: 1;
   background: linear-gradient(90deg, var(--orange), var(--orange-hot) 45%, rgba(159,184,204,0.35) 80%, transparent);
   box-shadow: 0 0 14px rgba(232, 84, 30, 0.55);
@@ -1203,7 +1205,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 14px rgba(0,0,0,0.25);
   transition: transform 0.22s var(--ease-out), border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
 }
-.quick a:hover .ico {
+.quick a:hover .ico,
+.quick a:focus-within .ico {
   transform: translateY(-2px) scale(1.06);
   border-color: rgba(232, 84, 30, 0.45);
   background: rgba(200, 56, 3, 0.14);
@@ -1216,6 +1219,42 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   letter-spacing: 0;
   color: var(--text-dim);
   line-height: 1.45;
+}
+
+/* ============================================================
+   v1.54.0 — fan playbook quick-card keyboard parity + entrance.
+   The nine playbook tiles on the homepage were the last cards
+   without :focus-within parity: their hover lift, thread
+   ignition, and icon warm-up were mouse-only, so keyboard users
+   got a bare outline on a flat card. Now the hover treatment
+   answers to :focus-within, the tile carries a visible
+   :focus-visible ring in the family style, and the grid enters
+   with a staggered frost-fade on first paint (backwards fill so
+   the hover lift still works once the animation ends).
+   Reduced motion snaps the entrance and every transition.
+   ============================================================ */
+.quick a:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(209, 58, 2, 0.28), 0 0 18px rgba(209, 58, 2, 0.35);
+}
+.grid.quick a {
+  animation: cfSnapIn 0.55s var(--ease-out, ease) backwards;
+  animation-delay: calc(var(--qi, 0) * 45ms);
+}
+.grid.quick a:nth-child(2) { --qi: 1; }
+.grid.quick a:nth-child(3) { --qi: 2; }
+.grid.quick a:nth-child(4) { --qi: 3; }
+.grid.quick a:nth-child(5) { --qi: 4; }
+.grid.quick a:nth-child(6) { --qi: 5; }
+.grid.quick a:nth-child(7) { --qi: 6; }
+.grid.quick a:nth-child(8) { --qi: 7; }
+.grid.quick a:nth-child(9) { --qi: 8; }
+@media (prefers-reduced-motion: reduce) {
+  .quick a,
+  .quick a::before,
+  .quick a .ico { transition: none; }
+  .grid.quick a { animation: none; }
 }
 
 /* ---------- Odds ---------- */
