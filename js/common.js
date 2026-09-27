@@ -1206,6 +1206,7 @@ CF.closeNav = (nav, toggle) => {
   if (toggle) {
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-label", "Open menu");
+    toggle.textContent = "\u2630";
   }
   const bd = CF.$(".nav-backdrop");
   if (bd) bd.hidden = true;
@@ -1217,9 +1218,12 @@ CF.openNav = (nav, toggle) => {
   if (head) document.documentElement.style.setProperty("--cf-head-h", head.offsetHeight + "px");
   nav.classList.add("open");
   document.body.classList.add("nav-open");
+  // Stagger index drives the drawer's link entrance cascade (see cf-nav-in).
+  Array.from(nav.querySelectorAll("a")).forEach((a, i) => a.style.setProperty("--ni", i));
   if (toggle) {
     toggle.setAttribute("aria-expanded", "true");
     toggle.setAttribute("aria-label", "Close menu");
+    toggle.textContent = "\u2715";
   }
   let bd = CF.$(".nav-backdrop");
   if (!bd) {

@@ -3742,3 +3742,77 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   .cf-progress { display: none; }
   .countdown .unit.tick { animation: none !important; }
 }
+
+/* ---------- v1.28.0 — mobile drawer recomposition ----------
+   The drawer graduates from a full-bleed drop panel to a floating
+   frosted card: rounded, inset, staggered link entrance, an orange
+   leading-edge thread on the active page, and a hamburger→✕ morph
+   on the toggle. Gated on prefers-reduced-motion. */
+@media (max-width: 960px) {
+  .nav {
+    left: 10px;
+    right: 10px;
+    top: calc(var(--cf-head-h, 64px) + 8px);
+    margin-top: 0;
+    max-height: calc(100dvh - var(--cf-head-h, 64px) - 32px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(11, 18, 32, 0.98), rgba(6, 10, 20, 0.98));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    padding: 12px;
+  }
+  .nav-toggle {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--ink);
+    font-size: 19px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.3s ease;
+  }
+  body.nav-open .nav-toggle {
+    background: rgba(200, 56, 3, 0.16);
+    border-color: rgba(200, 56, 3, 0.55);
+    transform: rotate(90deg);
+  }
+  .nav.open a {
+    min-height: 48px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    animation: cf-nav-in 0.38s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+    animation-delay: calc(var(--ni, 0) * 45ms);
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .nav.open a::after { display: none; }
+  .nav.open a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+  }
+  .nav.open a.active {
+    background: rgba(200, 56, 3, 0.13);
+    box-shadow: inset 3px 0 0 var(--orange);
+    color: #fff;
+  }
+  .nav.open a.nav-x {
+    justify-content: center;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    margin-top: 4px;
+  }
+}
+@keyframes cf-nav-in {
+  from { opacity: 0; transform: translateY(-10px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav.open a { animation: none; }
+  body.nav-open .nav-toggle { transform: none; }
+}

@@ -299,3 +299,23 @@ test('season log rows carry the W/L result treatment',async()=>{
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('mobile drawer staggers its links, highlights the active page, and the toggle morphs to a close glyph',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.match(css,/\.nav\.open a\s*\{[^}]*animation-delay:\s*calc\(var\(--ni, 0\) \* 45ms\)/s,'drawer links stagger their entrance');
+ assert.match(css,/@keyframes cf-nav-in/,'drawer entrance keyframes exist');
+ assert.match(css,/\.nav\.open a\.active\s*\{[^}]*inset 3px 0 0 var\(--orange\)/s,'active drawer link carries an orange leading-edge thread');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.nav\.open a \{ animation: none; \}/,'drawer entrance is gated on reduced-motion');
+ const p=await page('index',{mobile:true});try{
+  const w=p.w,d=w.document,b=d.querySelector('.nav-toggle'),nav=d.querySelector('.nav');
+  assert.equal(b.textContent.trim(),'\u2630','toggle starts as a hamburger');
+  b.click();
+  assert.equal(b.textContent.trim(),'\u2715','toggle morphs to a close glyph when open');
+  const links=Array.from(nav.querySelectorAll('a'));
+  assert.ok(links.length>1,'drawer has links to stagger');
+  assert.ok(links.every((a,i)=>a.style.getPropertyValue('--ni').trim()===String(i)),'each drawer link carries its stagger index');
+  b.click();
+  assert.equal(b.textContent.trim(),'\u2630','toggle returns to a hamburger when closed');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
