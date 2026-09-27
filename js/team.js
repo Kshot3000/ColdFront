@@ -11,6 +11,15 @@
   const groupKey = (group) => /offen/i.test(group || "") ? "offense"
     : /defen/i.test(group || "") ? "defense"
     : /special/i.test(group || "") ? "special" : "other";
+  // Human-readable group names, used only as a last resort when the feed
+  // omits a player's position (so the card never shows a bare "—").
+  const groupLabel = (group) => ({ offense: "Offense", defense: "Defense", special: "Special teams" }[groupKey(group)] || "Bears");
+  // Position/number line degrades gracefully when the feed omits a jersey
+  // number (practice-squad call-ups, specialists): never a dangling "#—".
+  const stLine = (player) => {
+    const pos = (player.pos && player.pos !== "—") ? player.pos : groupLabel(player.group);
+    return [pos, player.jersey ? "#" + player.jersey : ""].filter(Boolean).join(" · ");
+  };
 
   async function loadRoster() {
     const pill = CF.$("#roster-pill");
@@ -61,7 +70,7 @@
       const portrait = player.headshot ? '<img loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.hidden=true">' : '';
       return '<article class="player-card' + (enter ? " cf-enter" : "") + '" data-group="' + groupKey(player.group) + '"' +
         (enter ? ' style="--ni:' + Math.min(i, 11) + '"' : "") +
-        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait"><span class="player-number" aria-hidden="true">' + CF.esc(player.jersey || "CHI") + '</span>' + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(player.pos) + ' · #' + CF.esc(player.jersey || "—") + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + CF.esc([player.height, player.weight].filter(Boolean).join(" · ")) + '<br>' + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
+        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait"><span class="player-number" aria-hidden="true">' + CF.esc(player.jersey || "CHI") + '</span>' + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(stLine(player)) + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + CF.esc([player.height, player.weight].filter(Boolean).join(" · ")) + '<br>' + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
     }).join("") : '<div class="empty">' + empty + '</div>';
     CF.$("#roster-table tbody").innerHTML = rows.length ? rows.map((p) => '<tr><td class="num">' + CF.esc(p.jersey || "—") + '</td><td class="strong">' + CF.esc(p.name) + (p.url ? ' <a href="' + CF.esc(CF.safeURL(p.url)) + '" target="_blank" rel="noopener" aria-label="' + CF.esc(p.name + ' profile') + '">↗</a>' : '') + '</td><td>' + CF.esc(p.pos) + '</td><td class="num">' + CF.esc(p.age) + '</td><td class="num">' + CF.esc(p.exp) + '</td><td>' + CF.esc(p.height) + '</td><td>' + CF.esc(p.weight) + '</td><td>' + CF.esc(p.from) + '</td></tr>').join("") : '<tr><td colspan="8">' + empty + '</td></tr>';
   }

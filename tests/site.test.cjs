@@ -788,3 +788,20 @@ test('weather strip glow-up: condition-aware sky glyph and the identity thread',
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+
+test('roster cards degrade gracefully when the feed omits a jersey number',async()=>{
+ // Practice-squad call-ups and specialists sometimes arrive without a jersey
+ // in the ESPN feed — the card must never show a dangling "#—".
+ const noNumber={athletes:[{position:'specialTeam',items:[{id:'9',displayName:'Test Long Snapper',position:{abbreviation:'LS'}}]}]};
+ const p=await page('team',{fetch:async(u)=>{
+   if(u.pathname.includes('/roster'))return{ok:true,text:async()=>JSON.stringify(noNumber),json:async()=>noNumber};
+ }});try{const d=p.w.document;
+  const card=d.querySelector('.player-card');assert.ok(card,'the jersey-less player still renders a card');
+  const st=card.querySelector('.st').textContent;
+  assert.doesNotMatch(st,/#—/,'no dangling number dash');
+  assert.equal(st,'LS','the line falls back to the position alone');
+  assert.equal(card.querySelector('.player-number').textContent,'CHI','the portrait falls back to the team mark');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(card.textContent));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
