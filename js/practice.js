@@ -123,10 +123,19 @@
       ". Edit and push to keep it honest — never invents who practiced.</p>";
   }
 
+  let trkEntered = false; // first-paint entrance runs once; refreshes stay instant
+
   async function loadTracker() {
     const body = CF.$("#tracker tbody");
     const note = CF.$("#track-note");
     const trackPill = CF.$("#track-pill");
+    // v1.44.0 — week-intel treatment: the wrapper carries the family identity
+    // thread; the frost-fade entrance runs on first paint only.
+    const wrap = body ? body.closest(".tbl-wrap") : null;
+    if (wrap) {
+      wrap.classList.add("trk");
+      if (!trkEntered) wrap.classList.add("cf-enter");
+    }
     if (body) body.innerHTML = CF.skelRows(5, 2);
     try {
       const r = await fetch("data/practice.json", { cache: "no-cache" });
@@ -140,10 +149,10 @@
               const isToday = String(row.date || "").slice(0, 3) === today;
               const lv = inferLevel(row);
               const meta = levelMeta(lv);
+              const cls = "trk-row trk-lv" + lv + (isToday ? " is-today-row trk-today" : "");
               return (
-                "<tr" +
-                (isToday ? ' class="is-today-row"' : "") +
-                '><td class="strong">' +
+                "<tr class=\"" + cls + "\">" +
+                '<td class="strong">' +
                 CF.esc(row.date) +
                 (isToday ? ' <span class="st active">today</span>' : "") +
                 '</td><td>' +
@@ -169,13 +178,14 @@
               );
             })
             .join("")
-        : '<tr><td colspan="5">' +
+        : '<tr class="trk-row"><td colspan="5">' +
           CF.emptyHTML({
             icon: "❄️",
             title: "Tracker is empty",
             sub: "Confirmed sessions will appear here when announced.",
           }) +
           "</td></tr>";
+      trkEntered = true;
       if (trackPill) {
         trackPill.textContent = rows.length ? rows.length + " sessions" : "empty";
         trackPill.className = "tag";
@@ -194,13 +204,14 @@
         trackPill.className = "tag";
       }
       body.innerHTML =
-        '<tr><td colspan="5">' +
+        '<tr class="trk-row"><td colspan="5">' +
         CF.emptyHTML({
           icon: "🌫",
           title: "Tracker unavailable",
           sub: "The practice tracker could not be reached. Please try again later.",
         }) +
         "</td></tr>";
+      trkEntered = true;
     }
   }
 

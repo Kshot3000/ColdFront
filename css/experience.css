@@ -894,3 +894,44 @@ main:focus { outline: none; }
   .odds-card:hover, .odds-card:focus-within { transform: none; }
   .poly-card:hover, .poly-card:focus-within { transform: none; }
 }
+
+/* v1.44.0 — practice tracker week-intel treatment. The tracker table
+   (practice.html) joins the family: an orange identity leading-edge thread
+   across the top of the wrapper, an intensity leading-edge on every row
+   (Off → ice, Walk → steel, Light → amber, Full → orange, Game day → hot
+   orange), a warmed today row, rows that warm on hover with keyboard parity,
+   and a frost-fade entrance on first paint only — the 5-minute refresh
+   re-renders instantly. Reduced-motion snaps. */
+@keyframes trkRise {
+  from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
+}
+.tbl-wrap.trk { position: relative; overflow: hidden; overflow-x: auto; }
+.tbl-wrap.trk::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 55%, rgba(255,180,140,0.35) 100%);
+  box-shadow: 0 0 18px rgba(255,90,31,0.5);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 2;
+}
+.tbl-wrap.trk.cf-enter { animation: trkRise 0.45s var(--ease-out) backwards; }
+.tbl.trk tr.trk-row { transition: background-color 0.18s ease; }
+.tbl.trk tr.trk-row:hover td,
+.tbl.trk tr.trk-row:focus-within td { background: rgba(232,84,30,0.08); }
+/* Intensity leading-edges, mirroring the injury severity treatment. */
+.tbl.trk tr.trk-lv0 td:first-child { box-shadow: inset 3px 0 0 rgba(92,122,153,0.55); }
+.tbl.trk tr.trk-lv1 td:first-child { box-shadow: inset 3px 0 0 rgba(122,167,204,0.7); }
+.tbl.trk tr.trk-lv2 td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+.tbl.trk tr.trk-lv3 td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+.tbl.trk tr.trk-lv4 td:first-child { box-shadow: inset 3px 0 0 var(--orange-hot); }
+/* Today reads first: warmed row that deepens under attention. */
+.tbl.trk tr.trk-row.trk-today td { background: rgba(232,84,30,0.1); }
+.tbl.trk tr.trk-row.trk-today:hover td,
+.tbl.trk tr.trk-row.trk-today:focus-within td { background: rgba(232,84,30,0.15); }
+@media (prefers-reduced-motion: reduce) {
+  .tbl-wrap.trk.cf-enter { animation: none; }
+  .tbl.trk tr.trk-row { transition: none; }
+}

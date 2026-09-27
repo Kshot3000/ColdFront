@@ -706,3 +706,47 @@ test('odds board glow up: identity thread, focus parity, warm best rows, first-p
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('practice tracker becomes a week-intel table: identity thread, intensity edges, today warmth, first-paint entrance',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.tbl-wrap\.trk::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the tracker wrapper carries the orange identity thread');
+ assert.match(css,/\.tbl\.trk tr\.trk-lv4 td:first-child\s*\{[^}]*box-shadow:\s*inset 3px 0 0 var\(--orange-hot\)/s,'game-day rows carry the hot orange leading edge');
+ assert.match(css,/\.tbl\.trk tr\.trk-lv0 td:first-child\s*\{[^}]*box-shadow:\s*inset 3px 0 0 rgba\(92,\s*122,\s*153/s,'off-day rows carry the ice leading edge');
+ assert.match(css,/\.tbl\.trk tr\.trk-row:hover td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'rows warm on hover');
+ assert.match(css,/\.tbl\.trk tr\.trk-row:focus-within td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'keyboard focus warms rows too');
+ assert.match(css,/\.tbl\.trk tr\.trk-row\.trk-today td\s*\{[^}]*background:\s*rgba\(232,\s*84,\s*30,\s*0\.1\)/s,'the today row is warmed');
+ assert.match(css,/@keyframes trkRise/,'the tracker entrance keyframes exist');
+ assert.match(css,/\.tbl-wrap\.trk\.cf-enter[\s\S]{0,80}?animation:\s*trkRise/s,'first paint frost-fades the tracker in');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.tbl-wrap\.trk\.cf-enter[\s\S]*?animation:\s*none/s,'reduced motion snaps the entrance');
+ // The fixture clock is a Friday evening in Chicago (2026-09-26T03:00:00Z).
+ const pdata={updated:'2026-09-26',rows:[
+  {date:'Sat',session:'Travel day',focus:'—',media:'—',notes:'Off'},
+  {date:'Sun',session:'Kickoff vs Packers',focus:'Soldier Field',media:'Availability report',notes:''},
+  {date:'Fri',session:'Full practice',focus:'Red zone',media:'Presser',notes:''}
+ ]};
+ const p=await page('practice',{fetch:async(u)=>u.pathname.endsWith('/practice.json')?{ok:true,json:async()=>pdata}:undefined});
+ try{const w=p.w,d=w.document;
+  const wrap=d.querySelector('#tracker').closest('.tbl-wrap.trk');
+  assert.ok(wrap,'the tracker wrapper carries the family treatment');
+  assert.ok(wrap.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const rows=[...d.querySelectorAll('#tracker tr.trk-row')];
+  assert.equal(rows.length,3,'the three sessions render');
+  const sat=rows.find(r=>/Travel/.test(r.textContent));
+  assert.ok(sat.classList.contains('trk-lv0'),'an off/travel day gets the ice edge');
+  const sun=rows.find(r=>/Kickoff/.test(r.textContent));
+  assert.ok(sun.classList.contains('trk-lv4'),'game day gets the hot orange edge');
+  const fri=rows.find(r=>/Full practice/.test(r.textContent));
+  assert.ok(fri.classList.contains('trk-lv3'),'a full session gets the orange edge');
+  assert.ok(fri.classList.contains('trk-today'),'the fixture Friday is marked as today');
+  assert.ok(/today/.test(fri.textContent),'the today pill reads on the row');
+  assert.equal(d.querySelector('#track-pill').textContent,'3 sessions','the pill counts the sessions');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#tracker').textContent));
+  // One more render simulates the 5-minute auto-refresh: it must stay instant.
+  wrap.classList.remove('cf-enter');
+  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await settle(300);
+  const wrap2=d.querySelector('#tracker').closest('.tbl-wrap.trk');
+  assert.ok(wrap2,'the wrapper survives the refresh');
+  assert.ok(!wrap2.classList.contains('cf-enter'),'refresh re-renders stay instant');
+  assert.equal(d.querySelectorAll('#tracker tr.trk-row').length,3,'the rows re-render');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
