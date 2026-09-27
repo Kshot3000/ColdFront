@@ -726,3 +726,108 @@ main:focus { outline: none; }
   .tbl-wrap.ld.cf-enter { animation: none; }
   .tbl.ld tr.ld-row, .tbl.ld .ld-leader a { transition: none; }
 }
+
+/* v1.41.0 — division standings glow-up. The North standings (home) and the
+   Division watch table (games.html) get the family treatment: an orange
+   identity leading-edge thread across the top of the wrapper, the Bears row
+   warmed with an orange leading edge and a 🐻 identity chip, the Pct column
+   in display typography (a warm glow on our row), a 👑 DIV LEAD chip on the
+   division leader that ignites orange when it's the Bears, streak pills on
+   the games.html table, rows that warm on hover with keyboard parity, and a
+   frost-fade entrance on first paint only — the 5-minute refreshes re-render
+   instantly. Reduced-motion snaps. */
+@keyframes stndRise {
+  from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
+}
+.tbl-wrap.stnd { position: relative; overflow: hidden; overflow-x: auto; }
+.tbl-wrap.stnd::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-hot), var(--orange-hot) 55%, rgba(255,180,140,0.35) 100%);
+  box-shadow: 0 0 18px rgba(255,90,31,0.5);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 2;
+}
+.tbl-wrap.stnd.cf-enter,
+.race-bars.stnd.cf-enter { animation: stndRise 0.45s var(--ease-out) backwards; }
+.tbl.stnd tr.stnd-row { transition: background-color 0.18s ease; }
+.tbl.stnd tr.stnd-row:hover td,
+.tbl.stnd tr.stnd-row:focus-within td { background: rgba(232,84,30,0.08); }
+/* Our row: warmer tint, orange leading edge, bear identity chip. */
+.tbl.stnd tr.stnd-me td { background: rgba(232,84,30,0.12); }
+.tbl.stnd tr.stnd-me:hover td,
+.tbl.stnd tr.stnd-me:focus-within td { background: rgba(232,84,30,0.17); }
+.tbl.stnd tr.stnd-me td:first-child { box-shadow: inset 3px 0 0 var(--orange-hot); }
+.stnd-bear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px; height: 19px;
+  margin-right: 8px;
+  vertical-align: -4px;
+  border-radius: 6px;
+  font-size: 12px;
+  background: rgba(232,84,30,0.2);
+  border: 1px solid rgba(232,84,30,0.5);
+  filter: drop-shadow(0 0 6px rgba(255,90,31,0.4));
+}
+/* Pct is the headline number: display numerals, warm glow on our row. */
+.tbl.stnd .stnd-pct {
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--snow);
+  font-variant-numeric: tabular-nums;
+}
+.tbl.stnd tr.stnd-me .stnd-pct {
+  color: #ffd9c2;
+  text-shadow: 0 0 14px rgba(255,90,31,0.45);
+}
+/* Division leader crown; ignites orange when it's the Bears. */
+.stnd-crown {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--ice);
+  background: rgba(92,122,153,0.2);
+  border: 1px solid rgba(92,122,153,0.4);
+}
+.stnd-crown.hot {
+  color: #ffd9c2;
+  background: rgba(232,84,30,0.22);
+  border-color: rgba(255,90,31,0.6);
+  box-shadow: 0 0 12px rgba(255,90,31,0.35);
+}
+/* Streak pill (games.html Division watch). */
+.stnd-strk {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(92,122,153,0.18);
+  border: 1px solid rgba(92,122,153,0.35);
+}
+.stnd-strk.up { color: #ffb49a; background: rgba(232,84,30,0.2); border-color: rgba(232,84,30,0.5); }
+.stnd-strk.down { color: #a8c4dc; background: rgba(60,90,120,0.2); border-color: rgba(92,122,153,0.45); }
+@media (max-width: 560px) {
+  .stnd-pct, .tbl.stnd .stnd-pct { font-size: 13.5px; }
+  .stnd-crown { font-size: 9px; padding: 2px 7px; margin-left: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tbl-wrap.stnd.cf-enter,
+  .race-bars.stnd.cf-enter { animation: none; }
+  .tbl.stnd tr.stnd-row { transition: none; }
+}

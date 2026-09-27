@@ -9,6 +9,7 @@
   let lastEvents = [];
   let lastPastGame = null; // most recent completed Bears game (season log)
   let deskEntered = false; // .cf-enter on the duel only at first paint; refresh re-renders stay instant
+  let divEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
 
   const isoDate = (offset) => {
     const value=CF.dayParam(offset);
@@ -548,17 +549,39 @@
     }
     pill.className = "pill ok";
     pill.textContent = label;
-    body.innerHTML = div.rows.map((row) =>
-      '<tr class="' + (row.isMe ? "me" : "") + '">' +
-      '<td class="strong">' + CF.esc(row.name) + "</td>" +
+    /* v1.41.0 — standings glow-up: Bears row carries the 🐻 identity chip,
+       the division leader carries a 👑 DIV LEAD chip (glowing when it's us),
+       Pct reads in display numerals, streaks become pills. */
+    const streakPill = (s) => {
+      const t = String(s || "").trim();
+      const cls = /^W\d*/i.test(t) ? " up" : /^L\d*/i.test(t) ? " down" : "";
+      return '<span class="stnd-strk' + cls + '">' + CF.esc(t || "—") + "</span>";
+    };
+    body.innerHTML = div.rows.map((row, i) =>
+      '<tr class="stnd-row' + (row.isMe ? " stnd-me" : "") + '">' +
+      '<td class="strong stnd-team">' +
+      (row.isMe ? '<span class="stnd-bear" aria-hidden="true">🐻</span>' : "") +
+      CF.esc(row.name) +
+      (i === 0 ? ' <span class="stnd-crown' + (row.isMe ? " hot" : "") + '">👑 DIV LEAD</span>' : "") +
+      "</td>" +
       '<td class="num">' + CF.esc(row.gp != null ? row.gp : "—") + "</td>" +
       '<td class="num">' + CF.esc(row.w != null ? row.w : "—") + "</td>" +
       '<td class="num">' + CF.esc(row.l != null ? row.l : "—") + "</td>" +
-      '<td class="num">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
+      '<td class="num stnd-pct">' + (row.pct != null ? Number(row.pct).toFixed(3).replace(/^0/, "") : "—") + "</td>" +
       '<td class="num">' + CF.esc(row.div != null ? row.div : "—") + "</td>" +
-      '<td>' + CF.esc(row.streak || "") + "</td>" +
+      "<td>" + streakPill(row.streak) + "</td>" +
       "</tr>"
     ).join("");
+    CF.$("#div-table-2").classList.add("stnd");
+    const divWrap = CF.$("#div-table-2").closest(".tbl-wrap");
+    if (divWrap) {
+      divWrap.classList.add("stnd");
+      if (!divEntered) {
+        divWrap.classList.add("cf-enter");
+        CF.$("#div-race-2").classList.add("stnd", "cf-enter");
+        divEntered = true;
+      }
+    }
     paintRaceBars(div.rows, CF.$("#div-race-2"));
   }
 

@@ -2,6 +2,7 @@
 "use strict";
 (function () {
   let countdown = 0, predictionGame = null;
+  let stndEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
   const show = (selector, text) => { CF.$(selector).textContent = text; };
 
   async function loadMatchup() {
@@ -117,7 +118,29 @@
       if (!division?.rows.length) throw new Error("No division data");
       show("#div-pill", CF.sourceLabel(result.source));
       paintRaceBars(division.rows, CF.$("#div-race"));
-      CF.$("#div-table tbody").innerHTML = division.rows.map((row) => '<tr class="' + (row.isMe ? "me" : "") + '"><td class="strong">' + CF.esc(row.name) + '</td><td class="num">' + row.w + '</td><td class="num">' + row.l + '</td><td class="num">' + Number(row.pct).toFixed(3).replace(/^0/, "") + '</td></tr>').join("");
+      /* v1.41.0 — standings glow-up: Bears row carries the 🐻 identity chip,
+         the division leader carries a 👑 DIV LEAD chip (glowing when it's us),
+         Pct reads in display numerals. */
+      CF.$("#div-table tbody").innerHTML = division.rows.map((row, i) =>
+        '<tr class="stnd-row' + (row.isMe ? " stnd-me" : "") + '">' +
+        '<td class="strong stnd-team">' +
+        (row.isMe ? '<span class="stnd-bear" aria-hidden="true">🐻</span>' : "") +
+        CF.esc(row.name) +
+        (i === 0 ? ' <span class="stnd-crown' + (row.isMe ? " hot" : "") + '">👑 DIV LEAD</span>' : "") +
+        "</td>" +
+        '<td class="num">' + row.w + '</td><td class="num">' + row.l + '</td>' +
+        '<td class="num stnd-pct">' + Number(row.pct).toFixed(3).replace(/^0/, "") + "</td></tr>"
+      ).join("");
+      CF.$("#div-table").classList.add("stnd");
+      const stndWrap = CF.$("#division .tbl-wrap");
+      if (stndWrap) {
+        stndWrap.classList.add("stnd");
+        if (!stndEntered) {
+          stndWrap.classList.add("cf-enter");
+          CF.$("#div-race").classList.add("stnd", "cf-enter");
+          stndEntered = true;
+        }
+      }
     } catch (_) {
       show("#div-pill", "Unavailable");
       CF.$("#div-table tbody").innerHTML = '<tr><td colspan="4" class="dim">Standings are temporarily unavailable. <a href="https://www.espn.com/nfl/standings" target="_blank" rel="noopener">ESPN standings ↗</a></td></tr>';

@@ -619,3 +619,50 @@ test('player leaders render as leaderboards with the identity thread, glyph chip
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('division standings glow up: identity thread, Bears chip, leader crown, and streak pills',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.tbl-wrap\.stnd::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the standings wrapper carries the orange identity thread');
+ assert.match(css,/\.tbl\.stnd tr\.stnd-me td:first-child\s*\{[^}]*box-shadow:\s*inset 3px 0 0 var\(--orange-hot\)/s,'the Bears row carries the orange leading edge');
+ assert.match(css,/\.stnd-bear\s*\{[^}]*border:\s*1px solid rgba\(232,\s*84,\s*30,\s*0\.5\)/s,'the bear identity chip is styled');
+ assert.match(css,/\.stnd-crown\.hot\s*\{[^}]*box-shadow:\s*0 0 12px rgba\(255,\s*90,\s*31,\s*0\.35\)/s,'the leader crown glows when it is the Bears');
+ assert.match(css,/\.tbl\.stnd \.stnd-pct\s*\{[^}]*font-family:\s*var\(--display\)/s,'the Pct column gets display typography');
+ assert.match(css,/\.tbl\.stnd tr\.stnd-row:hover td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'rows warm on hover');
+ assert.match(css,/\.tbl\.stnd tr\.stnd-row:focus-within td[\s\S]{0,160}?background:\s*rgba\(232,\s*84,\s*30,\s*0\.08\)/s,'keyboard focus warms rows too');
+ assert.match(css,/\.stnd-strk\.up\s*\{[^}]*background:\s*rgba\(232,\s*84,\s*30,\s*0\.2\)/s,'win streaks warm orange');
+ assert.match(css,/@keyframes stndRise/,'standings entrance keyframes exist');
+ assert.match(css,/\.tbl-wrap\.stnd\.cf-enter[\s\S]{0,80}?animation:\s*stndRise/s,'first paint frost-fades the table in');
+ assert.match(css,/\.race-bars\.stnd\.cf-enter[\s\S]{0,80}?animation:\s*stndRise/s,'the race bars enter with the table');
+ assert.match(css,/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.tbl-wrap\.stnd\.cf-enter[\s\S]*?animation:\s*none/s,'reduced motion snaps the entrance');
+ assert.match(css,/@media \(max-width: 560px\) \{[\s\S]*?\.tbl\.stnd \.stnd-pct\s*\{\s*font-size:\s*13\.5px/s,'the Pct compacts on small screens');
+ const p=await page('index');try{
+  const d=p.w.document;
+  const wrap=d.querySelector('#division .tbl-wrap.stnd');
+  assert.ok(wrap,'the North standings wrapper carries the family treatment');
+  assert.ok(wrap.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const rows=[...d.querySelectorAll('#div-table.stnd tr.stnd-row')];
+  assert.equal(rows.length,4,'the four North teams render');
+  const chi=rows.find(r=>/Chicago Bears/.test(r.textContent));
+  assert.ok(chi.classList.contains('stnd-me'),'the Bears row is marked as ours');
+  assert.ok(chi.querySelector('.stnd-bear'),'the Bears row carries the bear chip');
+  assert.equal(chi.querySelector('.stnd-pct').textContent,'1.000','the Pct reads in display numerals');
+  const crown=rows[0].querySelector('.stnd-crown');
+  assert.ok(crown && /DIV LEAD/.test(crown.textContent),'the division leader carries the crown');
+  assert.ok(rows[0].classList.contains('stnd-me'),'the Bears lead the fixture division');
+  assert.ok(crown.classList.contains('hot'),'the crown glows when the Bears lead');
+  assert.ok(d.querySelector('#div-race.stnd.cf-enter'),'the race bars enter with the table');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const g=await page('games');try{
+  const d=g.w.document;
+  const wrap=d.querySelector('#div-table-2').closest('.tbl-wrap.stnd');
+  assert.ok(wrap,'the Division watch wrapper carries the family treatment');
+  assert.ok(wrap.classList.contains('cf-enter'),'first paint carries the entrance class');
+  const rows=[...d.querySelectorAll('#div-table-2.stnd tr.stnd-row')];
+  assert.equal(rows.length,4,'the four North teams render on games.html');
+  const chi=rows.find(r=>/Chicago Bears/.test(r.textContent));
+  assert.ok(chi.querySelector('.stnd-bear'),'the Bears row carries the bear chip there too');
+  assert.ok(rows[0].querySelector('.stnd-crown'),'the division leader carries the crown there too');
+  assert.ok(rows[0].querySelector('.stnd-strk'),'streaks render as pills');
+  assert.deepEqual(g.errors,[]);
+ }finally{g.close();}
+});
