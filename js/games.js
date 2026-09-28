@@ -132,7 +132,10 @@
       lastPastGame = past.find((g) => g.completed) || null;
       body.innerHTML = [
         ...upcoming.map(logRow),
-        ...(upcoming.length && past.length ? '<tr><td colspan="7" style="border:none;height:6px;background:rgba(200,56,3,.12)"></td></tr>' : ""),
+        // v1.76.0 — the split between upcoming and completed games is labeled,
+        // not a bare orange bar: a ruled divider carrying a fan-facing tag in
+        // the site's micro-label typography (Oswald, tracked-out uppercase).
+        ...(upcoming.length && past.length ? '<tr class="log-divider"><td colspan="7" style="border:none;padding:16px 8px 10px"><div style="display:flex;align-items:center;gap:14px" aria-hidden="true"><span style="flex:1;height:2px;min-width:24px;background:linear-gradient(90deg,transparent,var(--orange-glow));border-radius:2px"></span><span style="font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap">Completed &middot; the season so far</span><span style="flex:1;height:2px;min-width:24px;background:linear-gradient(90deg,var(--orange-glow),transparent);border-radius:2px"></span></div></td></tr>' : ""),
         ...past.map(logRow),
       ].join("");
     } catch (e) {

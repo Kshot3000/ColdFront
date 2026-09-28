@@ -32,6 +32,25 @@ test('Bears adapters preserve zero, home/away, completed status, headlines, and 
  }finally{p.close();}
 });
 
+test('v1.76.0: season-log split between upcoming and completed games is labeled',async()=>{
+ // The season log printed upcoming games, then a bare 6px orange-tinted bar,
+ // then completed games — the bar explained nothing to a first-time visitor.
+ // The split is now a ruled divider carrying a fan-facing tag in the site's
+ // micro-label typography (Oswald, tracked-out uppercase), naming the rows
+ // below as the season so far. Inline styles only; no stylesheet change, so
+ // no CSS cache-bust is needed.
+ const p=await page('games');try{const w=p.w;
+  await settle(300);
+  const body=w.document.querySelector('#log-table tbody');
+  assert.ok(body&&body.children.length>2,'the season log renders with upcoming and completed rows');
+  const div=w.document.querySelector('#log-table .log-divider');
+  assert.ok(div,'the season log carries a labeled divider between upcoming and completed games');
+  assert.match(div.textContent,/Completed/i,'the divider names the completed section: '+div.textContent);
+  assert.match(div.textContent,/the season so far/i,'the divider explains what the rows below are: '+div.textContent);
+  assert.ok(!/height:6px/.test(body.innerHTML),'the bare unlabeled bar is gone');
+ }finally{p.close();}
+});
+
 test('snow is on in warm September weather, pauses persistently, and responds to reduced-motion changes',async()=>{
  const p=await page('index',{mobile:true});try{
   const b=p.w.document.querySelector('.snow-toggle');b.click();
@@ -1197,7 +1216,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.74.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.76.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
