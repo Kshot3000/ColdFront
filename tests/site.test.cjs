@@ -1244,3 +1244,36 @@ test('last-game box score leaders split into team blocks, Bears first, with acce
  assert.ok(sh.includes('css/experience.css?v=1.65.0'),'stats.html busts the experience.css cache');
  assert.ok(sh.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
+
+test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',async()=>{
+ const p=await page('index');try{const w=p.w;
+  // Page load pushed a live-path slot whose <ins> will never fill in jsdom.
+  assert.ok(w.document.querySelectorAll('[data-ad-slot]').length>=1,'a live slot exists after page load');
+  w.CF.collapseUnfilledAds();
+  assert.equal(w.document.querySelectorAll('[data-ad-slot]').length,0,'an unfilled slot is removed from the DOM');
+  // A slot AdSense filled (status + rendered iframe) survives the check untouched.
+  const host=w.document.createElement('div');
+  host.className='ad-slot';host.setAttribute('data-ad-slot','homeLeaderboard');
+  const ins=w.document.createElement('ins');ins.className='adsbygoogle';
+  ins.setAttribute('data-ad-status','filled');
+  const frame=w.document.createElement('iframe');ins.appendChild(frame);
+  host.appendChild(ins);w.document.body.appendChild(host);
+  w.CF.collapseUnfilledAds();
+  assert.ok(w.document.body.contains(host),'a filled slot survives the unfilled check');
+  assert.ok(w.document.querySelector('ins.adsbygoogle iframe'),'the served ad iframe is never touched');
+  // A slot AdSense explicitly marked unfilled is removed too.
+  const host2=w.document.createElement('div');
+  host2.className='ad-slot';host2.setAttribute('data-ad-slot','oddsInline');
+  const ins2=w.document.createElement('ins');ins2.className='adsbygoogle';
+  ins2.setAttribute('data-ad-status','unfilled');host2.appendChild(ins2);
+  w.document.body.appendChild(host2);
+  w.CF.collapseUnfilledAds();w.CF.collapseUnfilledAds(); // idempotent
+  assert.equal(w.document.querySelectorAll('[data-ad-slot="oddsInline"]').length,0,'an unfilled-marked slot is removed and the check is idempotent');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ // Every page busts the common.js cache at the new key.
+ for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
+  const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
+  assert.ok(html.includes('js/common.js?v=1.66.0'),f+'.html busts the common.js cache');
+ }
+});

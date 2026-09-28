@@ -1346,6 +1346,28 @@ CF.initAds = () => {
     el.appendChild(ins);
     try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* ad-blocked or offline — slot stays quiet */ }
   });
+  // v1.66.0 — while the site awaits AdSense approval, no ad fills and an
+  // unfilled slot reserves a tall empty band between sections; collapse
+  // whatever never fills so the page flows cleanly.
+  [6000, 15000].forEach((ms) => {
+    const t = setTimeout(() => CF.collapseUnfilledAds(), ms);
+    if (t && typeof t.unref === "function") t.unref();
+  });
+};
+
+/* ---------- v1.66.0 — unfilled ad slots self-collapse ----------
+   Removes every [data-ad-slot] whose <ins> was never marked filled by
+   AdSense (no rendered iframe and data-ad-status !== "filled"). Slots that
+   fill stay untouched, and a served ad is never modified — collapsing an
+   empty container is not ad manipulation. Idempotent: safe to call more
+   than once, and skips elements already detached. */
+CF.collapseUnfilledAds = () => {
+  CF.$$("[data-ad-slot]").forEach((el) => {
+    if (!el.isConnected) return;
+    const ins = el.querySelector("ins.adsbygoogle");
+    const filled = ins && (ins.getAttribute("data-ad-status") === "filled" || ins.querySelector("iframe"));
+    if (!filled) el.remove();
+  });
 };
 
 /* ---------- v1.55.0 — prediction-market referral slots ----------
