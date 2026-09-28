@@ -65,7 +65,7 @@
       "</td>" +
       "<td>" + CF.esc(row.pos || "—") + "</td>" +
       "<td" + (full ? ' title="' + CF.esc(full) + '"' : "") + ">" + CF.esc(designation) + "</td>" +
-      '<td><span class="st ' + sev + '">' + CF.esc(row.status || "—") + "</span></td>" +
+      '<td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status) || "—") + "</span></td>" +
       '<td class="dim">' + CF.esc(eta || (row.date ? CF.fmtDate(row.date) : "")) + "</td></tr>";
   }
 
@@ -182,7 +182,7 @@
       const r = await CF.API.getLeagueInjuries();
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
-      rows.forEach((row) => parts.push(wireItem(row.name, row.comment, row.date, row.status, parts.length)));
+      rows.forEach((row) => parts.push(wireItem(row.name, row.comment, row.date, CF.injStatusLabel(row.status), parts.length)));
       (x.notes || []).forEach((n) => parts.push(wireItem(null, n, null, "league note", parts.length)));
     } catch (e) { /* league notes unavailable */ }
 

@@ -1063,6 +1063,32 @@ CF.injStatusCls = (s) => {
   return "active";
 };
 
+/* v1.71.0 — fan-English for the injury status pill. Feeds ship terse codes
+   ("ir", "pup", "nfi") that read as jargon on a fan page; map the known codes
+   to plain words and pass anything unknown through verbatim — never invent a
+   label for a status the map doesn't know. */
+CF.injStatusLabel = (s) => {
+  const x = (s || "").trim().toLowerCase();
+  const map = {
+    "ir": "Injured Reserve",
+    "pup": "PUP List",
+    "nfi": "NFI List",
+    "dtd": "Day-to-day",
+    "out": "Out",
+    "doubtful": "Doubtful",
+    "questionable": "Questionable",
+    "suspended": "Suspended",
+    "suspension": "Suspended",
+    "covid": "COVID-19",
+    "covid-19": "COVID-19",
+    "active": "Active",
+    "healthy": "Active",
+  };
+  if (map[x]) return map[x];
+  if (x === "physically unable to perform") return "PUP List";
+  return s;
+};
+
 /* ---- Injury movement vs prior snapshot ----
    Fan signal: who is NEW on the report, who got UPGRADED (worse), who was
    REMOVED (cleared). Prior = localStorage trail, else the baked nightly

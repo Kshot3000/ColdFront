@@ -892,7 +892,7 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
  assert.match(css,/\.city-tile:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible focus ring');
  assert.match(css,/\.city-tile:hover \.city-tile-label strong,\s*\.city-tile:focus-within \.city-tile-label strong\s*\{\s*color:\s*var\(--orange-hot\)/s,'the call to action warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
- for(const [f,v] of [['index.html','1.68.0'],['about.html','1.68.0']]){
+ for(const [f,v] of [['index.html','1.71.0'],['about.html','1.71.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes('css/main.css?v='+v),f+' busts the stylesheet cache at v'+v);
  }
@@ -975,7 +975,7 @@ test('whiteout 404 page carries the family treatment: identity thread, frost num
  assert.match(css,/\.whiteout-card\s*\{[^}]*animation:\s*cfSnapIn/s,'the card enters with a frost-fade on first paint');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.whiteout-card,\s*\.whiteout-snow span\s*\{\s*animation:\s*none/s,'reduced motion snaps the whiteout animations');
  const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.68.0'),'404.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.71.0'),'404.html busts the stylesheet cache');
  assert.ok(html.includes('class="whiteout-card"'),'the 404 page uses the whiteout card markup');
  assert.ok(!html.includes('font-size:64px'),'inline snowflake styling is gone');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
@@ -991,7 +991,7 @@ test('playbook quick-cards get keyboard parity and a staggered entrance',()=>{
  assert.match(css,/\.grid\.quick a:nth-child\(9\)\s*\{\s*--qi:\s*8;\s*\}/s,'the stagger covers all nine playbook cards');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.quick a,\s*\.quick a::before,\s*\.quick a \.ico\s*\{\s*transition:\s*none/s,'reduced motion snaps the quick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.68.0'),'index.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.71.0'),'index.html busts the stylesheet cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1008,7 +1008,7 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
- assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
  assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
@@ -1077,7 +1077,7 @@ test('v1.60.0: odds-board cards join the family — identity thread, keyboard pa
  assert.match(css,/\.odds-card:hover \.book,\s*\.odds-card:focus-within \.book\s*\{[^}]*text-shadow:/s,'the book label warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.odds-card::before,\s*\.poly-card::before,\s*\.poly-price\s*\{\s*transition:\s*none/,'reduced motion snaps the odds-card transitions');
  const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
- assert.ok(odds.includes('css/main.css?v=1.68.0'),'odds.html busts the stylesheet cache');
+ assert.ok(odds.includes('css/main.css?v=1.71.0'),'odds.html busts the stylesheet cache');
  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1146,7 +1146,7 @@ test('v1.62.0: hero next-game card paints a frost skeleton before the schedule a
   assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
   assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
   assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
-  assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+  assert.ok(html.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
   assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
 });
@@ -1179,7 +1179,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  }finally{hp.close();}
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ih.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+ assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(gh.includes('js/games.js?v=1.63.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
@@ -1274,7 +1274,7 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
  // Every page busts the common.js cache at the new key.
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.66.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.71.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -1283,7 +1283,7 @@ test('v1.67.0: visitor copy stays fan-facing — no developer maintenance notes 
  assert.ok(!injuries.includes('data/injuries.json'),'injuries.html no longer names the repo file to visitors');
  assert.ok(!injuries.includes('update in 30 seconds'),'injuries.html hero no longer sounds like a build doc');
  assert.ok(injuries.includes('the official NFL pregame injury report is the source of truth'),'injuries.html keeps the honesty callout');
- assert.ok(injuries.includes('js/injuries.js?v=1.68.0'),'injuries.html busts the injuries.js cache');
+ assert.ok(injuries.includes('js/injuries.js?v=1.71.0'),'injuries.html busts the injuries.js cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
  assert.ok(!practice.includes('data/practice.json'),'practice.html no longer names the repo file to visitors');
@@ -1307,12 +1307,12 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*-webkit-line-clamp:\s*3/s,'wire excerpts clamp to 3 lines');
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*overflow:\s*hidden/s,'wire excerpts hide the overflow');
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
- assert.ok(injuries.includes('js/injuries.js?v=1.68.0'),'injuries.html busts the injuries.js cache');
+ assert.ok(injuries.includes('js/injuries.js?v=1.71.0'),'injuries.html busts the injuries.js cache');
  assert.ok(injuries.includes('js/api.js?v=1.68.0'),'injuries.html busts the api.js cache');
- assert.ok(injuries.includes('css/main.css?v=1.68.0'),'injuries.html busts the main.css cache');
+ assert.ok(injuries.includes('css/main.css?v=1.71.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+ assert.ok(index.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(index.includes('js/api.js?v=1.68.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.'}]}]};
@@ -1355,7 +1355,7 @@ test('v1.69.0: sunday-desk status pill and footnote speak plain fan-facing words
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  const js=fs.readFileSync(path.join(__dirname,'..','js/home.js'),'utf8');
  assert.ok(!js.includes('"live sched"') && !js.includes('"poly"') && !js.includes('"home wx"'),'the shorthand bits are gone from home.js');
@@ -1382,4 +1382,37 @@ test('v1.70.0: 404 base resolves per host — the custom domain no longer 404s i
  }
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact on the 404 page');
  assert.ok(html.includes('@kshot9000'),'footer credit is intact on the 404 page');
+});
+
+test('v1.71.0: injury status pills speak fan English — cryptic feed codes become plain words',async()=>{
+ // Feeds ship terse codes ("ir", "pup", "nfi") that read as jargon on a fan
+ // page; the shared label map translates the known codes and passes anything
+ // unknown through verbatim — it must never invent a label. The severity
+ // class mapping is untouched: "ir" still scores the hot "out" treatment.
+ const p=await page('injuries');try{
+  const L=p.w.CF.injStatusLabel;
+  assert.equal(L('ir'),'Injured Reserve');
+  assert.equal(L('IR'),'Injured Reserve');
+  assert.equal(L('pup'),'PUP List');
+  assert.equal(L('nfi'),'NFI List');
+  assert.equal(L('Out'),'Out');
+  assert.equal(L('doubtful'),'Doubtful');
+  assert.equal(L('questionable'),'Questionable');
+  assert.equal(L('Suspended'),'Suspended');
+  assert.equal(L('Out for season'),'Out for season','unknown phrasing passes through verbatim');
+  assert.equal(L('Achilles'),'Achilles','an unknown status is never relabeled');
+  assert.equal(p.w.CF.injStatusCls('ir'),'out','severity still treats IR as out');
+  const css=fs.readFileSync(path.join(__dirname,'..','css/main.css'),'utf8');
+  assert.ok(/\.st\s*\{[^}]*white-space:\s*nowrap/.test(css),'.st pills never wrap mid-label');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const injuries=fs.readFileSync(path.join(__dirname,'..','js/injuries.js'),'utf8');
+ assert.ok(injuries.includes('CF.injStatusLabel(row.status)'),'the report table prints the fan-English label');
+ const home=fs.readFileSync(path.join(__dirname,'..','js/home.js'),'utf8');
+ assert.ok(home.includes('CF.injStatusLabel(row.status)'),'the homepage injury table prints the fan-English label');
+ const ih=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
+ assert.ok(ih.includes('js/injuries.js?v=1.71.0'),'injuries.html busts the injuries.js cache');
+ const xh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(xh.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
+ assert.ok(xh.includes('data-cf-copy="btc"'),'footer tip chip is intact on the homepage');
 });
