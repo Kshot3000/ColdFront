@@ -1197,7 +1197,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.63.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.74.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
@@ -1451,5 +1451,29 @@ test('photo-band copy stays fan-facing — photo credits live on the about page,
  // The about page keeps the real attribution — this run removed nothing from it.
  const p=await page('about');try{
   assert.ok(/photo credits/i.test(p.w.document.querySelector('main').textContent),'about page still carries the full photo credits');
+ }finally{p.close();}
+});
+
+test('v1.74.0: sunday-desk matchup line names the stadium once — no duplicated venue',async()=>{
+ // The games.html Sunday Desk matchup line built the site token as
+ // "Home · Soldier Field" and then appended g.venue again, printing
+ // "Home · Soldier Field · Soldier Field" on the marquee card (seen live
+ // on game day, Bears vs Eagles). The venue token now comes only from
+ // g.venue, with "Soldier Field" as the home fallback. A home fixture with
+ // the live venue + a TV network reproduces the exact shape.
+ const homeEv=event('201','CHI','PHI');
+ const p=await page('games',{fetch:async u=>{
+  if(u.pathname.includes('/teams/chicago/schedule')){
+   const body=JSON.stringify({season:{displayName:'2026',type:2},events:[homeEv]});
+   return {ok:true,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+ }});
+ try{
+  const meta=p.w.document.querySelector('#next-opp-meta');
+  assert.ok(meta,'the sunday-desk meta line renders');
+  const hits=(meta.textContent.match(/Soldier Field/g)||[]).length;
+  assert.equal(hits,1,'the venue appears exactly once in the detail line: '+meta.textContent);
+  assert.match(meta.textContent,/Home · Soldier Field · TV/,'home games read Home, venue, then the TV line');
+  assert.ok(!/Soldier Field · Soldier Field/.test(meta.textContent),'the duplicated stadium is gone');
  }finally{p.close();}
 });

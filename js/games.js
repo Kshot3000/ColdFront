@@ -454,7 +454,9 @@
       if (CF.clearKickoffBanner) CF.clearKickoffBanner();
       return;
     }
-    const site = g.home ? "Home · Soldier Field" : "Away";
+    // v1.74.0 — the venue token comes from g.venue below, so the site token must
+    // not hardcode it too (that printed "Home · Soldier Field · Soldier Field").
+    const site = g.home ? "Home" : "Away";
     if (pill) {
       pill.className = "pill ok";
       pill.textContent = g.home ? "home" : "away";
@@ -476,7 +478,7 @@
     meta.innerHTML =
       "<b>" + CF.fmtDate(g.date) + "</b> · " + (CF.fmtTime(g.date) || "TBD") +
       " · " + CF.esc(site) +
-      (g.venue ? " · " + CF.esc(g.venue) : "") +
+      (g.venue ? " · " + CF.esc(g.venue) : (g.home ? " · Soldier Field" : "")) +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
     chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
     if (schedData) await paintMatchupPreview(schedData, g);
