@@ -1008,7 +1008,7 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
- assert.ok(html.includes('js/home.js?v=1.68.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
  assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
@@ -1146,7 +1146,7 @@ test('v1.62.0: hero next-game card paints a frost skeleton before the schedule a
   assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
   assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
   assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
-  assert.ok(html.includes('js/home.js?v=1.68.0'),'index.html busts the home.js cache');
+  assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
   assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
 });
@@ -1179,7 +1179,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  }finally{hp.close();}
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ih.includes('js/home.js?v=1.68.0'),'index.html busts the home.js cache');
+ assert.ok(ih.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
  assert.ok(gh.includes('js/games.js?v=1.63.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
@@ -1312,7 +1312,7 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.ok(injuries.includes('css/main.css?v=1.68.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('js/home.js?v=1.68.0'),'index.html busts the home.js cache');
+ assert.ok(index.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
  assert.ok(index.includes('js/api.js?v=1.68.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.'}]}]};
@@ -1332,4 +1332,31 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
   assert.ok(excerpt.textContent.includes('lingered for weeks'),'the full prose stays in the DOM for screen readers');
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
+});
+
+test('v1.69.0: sunday-desk status pill and footnote speak plain fan-facing words',async()=>{
+ // The pill names the live sources feeding the desk in plain words — never the
+ // developer shorthand ("live sched", "poly", "home wx") — and the footnote is
+ // pure provenance: the section header already carries the "Full desk →" link,
+ // so the old duplicate "Games Sunday desk →" link read as leftover scaffolding.
+ const p=await page('index');try{
+  const d=p.w.document;
+  const pill=d.querySelector('#sunday-desk-pill');
+  assert.ok(pill,'the sunday-desk pill exists');
+  assert.ok(/Live schedule/.test(pill.textContent),'the pill says Live schedule, not "live sched"');
+  assert.ok(!/poly|wx|live sched|snapshot/.test(pill.textContent),'no developer shorthand in the pill');
+  const desk=d.querySelector('#sunday-desk');
+  assert.ok(desk,'the sunday desk paints');
+  const note=desk.querySelector('.src-note');
+  assert.ok(note,'the provenance footnote exists');
+  assert.match(note.textContent,/season log/i,'the footnote credits the season log');
+  assert.ok(!note.querySelector('a[href="games.html#next-opp"]'),'the footnote no longer duplicates the header Full desk link');
+  assert.ok(!/Games Sunday desk/.test(desk.textContent),'the scaffolding copy is gone from the desk');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(html.includes('js/home.js?v=1.69.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+ const js=fs.readFileSync(path.join(__dirname,'..','js/home.js'),'utf8');
+ assert.ok(!js.includes('"live sched"') && !js.includes('"poly"') && !js.includes('"home wx"'),'the shorthand bits are gone from home.js');
 });

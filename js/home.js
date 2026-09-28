@@ -380,12 +380,14 @@
       }
     } catch (e2) { /* quiet */ }
 
+    // v1.69.0 — fan-facing status copy: the pill names the live sources feeding
+    // the desk in plain words, not developer shorthand.
     if (pill) {
       const bits = [];
-      bits.push(src === "live" ? "live sched" : "snapshot");
-      if (lineOk) bits.push("wire");
-      if (polyOk) bits.push("poly");
-      if (g.home) bits.push("home wx");
+      bits.push(src === "live" ? "Live schedule" : "Schedule snapshot");
+      if (lineOk) bits.push("Wire line");
+      if (polyOk) bits.push("Polymarket");
+      if (g.home) bits.push("Game-day weather");
       pill.textContent = bits.join(" · ");
       pill.className = "tag";
     }
@@ -426,7 +428,10 @@
             : "") +
           "</div>"
         : '<div class="desk-markets"><div class="dim" style="font-size:13px">No wire line or Bears market right now · <a href="odds.html">Odds →</a></div></div>') +
-      '<p class="src-note" style="margin-top:12px;margin-bottom:0"><a href="games.html#next-opp">Games Sunday desk →</a> · rest &amp; meetings from the season log</p>';
+      // v1.69.0 — footnote is pure provenance now: the section header already
+      // carries the "Full desk →" link, so the old "Games Sunday desk →"
+      // duplicate read like leftover developer scaffolding.
+      '<p class="src-note" style="margin-top:12px;margin-bottom:0">Rest &amp; recent meetings come from the season log.</p>';
   }
 
   /* ---------- odds / Polymarket pulse (compact, near week clock) ---------- */
