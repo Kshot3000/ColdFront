@@ -1433,3 +1433,23 @@ test('v1.71.0: injury status pills speak fan English — cryptic feed codes beco
  assert.ok(xh.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(xh.includes('data-cf-copy="btc"'),'footer tip chip is intact on the homepage');
 });
+
+test('photo-band copy stays fan-facing — photo credits live on the about page, not in the bands',async()=>{
+ // v1.67.0 swept maintenance notes off injuries/practice but missed the photo
+ // bands: games/news/stats ended their fan-facing band copy with internal
+ // photo-credit and trademark-disclaimer language ("Unsplash photography;
+ // Cold Front marks only", "Never league logos"). The credits are fully
+ // attributed on about.html + img/ATTRIBUTION.txt, so the bands speak fan.
+ const credit=/unsplash|wikimedia|marks only|original cold front art|never league logos/i;
+ for(const name of ['games','news','stats','about','highlights','injuries','odds','team']){
+  const p=await page(name);try{
+   const bands=p.w.document.querySelectorAll('.photo-band-copy p');
+   assert.ok(bands.length>0,name+' has photo-band copy');
+   for(const band of bands) assert.ok(!credit.test(band.textContent),name+' band copy is fan-facing: '+band.textContent);
+  }finally{p.close();}
+ }
+ // The about page keeps the real attribution — this run removed nothing from it.
+ const p=await page('about');try{
+  assert.ok(/photo credits/i.test(p.w.document.querySelector('main').textContent),'about page still carries the full photo credits');
+ }finally{p.close();}
+});
