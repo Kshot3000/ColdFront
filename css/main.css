@@ -1257,6 +1257,52 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 }
 
 /* ============================================================
+   v1.82.0 — the playbook grid's closing card stops orphaning.
+   The nine tiles sat in a 4-column grid, so "Behind the front"
+   always landed alone on the last row at every breakpoint. That
+   card is also thematically the odd one out (the builder and the
+   tip jar, not a content section), so it now spans the full row
+   as a wide feature banner: icon and title left, the mission
+   line stretched across the middle, an orange lead-in arrow at
+   the right edge that nudges on hover. Horizontal flex keeps the
+   family card styling, hover lift, and focus ring intact; the
+   stagger entrance and reduced-motion rules below cover it.
+   ============================================================ */
+.grid.quick a.wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 18px;
+  min-height: 0;
+  padding: 22px 26px;
+  background:
+    linear-gradient(115deg, rgba(232, 84, 30, 0.10) 0%, rgba(232, 84, 30, 0.02) 48%, transparent 72%),
+    linear-gradient(160deg, rgba(255,255,255,0.045) 0%, transparent 45%),
+    var(--glass);
+}
+.grid.quick a.wide .desc {
+  flex: 1 1 auto;
+  font-size: 13px;
+}
+.grid.quick a.wide::after {
+  content: "→";
+  font-family: var(--body);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--orange-hot);
+  text-shadow: 0 0 14px rgba(232, 84, 30, 0.5);
+  transition: transform 0.22s var(--ease-out);
+}
+.grid.quick a.wide:hover::after,
+.grid.quick a.wide:focus-within::after {
+  transform: translateX(7px);
+}
+@media (max-width: 560px) {
+  .grid.quick a.wide { gap: 14px; padding: 18px; }
+  .grid.quick a.wide::after { font-size: 18px; }
+}
+
+/* ============================================================
    v1.54.0 — fan playbook quick-card keyboard parity + entrance.
    The nine playbook tiles on the homepage were the last cards
    without :focus-within parity: their hover lift, thread
@@ -1290,6 +1336,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   .quick a::before,
   .quick a .ico { transition: none; }
   .grid.quick a { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grid.quick a.wide::after { transition: none; }
 }
 
 /* ---------- Odds ---------- */

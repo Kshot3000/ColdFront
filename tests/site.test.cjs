@@ -911,7 +911,7 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
  assert.match(css,/\.city-tile:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible focus ring');
  assert.match(css,/\.city-tile:hover \.city-tile-label strong,\s*\.city-tile:focus-within \.city-tile-label strong\s*\{\s*color:\s*var\(--orange-hot\)/s,'the call to action warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
- for(const [f,v] of [['index.html','1.78.0'],['about.html','1.78.0']]){
+ for(const [f,v] of [['index.html','1.82.0'],['about.html','1.82.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes('css/main.css?v='+v),f+' busts the stylesheet cache at v'+v);
  }
@@ -994,7 +994,7 @@ test('whiteout 404 page carries the family treatment: identity thread, frost num
  assert.match(css,/\.whiteout-card\s*\{[^}]*animation:\s*cfSnapIn/s,'the card enters with a frost-fade on first paint');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.whiteout-card,\s*\.whiteout-snow span\s*\{\s*animation:\s*none/s,'reduced motion snaps the whiteout animations');
  const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.78.0'),'404.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.82.0'),'404.html busts the stylesheet cache');
  assert.ok(html.includes('class="whiteout-card"'),'the 404 page uses the whiteout card markup');
  assert.ok(!html.includes('font-size:64px'),'inline snowflake styling is gone');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
@@ -1010,7 +1010,7 @@ test('playbook quick-cards get keyboard parity and a staggered entrance',()=>{
  assert.match(css,/\.grid\.quick a:nth-child\(9\)\s*\{\s*--qi:\s*8;\s*\}/s,'the stagger covers all nine playbook cards');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.quick a,\s*\.quick a::before,\s*\.quick a \.ico\s*\{\s*transition:\s*none/s,'reduced motion snaps the quick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.78.0'),'index.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.82.0'),'index.html busts the stylesheet cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1096,7 +1096,7 @@ test('v1.60.0: odds-board cards join the family — identity thread, keyboard pa
  assert.match(css,/\.odds-card:hover \.book,\s*\.odds-card:focus-within \.book\s*\{[^}]*text-shadow:/s,'the book label warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.odds-card::before,\s*\.poly-card::before,\s*\.poly-price\s*\{\s*transition:\s*none/,'reduced motion snaps the odds-card transitions');
  const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
- assert.ok(odds.includes('css/main.css?v=1.78.0'),'odds.html busts the stylesheet cache');
+ assert.ok(odds.includes('css/main.css?v=1.82.0'),'odds.html busts the stylesheet cache');
  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1345,7 +1345,7 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.71.0'),'injuries.html busts the injuries.js cache');
  assert.ok(injuries.includes('js/api.js?v=1.72.0'),'injuries.html busts the api.js cache');
- assert.ok(injuries.includes('css/main.css?v=1.78.0'),'injuries.html busts the main.css cache');
+ assert.ok(injuries.includes('css/main.css?v=1.82.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
@@ -1567,7 +1567,7 @@ test('v1.78.0: section dividers read as field markings, not loading bars',async(
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.78.0'),name+'.html carries the v1.78.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.82.0'),name+'.html carries the v1.82.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.7[0-7]/.test(html),name+'.html has no stale main.css key');
  }
 });
@@ -1660,4 +1660,35 @@ test('v1.81.0: Bears identity chip rides the Bears row — no overlap with the v
   assert.ok(html.includes('css/experience.css?v=1.81.0'),name+'.html carries the v1.81.0 experience.css cache key');
   assert.ok(!/experience\.css\?v=1\.80\.0/.test(html),name+'.html has no stale experience.css key');
  }
+});
+
+test('v1.82.0: the playbook grid\'s closing card spans the row — no orphan tile',async()=>{
+ // Fresh-eyes review (2026-09-28): the nine "Your fan playbook" tiles sat in
+ // a 4-column grid, so "Behind the front" always landed alone on the last row
+ // at every breakpoint — one orphan tile under a tidy 2x4 block. That card is
+ // also thematically the odd one out (the builder and the tip jar, not a
+ // content section), so it now spans the full row as a wide feature banner.
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(html.includes('<a href="about.html" class="wide">'),'the about/builder card carries the wide class');
+ const css=fs.readFileSync(path.join(__dirname,'..','css','main.css'),'utf8');
+ const wide=css.match(/\.grid\.quick a\.wide\s*\{[^}]*\}/s);
+ assert.ok(wide,'the .grid.quick a.wide block exists');
+ assert.ok(/grid-column:\s*1\s*\/\s*-1/.test(wide[0]),'the wide card spans the full row (grid-column: 1 / -1)');
+ assert.ok(/flex-direction:\s*row/.test(wide[0]),'the wide card lays out horizontally');
+ assert.ok(/min-height:\s*0/.test(wide[0]),'the wide card drops the 145px tile min-height');
+ const arrow=css.match(/\.grid\.quick a\.wide::after\s*\{[^}]*\}/s);
+ assert.ok(arrow,'the wide card carries a lead-in arrow (::after)');
+ assert.ok(/transform:\s*translateX\(7px\)/.test(css),'the arrow nudges right on hover/focus');
+ // The stylesheet changed, so every page must carry the fresh cache key.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const p=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(p.includes('css/main.css?v=1.82.0'),name+'.html carries the v1.82.0 main.css cache key');
+  assert.ok(!/main\.css\?v=1\.78\.0/.test(p),name+'.html has no stale main.css key');
+ }
+ // Footer branding must survive the release.
+ const common=fs.readFileSync(path.join(__dirname,'..','js','common.js'),'utf8');
+ assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
+ assert.ok(html.includes('3GnR…8vZK'),'the truncated BTC display survives in index.html');
+ assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives');
 });
