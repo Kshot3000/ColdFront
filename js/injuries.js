@@ -130,7 +130,7 @@
       const data = await r.json();
       const rows = (data.rows || []).filter((row) => row.name && row.name !== "—");
       pill.textContent = "community report";
-      if (data.updated) note.textContent = "Last updated in the repo: " + data.updated + ".";
+      if (data.updated) note.textContent = "Community report updated: " + CF.esc(data.updated) + ".";
       body.innerHTML = rows.length
         ? rows.map((row) => reportRow(row, row.eta)).join("")
         : '<tr><td colspan="5" class="dim">No verified report is available. Check the official Bears injury report for current availability.</td></tr>';

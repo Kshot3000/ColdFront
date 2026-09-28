@@ -61,7 +61,7 @@
         day: d,
         label: "—",
         level: d === "Sun" ? 4 : d === "Sat" ? 0 : 2,
-        note: "Add participation[] or rows in data/practice.json",
+        note: "Awaiting confirmed updates",
       }));
     }
     return cells.map((c) => Object.assign({}, c, { isToday: String(c.day).slice(0, 3) === today }));
@@ -118,9 +118,9 @@
         })
         .join("") +
       "</div>" +
-      '<p class="heat-note dim">Week strip from <code>data/practice.json</code>' +
-      (fromPart ? " participation[]" : " rows (inferred intensity)") +
-      ". Edit and push to keep it honest — never invents who practiced.</p>";
+      '<p class="heat-note dim">The week strip follows the arc from facility to gameday' +
+      (fromPart ? " — built from confirmed participation data" : " — intensities estimated from announced sessions only") +
+      ".</p>";
   }
 
   let trkEntered = false; // first-paint entrance runs once; refreshes stay instant

@@ -1277,3 +1277,27 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
   assert.ok(html.includes('js/common.js?v=1.66.0'),f+'.html busts the common.js cache');
  }
 });
+
+test('v1.67.0: visitor copy stays fan-facing — no developer maintenance notes on injuries or practice',async()=>{
+ const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
+ assert.ok(!injuries.includes('data/injuries.json'),'injuries.html no longer names the repo file to visitors');
+ assert.ok(!injuries.includes('update in 30 seconds'),'injuries.html hero no longer sounds like a build doc');
+ assert.ok(injuries.includes('the official NFL pregame injury report is the source of truth'),'injuries.html keeps the honesty callout');
+ assert.ok(injuries.includes('js/injuries.js?v=1.67.0'),'injuries.html busts the injuries.js cache');
+ assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
+ const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
+ assert.ok(!practice.includes('data/practice.json'),'practice.html no longer names the repo file to visitors');
+ assert.ok(!practice.includes('make it yours'),'practice.html tracker note no longer sounds like a template doc');
+ assert.ok(practice.includes('js/practice.js?v=1.67.0'),'practice.html busts the practice.js cache');
+ assert.ok(practice.includes('data-cf-copy="btc"'),'footer tip chip is intact on practice.html');
+ // The practice heat renders the new fan-facing week-strip note when data exists.
+ const p=await page('practice',{fetch:async(u)=>u.pathname.endsWith('/practice.json')?{ok:true,json:async()=>({updated:'2026-09-26',note:'',rows:[{date:'Fri',session:'Full practice',focus:'Red zone',media:'Presser',notes:''}],participation:[]})}:undefined});
+ try{
+  const w=p.w;await settle(300);
+  const note=w.document.querySelector('#practice-heat .heat-note');
+  assert.ok(note,'the week strip carries a heat note');
+  assert.ok(!note.textContent.includes('practice.json'),'the heat note no longer names the repo file');
+  assert.ok(note.textContent.includes('facility to gameday'),'the heat note reads fan-facing');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
