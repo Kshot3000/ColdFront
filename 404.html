@@ -2,7 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <base href="/ColdFront/">
+  <script>
+  /* v1.70.0 — 404s are served from arbitrary path depths, so pin relative URLs
+     to the site root: /ColdFront/ on the github.io project URL, / on the custom
+     domain. The old hardcoded <base href="/ColdFront/"> 404'd every stylesheet,
+     script, and image on coldfronthq.com, leaving visitors a raw unstyled page.
+     Runs synchronously during parse, ahead of every relative asset below. */
+  (function () {
+    var base = document.createElement('base');
+    base.href = location.hostname === 'kshot3000.github.io' ? '/ColdFront/' : '/';
+    document.head.insertBefore(base, document.head.firstChild);
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta property="og:title" content="404 — Whiteout — THE COLD FRONT">
   <meta property="og:description" content="404 — Whiteout — THE COLD FRONT">

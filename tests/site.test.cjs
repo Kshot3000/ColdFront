@@ -1360,3 +1360,26 @@ test('v1.69.0: sunday-desk status pill and footnote speak plain fan-facing words
  const js=fs.readFileSync(path.join(__dirname,'..','js/home.js'),'utf8');
  assert.ok(!js.includes('"live sched"') && !js.includes('"poly"') && !js.includes('"home wx"'),'the shorthand bits are gone from home.js');
 });
+
+test('v1.70.0: 404 base resolves per host — the custom domain no longer 404s its own assets',async()=>{
+ // The old hardcoded <base href="/ColdFront/"> made every stylesheet, script,
+ // and image resolve under /ColdFront/*, which 404s on coldfronthq.com
+ // (verified live) — a bad URL served a raw unstyled page. The base is now
+ // chosen at parse time: /ColdFront/ on the github.io project URL, / elsewhere.
+ const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
+ const noScripts=html.replace(/<script[\s\S]*?<\/script>/g,'');
+ assert.ok(!/<base[^>]*>/.test(noScripts),'no static base tag remains to 404 assets on the custom domain');
+ const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+ const baseScript=scripts.find(s=>s.includes("createElement('base')"));
+ assert.ok(baseScript,'the parse-time base script exists in 404.html');
+ for(const [hostname,expected] of [['kshot3000.github.io','/ColdFront/'],['coldfronthq.com','/'],['localhost','/']]){
+  let inserted=null;const firstChild={};
+  const fakeDocument={head:{firstChild,insertBefore(el,ref){inserted={href:el.href,atFirst:ref===firstChild};}},createElement:()=>({})};
+  new Function('document','location',baseScript)(fakeDocument,{hostname});
+  assert.ok(inserted,'the script inserts a base element on '+hostname);
+  assert.equal(inserted.href,expected,'base resolves to '+expected+' on '+hostname);
+  assert.ok(inserted.atFirst,'the base lands ahead of every relative asset');
+ }
+ assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact on the 404 page');
+ assert.ok(html.includes('@kshot9000'),'footer credit is intact on the 404 page');
+});
