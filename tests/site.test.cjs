@@ -1105,6 +1105,23 @@ test('v1.60.1: RSS titles decode double-escaped entities before render',async()=
  }finally{p.close();}
 });
 
+test('v1.72.0: RSS titles decode stack-escaped entities to a fixpoint',async()=>{
+ const p=await page('news'); try{
+  // Three stacking levels: &amp;amp;quot; in the XML. One decode pass left
+  // "&quot;" in the string, which the render path re-escaped — headlines
+  // printed the literal text "&quot;" on the Wide Wire (seen live).
+  const xml='<rss><channel><item><title>Patrick Beverley on the season: &amp;amp;quot;What is going on, man?&amp;amp;quot;</title><link>https://example.com/story</link><pubDate>Sun, 27 Sep 2026 12:00:00 GMT</pubDate><description>He said &amp;quot;no comment&amp;quot; after the game</description><source url="https://example.com">Chi &amp;amp;amp; Times</source></item></channel></rss>';
+  const items=p.w.CF.API.parseRss(xml);
+  assert.equal(items.length,1,'one item parses');
+  assert.equal(items[0].title,'Patrick Beverley on the season: "What is going on, man?"','triple-escaped quotes decode to real quotes');
+  assert.equal(items[0].desc,'He said "no comment" after the game','descriptions decode stacked entities too');
+  assert.equal(items[0].source,'Chi & Times','source decodes stacked entities too');
+  const html=p.w.CF.esc(items[0].title);
+  assert.ok(!html.includes('&amp;quot;'),'rendered HTML carries no stacked entity');
+  assert.ok(html.includes('&quot;'),'quotes are safely escaped exactly once');
+ }finally{p.close();}
+});
+
 test('v1.61.0: crowd probability bars use the single-fill convention with a 50/50 tick',async()=>{
  const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
  assert.match(css,/\.poly-bar::after\s*\{[^}]*left:\s*50%/s,'the bar carries a 50/50 reference tick');
@@ -1308,12 +1325,12 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*overflow:\s*hidden/s,'wire excerpts hide the overflow');
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.71.0'),'injuries.html busts the injuries.js cache');
- assert.ok(injuries.includes('js/api.js?v=1.68.0'),'injuries.html busts the api.js cache');
+ assert.ok(injuries.includes('js/api.js?v=1.72.0'),'injuries.html busts the api.js cache');
  assert.ok(injuries.includes('css/main.css?v=1.71.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(index.includes('js/api.js?v=1.68.0'),'index.html busts the api.js cache');
+ assert.ok(index.includes('js/api.js?v=1.72.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.'}]}]};
  const resp={ok:true,text:async()=>JSON.stringify(payload),json:async()=>payload};

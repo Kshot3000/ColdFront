@@ -163,10 +163,24 @@ CF.API = {
     const doc = new DOMParser().parseFromString(xml, "text/xml");
     const items = Array.from(doc.querySelectorAll("item")).map((el) => {
       const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
-      // v1.60.1 — Google News double-escapes entities in titles (the XML
-      // carries &amp;quot;), which rendered as literal "&quot;" on cards.
-      // Decode once more so headlines show real quotes.
-      const unesc = (s) => s ? new DOMParser().parseFromString(s, "text/html").body.textContent : s;
+      // v1.72.0 — Google/Bing RSS (and the CORS proxies ferrying it) can stack
+      // entity-escaping: the XML may carry &amp;quot; (two levels) or
+      // &amp;amp;quot; (three levels) for the same quote. Decoding exactly
+      // once leaves "&quot;" in the string, which the render path then
+      // re-escapes, so headlines printed the literal text "&quot;" on the
+      // page (seen live on the Wide Wire). Decode to a fixpoint so any
+      // stacking level collapses to the real character. Bounded at 5 passes;
+      // textContent never adds entities, so this always terminates.
+      const unesc = (s) => {
+        if (!s) return s;
+        let cur = s;
+        for (let i = 0; i < 5; i++) {
+          const next = new DOMParser().parseFromString(cur, "text/html").body.textContent;
+          if (next === cur) return next;
+          cur = next;
+        }
+        return cur;
+      };
       // Bing wraps the source in a namespace: <News:Source>.
       const srcEl = el.getElementsByTagName("source")[0] || el.getElementsByTagNameNS("*", "Source")[0];
       let link = t("link") || null;
@@ -180,9 +194,9 @@ CF.API = {
       return {
         title: unesc(t("title")),
         link,
-        source: srcEl ? srcEl.textContent.trim() : null,
+        source: unesc(srcEl ? srcEl.textContent.trim() : null),
         date: t("pubDate"),
-        desc: new DOMParser().parseFromString(t("description") || "", "text/html").body.textContent || "",
+        desc: unesc(t("description") || "") || "",
       };
     }).filter((it) => it.title && it.link);
     return items;
