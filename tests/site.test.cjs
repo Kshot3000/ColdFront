@@ -1291,7 +1291,7 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
  // Every page busts the common.js cache at the new key.
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.71.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.75.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -1475,5 +1475,35 @@ test('v1.74.0: sunday-desk matchup line names the stadium once — no duplicated
   assert.equal(hits,1,'the venue appears exactly once in the detail line: '+meta.textContent);
   assert.match(meta.textContent,/Home · Soldier Field · TV/,'home games read Home, venue, then the TV line');
   assert.ok(!/Soldier Field · Soldier Field/.test(meta.textContent),'the duplicated stadium is gone');
+ }finally{p.close();}
+});
+
+test('v1.75.0: cfi spark pill labels the trend in plain fan words — no bare acronym knob',async()=>{
+ // The weather strip's CFI spark pill showed the trend sparkline beside the
+ // bare acronym "CFI", which first-time visitors read as an unexplained
+ // (even interactive) control — nothing in visible text said what it was.
+ // The pill's visible label now names the window in plain words
+ // ("next 7 days" for the forecast path, "recent readings" for history),
+ // with the full "Cold Front Index" name kept in the tooltip and on the
+ // dial beside it.
+ const p=await page('index');try{const w=p.w;
+  const days=[],tMax=[],wind=[],snow=[];
+  for(let i=0;i<7;i++){days.push('2026-09-2'+i);tMax.push(10+i%3);wind.push(8+i);snow.push(0);}
+  const wx={daily:{time:days,temperature_2m_max:tMax,wind_speed_10m_max:wind,snowfall_sum:snow},gauge:{score:12,cls:'mild',label:'mild'}};
+  const host=w.document.createElement('span');
+  w.CF.paintCfiSpark(wx,host);
+  assert.equal(host.hidden,false,'the pill renders when the forecast covers a week');
+  const label=host.querySelector('.cfi-spark-label');
+  assert.ok(label,'the pill carries a visible label');
+  assert.equal(label.textContent,'next 7 days','the pill label names the trend window in plain words: '+label.textContent);
+  assert.ok(!/\bCFI\b/.test(label.textContent),'the bare acronym is gone from the visible label');
+  assert.ok(host.title.includes('Cold Front Index'),'the tooltip still names the index: '+host.title);
+  // History path: no daily data, readings from a prior visit.
+  w.localStorage.setItem('cf.'+w.CF.cfiHistoryKey,JSON.stringify([{score:10,t:1},{score:14,t:2}]));
+  const host2=w.document.createElement('span');
+  w.CF.paintCfiSpark({daily:{time:[]},gauge:{score:12,cls:'mild',label:'mild'}},host2);
+  const label2=host2.querySelector('.cfi-spark-label');
+  assert.ok(label2,'the history pill carries a visible label');
+  assert.equal(label2.textContent,'recent readings','the history pill label speaks plain words: '+label2.textContent);
  }finally{p.close();}
 });

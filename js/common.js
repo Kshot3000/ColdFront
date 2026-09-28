@@ -904,9 +904,15 @@ CF.paintCfiSpark = (wx, root) => {
   const tip = forecast.length >= 2
     ? ("Cold Front Index · next " + forecast.length + " days at Soldier Field")
     : ("Cold Front Index · " + series.length + " recent readings");
+  /* v1.75.0 — the pill's visible label names what the squiggle is in plain
+     fan words ("next 7 days" / "recent readings"), not the bare "CFI" acronym,
+     which first-time visitors read as a cryptic slider knob with no
+     explanation. The full index name stays in the tooltip; the dial beside
+     the pill already names the index. */
+  const label = forecast.length >= 2 ? ("next " + forecast.length + " days") : "recent readings";
   host.title = tip;
   host.innerHTML = CF.cfiSparkSVG(series) +
-    '<span class="cfi-spark-label">CFI</span>';
+    '<span class="cfi-spark-label">' + CF.esc(label) + "</span>";
 };
 
 CF.loadWeather = async () => {
