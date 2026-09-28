@@ -844,7 +844,7 @@ test('donation cards get the family treatment: identity thread, keyboard copy, e
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.don-card\.cf-enter\s*\{\s*animation:\s*none/s,'reduced motion snaps the entrance');
  const p=await page('about');try{const d=p.w.document;
   const cards=[...d.querySelectorAll('#don-grid .don-card')];
-  assert.equal(cards.length,4,'all four donation cards render');
+  assert.equal(cards.length,3,'all three donation cards render');
   cards.forEach((c,i)=>{
    assert.ok(c.classList.contains('cf-enter'),'card '+i+' enters staggered');
    assert.equal(c.style.getPropertyValue('--ni'),String(i),'card '+i+' carries its stagger index');
@@ -855,7 +855,7 @@ test('donation cards get the family treatment: identity thread, keyboard copy, e
   });
   const text=d.querySelector('#don-grid').textContent;
   assert.ok(text.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip address is intact');
-  assert.ok(text.includes('prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d'),'the PRL donation address is intact');
+  assert.ok(!text.includes('prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d'),'the PRL donation address is gone per Kyle');
   assert.ok(!/NaN|undefined|\[object Object\]/.test(text));
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}

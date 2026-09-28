@@ -24,17 +24,8 @@ CF.CONFIG = {
     github: "https://github.com/Kshot3000",
   },
 
-  // Donation wallets (same addresses as EUTXO.DEX / NightDream + Pearl).
+  // Donation wallets (same addresses as EUTXO.DEX / NightDream).
   donations: [
-    {
-      chain: "PRL",
-      label: "Pearl (PRL)",
-      symbol: "◆",
-      color: "#E8541E",
-      address: "prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d",
-      // No public explorer URL wired yet — about.js only shows the
-      // Explorer button when `view` is present.
-    },
     {
       chain: "BTC",
       label: "Bitcoin (BTC)",
