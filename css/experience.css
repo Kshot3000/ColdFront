@@ -363,7 +363,16 @@ main:focus { outline: none; }
   .roster-grid { grid-template-columns: repeat(2,1fr); } .city-strip { grid-template-columns: 1fr; }
   .city-tile { min-height: 170px; } .section-head { gap: 10px; flex-wrap: wrap; } .section-head .rule { display: none; }
   .section-head .tag { display: none; } .wx-item + .wx-item { display: none; }
-  .snow-toggle { padding: 9px 12px; font-size: 11px; right: 12px; bottom: 12px; }
+  /* v1.79.0 — on phones the floating snow pill parked on readable content
+     (it covered the responsible-gambling helpline number on odds.html and the
+     matchup line on the NEXT UP card). The toggle now docks into the sticky
+     header beside the menu button: position:static pulls it out of the fixed
+     layer into the header flow, icon-only, with its state still announced via
+     aria-label/aria-pressed. Desktop keeps the floating pill untouched. */
+  .snow-toggle { position: static; margin-left: auto; width: 40px; height: 40px; min-height: 0; padding: 0; gap: 0; justify-content: center; border-radius: 12px; }
+  .snow-toggle .snow-ico { font-size: 18px; }
+  .snow-toggle .snow-label { display: none; }
+  .nav-toggle { margin-left: 0; }
 }
 @media (max-width:440px) {
   .wrap { width: 92%; } .match-card { padding: 21px; } .match-card .abbr { font-size: 41px; }

@@ -14,7 +14,17 @@ CF.initSnow = () => {
   control.type = "button";
   control.className = "snow-toggle";
   control.setAttribute("aria-controls", "snow");
-  document.body.appendChild(control);
+  // v1.79.0 — the toggle docks in the sticky header (left of the menu button),
+  // so on phones it can never park on readable content — the floating pill used
+  // to cover the responsible-gambling helpline number on odds.html and the
+  // matchup line on the NEXT UP card. Desktop keeps position:fixed via CSS, so
+  // the DOM location is irrelevant there; the header wrap is flex, so the
+  // mobile CSS simply sets position:static to pull it into the header flow.
+  const headBar = document.querySelector(".site-head .wrap");
+  const navToggle = headBar && headBar.querySelector(".nav-toggle");
+  if (navToggle) headBar.insertBefore(control, navToggle);
+  else if (headBar) headBar.appendChild(control);
+  else document.body.appendChild(control);
 
   function resize() {
     width = window.innerWidth;
@@ -67,7 +77,10 @@ CF.initSnow = () => {
     document.documentElement.classList.toggle("motion-paused", !active);
     control.setAttribute("aria-pressed", String(active));
     control.setAttribute("aria-label", active ? "Pause snowfall and background motion" : "Resume snowfall and background motion");
-    control.innerHTML = '<span aria-hidden="true">❄</span> ' + (active ? "Snow on" : "Snow paused");
+    // v1.79.0 — the label span lets the phone layout collapse the toggle to
+    // icon-only while assistive tech still gets the state from
+    // aria-label/aria-pressed on the button itself.
+    control.innerHTML = '<span class="snow-ico" aria-hidden="true">❄</span><span class="snow-label">' + (active ? "Snow on" : "Snow paused") + "</span>";
     control.disabled = reduced.matches;
     control.title = reduced.matches ? "Your device prefers reduced motion" : "Decorative snowfall · Chicago weather is shown above";
     if (active && !document.hidden) frame = requestAnimationFrame(draw);

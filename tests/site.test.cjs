@@ -1026,7 +1026,7 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/\.prediction-diff\.is-bears\s*\{[^}]*box-shadow/s,'the Bears differential glows');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
+ assert.ok(html.includes('css/experience.css?v=1.79.0'),'index.html busts the experience.css cache');
  assert.ok(html.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
@@ -1064,10 +1064,10 @@ test('v1.59.0: social tiles join the family — identity thread, icon warm-up, f
  assert.match(css,/\.social-grid a:focus-visible\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible family focus ring');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.social-grid a::before[\s\S]*transition:\s*none/,'reduced motion snaps the social-tile transitions');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
+ assert.ok(index.includes('css/experience.css?v=1.79.0'),'index.html busts the experience.css cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
- assert.ok(practice.includes('css/experience.css?v=1.59.0'),'practice.html busts the experience.css cache');
+ assert.ok(practice.includes('css/experience.css?v=1.79.0'),'practice.html busts the experience.css cache');
  assert.ok(practice.includes('data-cf-copy="btc"'),'footer tip chip is intact on practice.html');
 });
 
@@ -1158,7 +1158,7 @@ test('v1.61.0: crowd probability bars use the single-fill convention with a 50/5
   const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
   assert.ok(odds.includes('tick = the 50/50 line'),'the legend names the tick');
   assert.ok(!odds.includes('bar = crowd is'),'the old two-bar legend copy is gone');
-  assert.ok(odds.includes('css/experience.css?v=1.61.0'),'odds.html busts the stylesheet cache');
+  assert.ok(odds.includes('css/experience.css?v=1.79.0'),'odds.html busts the stylesheet cache');
   assert.ok(odds.includes('js/odds.js?v=1.61.0'),'odds.html busts the odds script cache');
   assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
@@ -1181,7 +1181,7 @@ test('v1.62.0: hero next-game card paints a frost skeleton before the schedule a
   assert.ok(html.includes('id="ng-skel-status"'),'the skeleton status announces the load in markup');
   assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
   assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
-  assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
+  assert.ok(html.includes('css/experience.css?v=1.79.0'),'index.html busts the experience.css cache');
   assert.ok(html.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
   assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
@@ -1277,7 +1277,7 @@ test('last-game box score leaders split into team blocks, Bears first, with acce
  }finally{q.close();}
  const sh=fs.readFileSync(path.join(__dirname,'..','stats.html'),'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.65.0'),'stats.html busts the stats.js cache');
- assert.ok(sh.includes('css/experience.css?v=1.65.0'),'stats.html busts the experience.css cache');
+ assert.ok(sh.includes('css/experience.css?v=1.79.0'),'stats.html busts the experience.css cache');
  assert.ok(sh.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1569,5 +1569,38 @@ test('v1.78.0: section dividers read as field markings, not loading bars',async(
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.78.0'),name+'.html carries the v1.78.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.7[0-7]/.test(html),name+'.html has no stale main.css key');
+ }
+});
+
+test('v1.79.0: snow toggle docks in the header on phones — never parks on content',async()=>{
+ // Fresh-eyes live QA (2026-09-28): the floating "Snow on" pill sat fixed at
+ // bottom-right on phones, covering the responsible-gambling helpline number
+ // on odds.html and the matchup line on the NEXT UP card. The toggle now docks
+ // into the sticky header (left of the menu button) on narrow screens, so it
+ // can never float over readable content. Desktop keeps the floating pill.
+ const css=fs.readFileSync(path.join(__dirname,'..','css','experience.css'),'utf8');
+ const mob=css.match(/@media \(max-width:760px\)\s*\{([\s\S]*?)\n\}\n@media \(max-width:440px\)/);
+ assert.ok(mob,'the 760px mobile block exists');
+ const block=mob[1];
+ assert.ok(/\.snow-toggle\s*\{[^}]*position:\s*static/s.test(block),'on phones the toggle leaves the fixed layer (position:static)');
+ assert.ok(/\.snow-toggle\s*\{[^}]*margin-left:\s*auto/s.test(block),'the docked toggle sits at the header\'s right, before the menu button');
+ assert.ok(/\.snow-toggle \.snow-label\s*\{\s*display:\s*none/s.test(block),'the text label hides on phones — icon-only, state stays in aria-label/aria-pressed');
+ assert.ok(!/\.snow-toggle\s*\{[^}]*position:\s*fixed/s.test(block),'no fixed positioning remains on the mobile toggle');
+ // Desktop pill untouched: the base rule (outside the media block) still floats.
+ const base=css.split('@media')[0];
+ assert.ok(/\.snow-toggle\s*\{[^}]*position:\s*fixed/s.test(base),'the desktop pill still floats bottom-right');
+ // snow.js inserts the control into the header bar, and the label is wrapped
+ // so the phone layout can collapse it to icon-only.
+ const snow=fs.readFileSync(path.join(__dirname,'..','js','snow.js'),'utf8');
+ assert.ok(/headBar\.insertBefore\(control, navToggle\)/.test(snow),'the toggle is inserted before the menu button in the header');
+ assert.ok(/class="snow-label"/.test(snow),'the toggle label is wrapped in a .snow-label span');
+ // Both changed assets are cache-busted on every page — a stale key would
+ // keep serving the old floating-pill CSS/JS to returning phones.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('css/experience.css?v=1.79.0'),name+'.html carries the v1.79.0 experience.css cache key');
+  assert.ok(html.includes('js/snow.js?v=1.79.0'),name+'.html carries the v1.79.0 snow.js cache key');
+  assert.ok(!/experience\.css\?v=1\.[0-6]|snow\.js\?v=1\.1[0-8]/.test(html),name+'.html has no stale experience/snow cache key');
  }
 });
