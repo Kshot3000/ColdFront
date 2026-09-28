@@ -1006,8 +1006,8 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/\.prediction-diff\.is-bears\s*\{[^}]*box-shadow/s,'the Bears differential glows');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/experience.css?v=1.59.0'),'index.html busts the experience.css cache');
- assert.ok(html.includes('js/home.js?v=1.58.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
+ assert.ok(html.includes('js/home.js?v=1.62.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
  assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
@@ -1044,7 +1044,7 @@ test('v1.59.0: social tiles join the family — identity thread, icon warm-up, f
  assert.match(css,/\.social-grid a:focus-visible\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible family focus ring');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.social-grid a::before[\s\S]*transition:\s*none/,'reduced motion snaps the social-tile transitions');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('css/experience.css?v=1.59.0'),'index.html busts the experience.css cache');
+ assert.ok(index.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
  assert.ok(practice.includes('css/experience.css?v=1.59.0'),'practice.html busts the experience.css cache');
@@ -1124,5 +1124,28 @@ test('v1.61.0: crowd probability bars use the single-fill convention with a 50/5
   assert.ok(odds.includes('css/experience.css?v=1.61.0'),'odds.html busts the stylesheet cache');
   assert.ok(odds.includes('js/odds.js?v=1.61.0'),'odds.html busts the odds script cache');
   assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+ }finally{p.close();}
+});
+
+test('v1.62.0: hero next-game card paints a frost skeleton before the schedule answers',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.match-card \.skel-match\s*\{[^}]*min-height:\s*49px/s,'the abbr skeleton matches the display-type height');
+ assert.match(css,/\.match-card \.countdown \.skel-unit\s*\{[^}]*flex:\s*1/s,'the countdown skeletons fill the unit row evenly');
+ const p=await page('index'); try{
+  const d=p.w.document;
+  // The mocked schedule answers, so the skeleton status must be gone and real content painted.
+  assert.equal(d.querySelector('#ng-skel-status'),null,'the skeleton status is removed on first paint');
+  assert.ok(!/Finding the next kickoff/.test(d.querySelector('#ng-title').textContent),'the placeholder title is gone');
+  assert.equal(d.querySelector('#ng-away-abbr').textContent,'CHI','the away abbr paints real data');
+  assert.equal(d.querySelector('#ng-home-abbr').textContent,'PHI','the home abbr paints real data');
+  assert.ok(!d.querySelector('#ng-pill').classList.contains('is-loading'),'the status pill stops shimmering once painted');
+  assert.ok(!/NaN|undefined|\[object Object\]/.test(d.querySelector('#next-game').textContent));
+  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+  assert.ok(html.includes('id="ng-skel-status"'),'the skeleton status announces the load in markup');
+  assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
+  assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
+  assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
+  assert.ok(html.includes('js/home.js?v=1.62.0'),'index.html busts the home.js cache');
+  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
 });

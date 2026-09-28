@@ -22,6 +22,9 @@
     /* v1.37.0 — reset the hero card's Bears identity and result state on each paint. */
     card.classList.remove("final", "bears-won");
     card.querySelectorAll(".side").forEach((s) => s.classList.remove("is-bears", "winner", "loser"));
+    /* v1.62.0 — the frost-skeleton first paint announces via #ng-skel-status;
+       remove it once the card paints real content (or the quiet state). */
+    CF.$("#ng-skel-status")?.remove();
     if (!game) {
       show("#ng-title", "Waiting for the next Bears matchup");
       show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");

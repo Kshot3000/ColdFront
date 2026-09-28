@@ -108,6 +108,17 @@ main:focus { outline: none; }
 .match-card .countdown b { font-size: 27px; }
 .match-card .countdown span { font-size: 9px; letter-spacing: .14em; }
 .match-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ffffff12; font-size: 12px; }
+/* v1.62.0 — hero match-card frost-skeleton first paint: shimmer blocks mirror
+   the title, team abbrs, venue, meta, and countdown units so the card reads as
+   "warming up" instead of mismatched bare text, and real data swaps in
+   block-for-block with no layout shift. Skeletons are aria-hidden in markup;
+   the sr-only #ng-skel-status announces the load and is removed on first
+   paint; reduced motion gets the global static frost wash (no shimmer). */
+.match-card h3 .skel { max-width: 430px; }
+.match-card .skel-match { width: 88px; min-height: 49px; margin: 0 auto; border-radius: 10px; }
+.match-card .mid .skel { margin-left: auto; margin-right: auto; max-width: 200px; }
+.match-card .game-meta .skel { flex: 0 1 auto; min-width: 62%; }
+.match-card .countdown .skel-unit { flex: 1; min-height: 62px; border-radius: var(--radius-sm); }
 .text-button { background: none; color: #bcdff5; border: 0; cursor: pointer; padding: 9px 0; font: inherit; }
 /* ---------- v1.58.0 — "Make your call" prediction glow-up ----------
    The score-prediction widget was the last plain form on the site. It becomes
