@@ -505,7 +505,7 @@
         chip.innerHTML =
           '<span class="opp-chip home" title="Soldier Field conditions">' +
           "❄ Chicago · <b>" + f(wx.tempC) + "°F</b> " + desc +
-          (wx.wind != null ? " · wind " + Math.round(wx.wind) + " km/h" : "") +
+          (wx.wind != null ? " · wind " + Math.round(wx.wind / 1.609344) + " mph" : "") +
           "</span>";
       } catch (e2) {
         chip.innerHTML = '<span class="opp-chip">❄ Chicago · weather unavailable</span>';

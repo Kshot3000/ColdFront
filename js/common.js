@@ -1204,7 +1204,7 @@ CF.kickoffWeatherHTML = async (isHome) => {
     }
     const f = Math.round(Number(wx.tempC) * 9 / 5 + 32);
     const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
-    const wind = wx.wind != null ? " · wind " + Math.round(wx.wind) + " mph" : "";
+    const wind = wx.wind != null ? " · wind " + Math.round(wx.wind / 1.609344) + " mph" : "";
     const gauge = wx.gauge ? (' · CFI <b>' + wx.gauge.score + "</b>") : "";
     return '<div class="kickoff-wx" title="Latest weather at Soldier Field; not a kickoff forecast">' +
       '<span class="k">Chicago now</span>' +

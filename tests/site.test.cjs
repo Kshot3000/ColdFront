@@ -1216,7 +1216,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.76.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.83.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
@@ -1310,7 +1310,7 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
  // Every page busts the common.js cache at the new key.
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.75.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.83.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -1691,4 +1691,57 @@ test('v1.82.0: the playbook grid\'s closing card spans the row — no orphan til
  assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
  assert.ok(html.includes('3GnR…8vZK'),'the truncated BTC display survives in index.html');
  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives');
+});
+
+test('v1.83.0: wind reads in mph everywhere — no km/h, no inflated kickoff number',async()=>{
+ // Fresh-eyes review (2026-09-28) spotted "wind 11 km/h" in the games.html
+ // Sunday-desk meta chip next to "wind 11 mph" in the kickoff weather line.
+ // Digging in found two defects sharing one cause: wx.wind arrives in km/h
+ // (Open-Meteo's wind_speed_10m). The weather strip converts to mph, but
+ // CF.kickoffWeatherHTML printed the raw km/h value under an "mph" label —
+ // overstating wind by 61% on every home game day (used on games.html's
+ // Sunday desk and index.html's next-opp card) — while the desk chip printed
+ // the right value in metric units, clashing with the strip. Both now convert
+ // inline (km/h / 1.609344), matching the strip's convention.
+ const common=fs.readFileSync(path.join(__dirname,'..','js','common.js'),'utf8');
+ assert.ok(/Math\.round\(wx\.wind \/ 1\.609344\) \+ " mph"/.test(common),'kickoffWeatherHTML converts km/h to mph');
+ const gamesJs=fs.readFileSync(path.join(__dirname,'..','js','games.js'),'utf8');
+ assert.ok(/Math\.round\(wx\.wind \/ 1\.609344\) \+ " mph"/.test(gamesJs),'the sunday-desk chip converts km/h to mph');
+ assert.ok(!/km\/h/.test(common),'no km/h display string remains in common.js');
+ assert.ok(!/km\/h/.test(gamesJs),'no km/h display string remains in games.js');
+ // Behavioral: the mocked Open-Meteo fixture reports wind_speed_10m:16, so a
+ // rendered home game day must read "wind 10 mph" (16/1.609344 = 9.94 -> 10),
+ // not "16 mph" and not "16 km/h", in both the desk chip and the kickoff line.
+ const homeEv=event('201','CHI','PHI');
+ const p=await page('games',{fetch:async u=>{
+  if(u.pathname.includes('/teams/chicago/schedule')){
+   const body=JSON.stringify({season:{displayName:'2026',type:2},events:[homeEv]});
+   return {ok:true,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+ }});
+ try{
+  const chip=p.w.document.querySelector('#next-opp-chip');
+  assert.ok(chip,'the sunday-desk weather chip renders');
+  assert.match(chip.textContent,/wind 10 mph/,'the chip reads the converted 10 mph: '+chip.textContent);
+  assert.ok(!/km\/h/.test(chip.textContent),'no metric wind in the chip');
+  const kw=p.w.document.querySelector('.kickoff-wx.in-desk');
+  assert.ok(kw,'the kickoff weather block renders in the desk');
+  assert.match(kw.textContent,/wind 10 mph/,'the kickoff line reads the converted 10 mph: '+kw.textContent);
+  assert.ok(!/km\/h/.test(kw.textContent),'no metric wind in the kickoff line');
+  assert.ok(!/wind 16 mph/.test(kw.textContent),'the old inflated number is gone');
+ }finally{p.close();}
+ // Both changed assets are cache-busted on every page they load on — a stale
+ // key would keep serving the inflated wind number to returning visitors.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('js/common.js?v=1.83.0'),name+'.html carries the v1.83.0 common.js cache key');
+  assert.ok(!/common\.js\?v=1\.(7[0-4]|([0-6][0-9]?))/.test(html),name+'.html has no stale common.js key');
+ }
+ const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
+ assert.ok(ghtml.includes('js/games.js?v=1.83.0'),'games.html carries the v1.83.0 games.js cache key');
+ assert.ok(!/games\.js\?v=1\.(7[0-5]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ // Footer branding must survive the release.
+ assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
+ assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
 });
