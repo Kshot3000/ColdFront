@@ -1320,6 +1320,8 @@ CF.initAds = () => {
   const ensureLib = () => {
     if (libLoaded) return;
     libLoaded = true;
+    // The AdSense library is already hardcoded in every page <head>; don't load it twice.
+    if (document.querySelector('script[src*="adsbygoogle.js"]')) return;
     const sc = document.createElement("script");
     sc.async = true;
     sc.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + encodeURIComponent(client);
