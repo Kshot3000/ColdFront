@@ -1526,3 +1526,22 @@ test('v1.75.0: cfi spark pill labels the trend in plain fan words — no bare ac
   assert.equal(label2.textContent,'recent readings','the history pill label speaks plain words: '+label2.textContent);
  }finally{p.close();}
 });
+
+test('v1.77.0: games sunday-desk footnote speaks plain fan-facing words',async()=>{
+ // The Sunday-desk src-note on games.html ended on developer shorthand —
+ // "wire / Polymarket when the feeds answer" — the same class of leak cleaned
+ // up on the home desk (v1.69.0) and the CFI pill (v1.75.0). It now names the
+ // provenance ("Rest & last meeting come from the season log") and the
+ // refresh behavior ("Lines and market prices refresh automatically") in
+ // words a fan reads at a glance. Inline HTML only: no JS/CSS changed, so no
+ // cache-bust bump is required.
+ const html=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
+ const note=html.match(/<p class="src-note"[^>]*>.*?<\/p>/s);
+ assert.ok(note,'the sunday-desk src-note exists on games.html');
+ const copy=note[0];
+ assert.ok(/Rest &amp; last meeting come from the season log/.test(copy),'the footnote credits the season log in fan words');
+ assert.ok(/Lines and market prices refresh automatically/.test(copy),'the refresh note reads fan-facing');
+ assert.ok(!/wire \/ Polymarket when the feeds answer/.test(copy),'the developer shorthand is gone');
+ assert.ok(!/when the feeds/.test(copy),'no "feeds" internals leak into the visible copy');
+ assert.ok(copy.includes('Season log ↓') && copy.includes('Odds →'),'the quick links survive the rewrite');
+});
