@@ -1007,7 +1007,7 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
- assert.ok(html.includes('js/home.js?v=1.62.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('js/home.js?v=1.63.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
  assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
@@ -1145,7 +1145,40 @@ test('v1.62.0: hero next-game card paints a frost skeleton before the schedule a
   assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
   assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
   assert.ok(html.includes('css/experience.css?v=1.62.0'),'index.html busts the experience.css cache');
-  assert.ok(html.includes('js/home.js?v=1.62.0'),'index.html busts the home.js cache');
+  assert.ok(html.includes('js/home.js?v=1.63.0'),'index.html busts the home.js cache');
   assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
+});
+
+test('v1.63.0: last-meeting stats stay honest when the season log has no meeting',async()=>{
+ // Fixture: next kickoff is @ PHI, and the season log holds no completed
+ // Bears-Eagles meeting, so both surfaces must say "Not met yet" scoped to
+ // the season log — never the all-time-looking "No prior".
+ const gp=await page('games');try{
+  const d=gp.w.document;
+  const preview=d.querySelector('#next-opp-preview');
+  assert.ok(preview && !preview.hidden,'the games matchup preview paints');
+  const stat=[...preview.querySelectorAll('.matchup-stat')].find(s=>s.querySelector('.k') && s.querySelector('.k').textContent==='Last meeting');
+  assert.ok(stat,'the last-meeting stat exists on games.html');
+  assert.equal(stat.querySelector('.v').textContent,'Not met yet','no false all-time claim on the value');
+  assert.match(stat.querySelector('.s').textContent,/no completed meeting vs PHI in the season log/i,'the sub scopes the claim to the season log');
+  assert.ok(!/No prior/.test(preview.textContent),'the misleading copy is gone from the preview');
+  assert.deepEqual(gp.errors,[]);
+ }finally{gp.close();}
+ const hp=await page('index');try{
+  const d=hp.w.document;
+  const desk=d.querySelector('#sunday-desk');
+  assert.ok(desk,'the homepage sunday desk paints');
+  const stat=[...desk.querySelectorAll('.matchup-stat')].find(s=>s.querySelector('.k') && s.querySelector('.k').textContent==='Last meeting');
+  assert.ok(stat,'the last-meeting stat exists on index.html');
+  assert.equal(stat.querySelector('.v').textContent,'Not met yet','no false all-time claim on the value');
+  assert.match(stat.querySelector('.s').textContent,/no meeting in the season log/i,'the sub scopes the claim to the season log');
+  assert.ok(!/No prior/.test(desk.textContent),'the misleading copy is gone from the desk');
+  assert.deepEqual(hp.errors,[]);
+ }finally{hp.close();}
+ const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
+ assert.ok(ih.includes('js/home.js?v=1.63.0'),'index.html busts the home.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.63.0'),'games.html busts the games.js cache');
+ assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });

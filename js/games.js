@@ -273,8 +273,8 @@
         (last.result ? " · " + CF.esc(last.result) : "") + "</div>";
     } else {
       lastHTML +=
-        '<div class="v">No prior</div>' +
-        '<div class="s">No completed meeting vs ' + CF.esc(g.oppAbbr || "this opponent") + " in the loaded log yet.</div>";
+        '<div class="v">Not met yet</div>' +
+        '<div class="s">No completed meeting vs ' + CF.esc(g.oppAbbr || "this opponent") + " in the season log yet.</div>";
     }
     lastHTML += "</div>";
 

@@ -318,8 +318,8 @@
         (rest.last.oppAbbr ? (" vs " + rest.last.oppAbbr) : "");
     }
 
-    let lastBit = "No prior";
-    let lastSub = "vs " + (g.oppAbbr || "OPP");
+    let lastBit = "Not met yet";
+    let lastSub = "vs " + (g.oppAbbr || "OPP") + " · no meeting in the season log";
     if (last) {
       const site = last.home ? "vs" : "@";
       const score = (last.scoreMe != null && last.scoreMe !== "" && last.scoreMe !== "–")
