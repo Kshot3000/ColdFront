@@ -1216,7 +1216,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.83.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.84.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
@@ -1739,9 +1739,62 @@ test('v1.83.0: wind reads in mph everywhere — no km/h, no inflated kickoff num
   assert.ok(!/common\.js\?v=1\.(7[0-4]|([0-6][0-9]?))/.test(html),name+'.html has no stale common.js key');
  }
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.83.0'),'games.html carries the v1.83.0 games.js cache key');
- assert.ok(!/games\.js\?v=1\.(7[0-5]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.84.0'),'games.html carries the v1.84.0 games.js cache key');
+ assert.ok(!/games\.js\?v=1\.(8[0-3]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
  // Footer branding must survive the release.
  assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
+ assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
+});
+
+test('v1.84.0: sunday-desk week pill reads "WK 3", never "WK Week 3"',async()=>{
+ // Fresh-eyes visual QA (2026-09-28) caught the Sunday Desk duel card's week
+ // pill reading "WK Week 3" live on games.html. Root cause: the ESPN adapter
+ // (js/api.js) yields e.week.text verbatim ("Week 3"), and paintDuel in
+ // js/games.js prefixed its own "WK " unconditionally — doubling the word.
+ // The pill now strips a leading "Week" before the prefix goes on, so it
+ // reads "WK 3" whether the feed says "Week 3" or "3". Non-week labels
+ // ("Wild Card") pass through untouched.
+ const games=fs.readFileSync(path.join(__dirname,'..','js','games.js'),'utf8');
+ assert.ok(/replace\(\/\^Week\\s\+\/i, ""\)/.test(games),'paintDuel strips a leading "Week" before the WK prefix');
+ assert.ok(!/duel-week.*WK ' \+ CF\.esc\(String\(g\.week\)\)/.test(games),'the old unconditional WK prefix is gone');
+ // Behavioral: a mocked schedule whose week.text is "Week 3" renders "WK 3".
+ const wk3={...event('201','PHI','CHI'),week:{text:'Week 3'}};
+ const p=await page('games',{fetch:async u=>{
+  if(u.pathname.includes('/teams/chicago/schedule')){
+   const body=JSON.stringify({season:{displayName:'2026',type:2},events:[wk3]});
+   return {ok:true,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+ }});
+ try{
+  await settle(300);
+  const pill=p.w.document.querySelector('#next-opp-duel .duel-week');
+  assert.ok(pill,'the sunday-desk duel card renders its week pill');
+  assert.equal(pill.textContent.trim(),'WK 3','the pill reads WK 3, not WK Week 3: '+pill.textContent);
+ }finally{p.close();}
+ // Bare-number week text ("4") still renders "WK 4" — no regression on the
+ // path that worked before.
+ const wk4={...event('202','PHI','CHI'),week:{text:'4'}};
+ const q=await page('games',{fetch:async u=>{
+  if(u.pathname.includes('/teams/chicago/schedule')){
+   const body=JSON.stringify({season:{displayName:'2026',type:2},events:[wk4]});
+   return {ok:true,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+ }});
+ try{
+  await settle(300);
+  const pill=q.w.document.querySelector('#next-opp-duel .duel-week');
+  assert.ok(pill,'the week pill renders for a bare-number week label');
+  assert.equal(pill.textContent.trim(),'WK 4','the pill reads WK 4: '+pill.textContent);
+ }finally{q.close();}
+ // Only games.html loads games.js, so only its key moves — but every page
+ // loads common.js and must not pick up a stale key. Footer branding survives.
+ const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
+ assert.ok(ghtml.includes('js/games.js?v=1.84.0'),'games.html carries the v1.84.0 games.js cache key');
+ assert.ok(!/games\\.js\\?v=1\\.(8[0-3]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('js/common.js?v=1.83.0'),name+'.html keeps the v1.83.0 common.js cache key');
+ }
  assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
 });

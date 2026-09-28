@@ -408,11 +408,14 @@
   }
 
   /* Sunday desk duel card — Bears side with the 🐻 identity chip, a vs/@
-     mid carrying the week number, and the opponent side. The frost-fade
-     entrance class lands on the first paint only. */
+     mid carrying the week number, and the opponent side. The pill reads
+     "WK N" (never "WK Week N"): the ESPN week text arrives as "Week 3",
+     so a leading "Week" is stripped before the WK prefix goes on. The
+     frost-fade entrance class lands on the first paint only. */
   function paintDuel(g) {
     const duel = CF.$("#next-opp-duel");
     if (!duel) return;
+    const wkLabel = String(g.week || "").replace(/^Week\s+/i, "");
     duel.innerHTML =
       '<div class="duel-side bears" style="--ni:0">' +
         '<span class="duel-abbr">CHI</span>' +
@@ -420,7 +423,7 @@
       "</div>" +
       '<div class="duel-mid">' +
         '<span class="duel-vs">' + (g.home ? "vs" : "@") + "</span>" +
-        (g.week ? '<span class="duel-week">WK ' + CF.esc(String(g.week)) + "</span>" : "") +
+        (wkLabel ? '<span class="duel-week">WK ' + CF.esc(wkLabel) + "</span>" : "") +
       "</div>" +
       '<div class="duel-side opp" style="--ni:2">' +
         '<span class="duel-abbr">' + CF.esc(String(g.oppAbbr || "OPP")) + "</span>" +
