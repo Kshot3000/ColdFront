@@ -1183,3 +1183,64 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  assert.ok(gh.includes('js/games.js?v=1.63.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
+test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
+ assert.match(css,/\.tbl\.ld tr\.ld-div th\s*\{[^}]*border-top:\s*1px solid var\(--glass-border\)/s,'the team divider is a real styled row');
+ assert.match(css,/tr\.ld-div\.me th\s*\{[^}]*box-shadow:\s*inset 3px 0 0 var\(--orange\)/s,'the Bears divider carries the orange leading edge');
+ assert.match(css,/tr\.ld-div\.me \.ld-div-abbr\s*\{[^}]*color:\s*var\(--orange-hot\)/s,'the Bears abbr chip glows orange');
+ assert.match(css,/\.ld-div-abbr\s*\{[^}]*color:\s*var\(--ice\)/s,'the opponent abbr chip reads cool ice');
+ // Two-team wire: leaders arrive value-sorted, so both teams' "Passing Yards"
+ // rows can sit next to each other with no grouping. The table must regroup
+ // them with the Bears block first.
+ const summaryBody={
+  header:{
+   id:'100',name:'Minnesota Vikings at Chicago Bears',date:'2026-09-20T17:00:00Z',
+   status:{type:{state:'post',completed:true,shortDetail:'Final'}},
+   competitions:[{status:{type:{state:'post',completed:true,shortDetail:'Final'}},venue:{fullName:'Soldier Field'},competitors:[
+    {homeAway:'home',team:{id:'3',abbreviation:'CHI',displayName:'Chicago Bears'},score:{value:24,displayValue:'24'}},
+    {homeAway:'away',team:{id:'9',abbreviation:'MIN',displayName:'Minnesota Vikings'},score:{value:17,displayValue:'17'}}]}]},
+  leaders:[
+   {team:{id:'9',abbreviation:'MIN',displayName:'Minnesota Vikings'},leaders:[
+    {name:'passingYards',displayName:'Passing Yards',leaders:[{athlete:{displayName:'Carson Wentz',position:{abbreviation:'QB'}},value:210,displayValue:'210 YDS',team:{id:'9'}}]}]},
+   {team:{id:'3',abbreviation:'CHI',displayName:'Chicago Bears'},leaders:[
+    {name:'passingYards',displayName:'Passing Yards',leaders:[{athlete:{displayName:'Caleb Williams',position:{abbreviation:'QB'}},value:195,displayValue:'195 YDS',team:{id:'3'}}]},
+    {name:'rushingYards',displayName:'Rushing Yards',leaders:[{athlete:{displayName:"D'Andre Swift",position:{abbreviation:'RB'}},value:78,displayValue:'78 YDS',team:{id:'3'}}]}]}]};
+ const p=await page('stats',{fetch:async(u)=>{
+  if(u.pathname.includes('/summary')) return {ok:true,text:async()=>JSON.stringify(summaryBody),json:async()=>summaryBody};
+ }});try{
+  const d=p.w.document;
+  const table=d.querySelector('#lastbox .tbl.ld');
+  assert.ok(table,'the box-score leaders table renders');
+  const divs=[...table.querySelectorAll('tr.ld-div')];
+  assert.equal(divs.length,2,'two teams get two dividers');
+  const [chi,min]=divs;
+  assert.ok(chi.classList.contains('me'),'the first divider is the Bears block');
+  assert.match(chi.textContent,/Chicago Bears/,'the Bears divider names the team');
+  assert.match(chi.textContent,/🐻/,'the Bears divider carries the identity mark');
+  assert.equal(chi.querySelector('th').getAttribute('colspan'),'3','the divider spans all columns');
+  assert.equal(chi.querySelector('th').getAttribute('scope'),'rowgroup','the divider announces the team block to screen readers');
+  assert.match(min.textContent,/Minnesota Vikings/,'the opponent divider names the team');
+  assert.ok(!min.classList.contains('me'),'the opponent divider stays cool');
+  const bodies=[...table.querySelectorAll('tbody')];
+  assert.equal(bodies.length,2,'each team block is its own tbody');
+  const chiRows=[...bodies[0].querySelectorAll('tr.ld-row')];
+  assert.equal(chiRows.length,2,'both Bears leaders sit in the Bears block');
+  assert.match(chiRows[0].textContent,/Caleb Williams/,'the Bears passing leader leads the block');
+  assert.match(bodies[1].textContent,/Carson Wentz/,'the Vikings leader sits in the Vikings block');
+  assert.equal(table.querySelector('caption').textContent,'Last game leaders by team','the caption matches the new grouping');
+  assert.ok(!/Passing Yards[\s\S]{0,200}Passing Yards/.test(bodies[0].textContent),'no repeated category inside one team block');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ // Single-team wire keeps the old flat render: no divider for one block.
+ const q=await page('stats');try{
+  const d=q.w.document;
+  const table=d.querySelector('#lastbox .tbl.ld');
+  assert.ok(table,'the default fixture still renders the leaders table');
+  assert.equal(table.querySelectorAll('tr.ld-div').length,0,'a lone team renders with no divider');
+  assert.deepEqual(q.errors,[]);
+ }finally{q.close();}
+ const sh=fs.readFileSync(path.join(__dirname,'..','stats.html'),'utf8');
+ assert.ok(sh.includes('js/stats.js?v=1.65.0'),'stats.html busts the stats.js cache');
+ assert.ok(sh.includes('css/experience.css?v=1.65.0'),'stats.html busts the experience.css cache');
+ assert.ok(sh.includes('data-cf-copy="btc"'),'footer tip chip is intact');
+});

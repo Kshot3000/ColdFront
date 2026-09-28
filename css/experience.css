@@ -921,6 +921,52 @@ main:focus { outline: none; }
   .tbl.ld tr.ld-row, .tbl.ld .ld-leader a { transition: none; }
 }
 
+/* v1.65.0 — box-score leaders split into team blocks. One undifferentiated
+   list made "Passing Yards" appear twice in a row with no way to see whose
+   was whose; each team now gets its own <tbody> under a divider row — Bears
+   first on this fan site. The Bears divider carries the orange identity (a
+   left leading edge + glowing abbr chip, echoing the season-log win row);
+   the opponent's reads cool ice. The divider is <th scope="rowgroup"> so
+   screen readers announce the block. Static under reduced motion. */
+.tbl.ld tr.ld-div th {
+  padding: 13px 14px 10px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.025);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--line);
+}
+tr.ld-div.me th { box-shadow: inset 3px 0 0 var(--orange); }
+.ld-div-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--snow);
+  white-space: nowrap;
+}
+.ld-div-abbr {
+  font-family: var(--display);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ice);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 2px 8px;
+  background: rgba(5, 11, 22, 0.6);
+  white-space: nowrap;
+}
+tr.ld-div.me .ld-div-abbr {
+  color: var(--orange-hot);
+  border-color: rgba(255, 90, 31, 0.55);
+  text-shadow: 0 0 14px rgba(255, 90, 31, 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tbl.ld tr.ld-div th, .ld-div-abbr { transition: none; }
+}
+
 /* v1.41.0 — division standings glow-up. The North standings (home) and the
    Division watch table (games.html) get the family treatment: an orange
    identity leading-edge thread across the top of the wrapper, the Bears row

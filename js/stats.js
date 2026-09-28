@@ -10,6 +10,47 @@
   };
   const statLabel = (n) => STAT_LABELS[n] || String(n).replace(/([A-Z])/g, " $1").trim();
 
+  /* v1.65.0 — the box-score leaders read as one undifferentiated list: both
+     teams' rows interleaved (value-sorted) with repeated category labels and
+     no way to see whose was whose. Leaders now render in team blocks — Bears
+     first on this fan site — each in its own <tbody> under a divider row
+     (<th scope="rowgroup"> so screen readers announce the team). A single
+     team, or rows with no team, keeps the old flat render. */
+  function divRowHTML(abbr, names) {
+    const isMe = abbr === "CHI";
+    const label = (names && names[abbr]) || abbr;
+    return '<tr class="ld-div' + (isMe ? " me" : "") + '"><th colspan="3" scope="rowgroup">' +
+      '<span class="ld-div-name">' + (isMe ? '<span aria-hidden="true">🐻</span> ' : "") +
+      CF.esc(label) + ' <span class="ld-div-abbr">' + CF.esc(abbr) + "</span></span></th></tr>";
+  }
+  function leadersTableHTML(leaders, names, entered) {
+    const rowHTML = (l) =>
+      '<tr class="ld-row">' + leaderCatCell(l) +
+      '<td class="ld-leader">' + leaderCell(l) + "</td>" +
+      '<td class="num ld-line">' + CF.esc(l.display) + "</td></tr>";
+    const abbr = (l) => (l.teamAbbr || "").toUpperCase();
+    const order = [];
+    leaders.forEach((l) => { const a = abbr(l); if (a && !order.includes(a)) order.push(a); });
+    order.sort((a, b) => (a === "CHI" ? -1 : b === "CHI" ? 1 : 0));
+    const blocks = order
+      .map((a) => ({ abbr: a, rows: leaders.filter((l) => abbr(l) === a) }))
+      .filter((b) => b.rows.length);
+    const stray = leaders.filter((l) => !abbr(l));
+    let body;
+    if (blocks.length >= 2) {
+      body = blocks.map((b) =>
+        "<tbody>" + divRowHTML(b.abbr, names) + b.rows.map(rowHTML).join("") + "</tbody>"
+      ).join("");
+      if (stray.length) body += "<tbody>" + stray.map(rowHTML).join("") + "</tbody>";
+    } else {
+      body = "<tbody>" + leaders.map(rowHTML).join("") + "</tbody>";
+    }
+    return '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '">' +
+      '<table class="tbl ld"><caption class="sr-only">Last game leaders by team</caption>' +
+      '<thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead>' +
+      body + "</table></div>";
+  }
+
   /* ---------- season pulse from the schedule ---------- */
   let pulseEntered = false; // .cf-enter only on first paint; refresh re-renders stay instant
 
@@ -226,6 +267,12 @@
       const awayIsBears = !iAmHome;
       const awayWon = as_ != null && hs != null && Number(as_) > Number(hs);
       const awayLost = as_ != null && hs != null && Number(as_) < Number(hs);
+      // v1.65.0 — display names for the team-block dividers on the leaders table.
+      const teamNames = {};
+      [away, home].forEach((c) => {
+        const t = c.team || {};
+        if (t.abbreviation) teamNames[String(t.abbreviation).toUpperCase()] = t.displayName || t.abbreviation;
+      });
       const entered = !boxEntered;
       boxEntered = true;
       pill.className = "pill ok";
@@ -247,15 +294,7 @@
         '<span class="wx-dot" aria-hidden="true"></span>' +
         "<span>" + CF.esc(CF.fmtDate(ev.date)) + "</span></div>" +
         "</div>" +
-        (leaders.length
-          ? '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears leaders, last game</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead><tbody>' +
-            leaders.map((l) =>
-              '<tr class="ld-row">' + leaderCatCell(l) +
-              '<td class="ld-leader">' + leaderCell(l) + "</td>" +
-              '<td class="num ld-line">' + CF.esc(l.display) + "</td></tr>"
-            ).join("") +
-            "</tbody></table></div>"
-          : "") +
+        (leaders.length ? leadersTableHTML(leaders, teamNames, entered) : "") +
         '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="games.html">More games →</a></p>';
     } catch (e) {
       pill.className = "pill sample";
