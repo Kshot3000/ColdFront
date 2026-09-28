@@ -81,9 +81,12 @@
         const x = CF.API.bearsInjuryRows(r.data);
         const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
         if (rows.length) {
+          // v1.68.0 — same compact rule as the injuries page: the player
+          // name is the headline and the story becomes a 3-line excerpt.
           injHTML = rows.slice(0, 8).map((row, idx) =>
             '<div class="news-item' + enterAttrs(idx, enter) + '"><div>' +
-            '<a class="headline" href="' + (row.url ? CF.esc(CF.safeURL(row.url)) : "injuries.html") + '" target="_blank" rel="noopener">' + CF.esc(row.name + " — " + (row.comment || row.status)) + "</a>" +
+            '<a class="headline" href="' + (row.url ? CF.esc(CF.safeURL(row.url)) : "injuries.html") + '" target="_blank" rel="noopener">' + CF.esc(row.name) + "</a>" +
+            (row.comment ? '<p class="inj-excerpt">' + CF.esc(row.comment) + "</p>" : "") +
             '<div class="meta"><span>' + CF.esc(row.status) + "</span><span>" + CF.timeAgo(row.date) + "</span></div></div>"
           ).join("");
         }

@@ -512,6 +512,9 @@ CF.API = {
         status: r.status || "",
         date: r.date || "",
         comment: comment,
+        // v1.68.0 — the compact designation for table cells; the long
+        // editorial comment stays on the wire as the story behind the row.
+        short: r.shortComment || "",
         url: a.links && a.links[0] ? a.links[0].href : null,
       });
     });

@@ -54,11 +54,17 @@
      editorial notes) → roster flags → community JSON. */
   function reportRow(row, eta) {
     const sev = sevCls(row);
+    // v1.68.0 — the INJURY cell prints the compact designation (ESPN's
+    // shortComment, e.g. "Hamstring — limited practice") so every row stays
+    // scannable; the full editorial prose moves to a title tooltip, and the
+    // injury wire on the right carries the story behind each row.
+    const designation = row.short || row.injury || row.comment || "—";
+    const full = row.comment && row.comment !== designation ? row.comment : null;
     return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) +
       (row.url ? ' <a href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
       "</td>" +
       "<td>" + CF.esc(row.pos || "—") + "</td>" +
-      "<td>" + CF.esc(row.comment || row.injury || "—") + "</td>" +
+      "<td" + (full ? ' title="' + CF.esc(full) + '"' : "") + ">" + CF.esc(designation) + "</td>" +
       '<td><span class="st ' + sev + '">' + CF.esc(row.status || "—") + "</span></td>" +
       '<td class="dim">' + CF.esc(eta || (row.date ? CF.fmtDate(row.date) : "")) + "</td></tr>";
   }
@@ -146,9 +152,15 @@
     }
   }
 
-  function wireItem(title, date, extra, i) {
+  /* v1.68.0 — wire cards used to print "Name — <full editorial prose>" as one
+     towering headline, so a ~100-word Caleb Williams update dwarfed the
+     single-word Anthony Johnson Jr. card. The player name is now the
+     headline; the story becomes a 3-line excerpt (CSS-clamped, full text
+     kept in the DOM for screen readers). */
+  function wireItem(name, comment, date, extra, i) {
     return '<div class="news-item' + (wireEntered ? "" : " cf-enter") + '" style="grid-template-columns:1fr;padding:12px 14px;--ni:' + Math.min(i, 12) + '">' +
-      '<p class="headline" style="font-size:13.5px;margin:0">' + CF.esc(title) + "</p>" +
+      (name ? '<p class="headline" style="font-size:13.5px;margin:0">' + CF.esc(name) + "</p>" : "") +
+      (comment ? '<p class="inj-excerpt">' + CF.esc(comment) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc(extra || "") + "</span><span>" + CF.timeAgo(date) + "</span></div></div>";
   }
 
@@ -170,8 +182,8 @@
       const r = await CF.API.getLeagueInjuries();
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
-      rows.forEach((row) => parts.push(wireItem(row.name + " — " + row.comment, row.date, row.status, parts.length)));
-      (x.notes || []).forEach((n) => parts.push(wireItem(n, null, "league note", parts.length)));
+      rows.forEach((row) => parts.push(wireItem(row.name, row.comment, row.date, row.status, parts.length)));
+      (x.notes || []).forEach((n) => parts.push(wireItem(null, n, null, "league note", parts.length)));
     } catch (e) { /* league notes unavailable */ }
 
     // 2) ESPN league wire headlines that mention a body part or a status.

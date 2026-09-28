@@ -1054,6 +1054,23 @@ body.nav-open .site-head {
   .news-item .thumb, .news-item .thumb-fallback { transition: none; }
 }
 
+/* v1.68.0 — injury wire excerpts. The league report's longComment can run
+   ~100 words; printed raw it towers over single-word cards. The player name
+   is the headline now and the story clamps to 3 lines; the full text stays
+   in the DOM, so screen readers still get the whole update and reduced
+   motion is unaffected (line-clamp is not animation). */
+.news-item .inj-excerpt {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
 /* ---------- Tables ---------- */
 .tbl-wrap {
   overflow-x: auto;
