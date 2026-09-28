@@ -68,15 +68,20 @@ main:focus { outline: none; }
   color: #ff7941;
   text-shadow: 0 0 26px rgba(255, 110, 40, 0.42), 0 2px 12px rgba(0, 0, 0, 0.4);
 }
-/* v1.80.0 — the hero card's matchup rows stack vertically (the .vs grid
+/* v1.81.0 — the hero card's matchup rows stack vertically (the .vs grid
    columns are never applied), so a chip centered at left:50% of the
-   full-width Bears row floated detached in mid-card. It now anchors to the
-   start of the Bears row, hovering directly above their abbr where it reads
-   as attached. */
+   full-width Bears row floated detached in mid-card (fixed in v1.80.0 by
+   anchoring it to the row start) — but hovering it 10px ABOVE the row
+   dropped the glyph onto the venue line ("Soldier Field") sitting directly
+   above the Bears row, and would hit the match title when the Bears are the
+   away side. The chip now rides the row itself: pinned to the row's left
+   edge and vertically centered, attached to the Bears block with clear air
+   above and below. */
 .match-card .bears-chip {
   position: absolute;
-  top: -10px;
+  top: 50%;
   left: 0;
+  transform: translateY(-50%);
   font-size: 13px;
   line-height: 1;
   display: none;
