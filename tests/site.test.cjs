@@ -925,6 +925,7 @@ test('ad slots stay invisible until a publisher ID is set, then fill correctly',
   assert.equal(host.getAttribute('aria-label'),'Advertisement');
   assert.ok(w.document.querySelector('script[src*="pagead2.googlesyndication.com"]'),'AdSense library loads once');
   // Placement without an ad-unit ID stays empty.
+  w.CF.CONFIG.ads.slots.newsRail='';
   const host2=w.document.createElement('div');
   host2.setAttribute('data-ad-slot','newsRail');
   w.document.body.appendChild(host2);

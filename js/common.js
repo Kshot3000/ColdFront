@@ -159,9 +159,9 @@ CF.CONFIG = {
   ads: {
     client: "ca-pub-3316742664595468", // live — Kyle's AdSense
     slots: {
-      homeLeaderboard: "", // index.html — below the wire ticker
-      newsRail: "",        // news.html — bottom of the injury rail
-      oddsInline: "",      // odds.html — under the Polymarket board
+      homeLeaderboard: "9372124334", // index.html — below the wire ticker
+      newsRail: "6745960998",        // news.html — bottom of the injury rail
+      oddsInline: "9688828263",      // odds.html — under the Polymarket board
     },
   },
 };
