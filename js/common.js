@@ -981,6 +981,7 @@ CF.loadWeather = async () => {
       daily: d.daily || null,
       source: "open-meteo",
     };
+    wx.readAt = Date.now(); // v1.96.0 — the strip stamp shows when the front was read
     wx.gauge = CF.coldFrontGauge(wx);
     CF.cacheSet("weather", wx, CF.CONFIG.ttl.weather);
     return wx;
@@ -1017,9 +1018,29 @@ CF.loadWeatherNWS = async () => {
     snowCm: null, snowWord: /snow/i.test(period.shortForecast || ""),
     daily: null, source: "nws",
   };
+  wx.readAt = Date.now(); // v1.96.0 — the strip stamp shows when the front was read
   wx.gauge = CF.coldFrontGauge(wx);
   CF.cacheSet("weather", wx, CF.CONFIG.ttl.weather);
   return wx;
+};
+
+/* v1.96.0 — weather-strip read-time stamp. The strip re-reads the front every
+   10 minutes on every page, but #wx-now never said WHEN the numbers were read —
+   a fan couldn't tell a two-minute-old reading from one that predates the
+   morning commute. Live reads get a dim wall-clock stamp ("read 6:02 AM CDT");
+   offline reads from the cache get the reading's age ("cached 38m ago") so
+   staleness is explicit, in the same relative-age vocabulary as the v1.94.0
+   pill stamps. Old cache entries without a readAt keep the bare "cached" label
+   rather than an invented age. Decoratively aria-hidden, matching freshStamp. */
+CF.wxReadStamp = (wx) => {
+  const readAt = Number(wx && wx.readAt) || 0;
+  if (wx && wx.offline) {
+    return readAt
+      ? ' · <span class="wx-offline" aria-hidden="true">cached ' + CF.esc(CF.timeAgo(new Date(readAt).toISOString())) + "</span>"
+      : ' · <span class="wx-offline">cached</span>';
+  }
+  const t = readAt || Date.now();
+  return ' · <span class="dim" style="font-size:11px" aria-hidden="true">read ' + CF.esc(CF.fmtTime(new Date(t).toISOString())) + "</span>";
 };
 
 CF.renderWeatherStrip = (root) => {
@@ -1057,7 +1078,7 @@ CF.renderWeatherStrip = (root) => {
       (wx.snowWord ? " · snow in the forecast" : "") +
       (wx.snowProb != null && !wx.snowWord ? " · precip. " + Math.round(wx.snowProb) + "%" : "") +
       (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NWS forecast</span>' : "") +
-      (wx.offline ? ' · <span class="wx-offline">cached</span>' : "");
+      CF.wxReadStamp(wx);
     if (wx.gauge) {
       gauge.innerHTML = CF.cfiDialSVG(wx.gauge.score, wx.gauge.cls, wx.gauge.label);
       gauge.className = "wx-gauge cfi-dial-wrap " + wx.gauge.cls;

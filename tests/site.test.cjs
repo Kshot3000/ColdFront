@@ -1310,7 +1310,7 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
  // Every page busts the common.js cache at the new key.
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -1735,8 +1735,8 @@ test('v1.83.0: wind reads in mph everywhere — no km/h, no inflated kickoff num
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),name+'.html carries the v1.94.0 common.js cache key');
-  assert.ok(!/common\.js\?v=1\.(9[0-3]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html carries the v1.96.0 common.js cache key');
+  assert.ok(!/common\.js\?v=1\.(9[0-5]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
  }
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ghtml.includes('js/games.js?v=1.94.0'),'games.html carries the v1.94.0 games.js cache key');
@@ -1794,7 +1794,7 @@ test('v1.84.0: sunday-desk week pill reads "WK 3", never "WK Week 3"',async()=>{
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),name+'.html keeps the v1.94.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html keeps the v1.96.0 common.js cache key');
  }
  assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
 });
@@ -1895,7 +1895,7 @@ test('v1.87.0: season-log date cells separate the date from kickoff with a middo
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),name+'.html keeps the v1.94.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html keeps the v1.96.0 common.js cache key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -1932,7 +1932,7 @@ test('v1.88.0: team hero headline speaks the live roster count',async()=>{
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const ph=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(ph.includes('js/common.js?v=1.94.0'),name+'.html keeps the v1.94.0 common.js cache key');
+  assert.ok(ph.includes('js/common.js?v=1.96.0'),name+'.html keeps the v1.96.0 common.js cache key');
   assert.ok(ph.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(ph.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -1983,15 +1983,15 @@ test('v1.89.0: injury designations speak fan English — "ir" and "inactive" nev
  // scripts. Footer branding survives.
  const ih=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(ih.includes('js/injuries.js?v=1.94.0'),'injuries.html busts the injuries.js cache');
- assert.ok(ih.includes('js/common.js?v=1.94.0'),'injuries.html busts the common.js cache');
+ assert.ok(ih.includes('js/common.js?v=1.96.0'),'injuries.html busts the common.js cache');
  const xh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(xh.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
- assert.ok(xh.includes('js/common.js?v=1.94.0'),'index.html busts the common.js cache');
+ assert.ok(xh.includes('js/common.js?v=1.96.0'),'index.html busts the common.js cache');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),name+'.html carries the v1.94.0 common.js cache key');
-  assert.ok(!/common\.js\?v=1\.(9[0-3]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html carries the v1.96.0 common.js cache key');
+  assert.ok(!/common\.js\?v=1\.(9[0-5]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2192,9 +2192,9 @@ test('v1.94.0: live pills carry data-freshness stamps — source AND when it was
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.95.0'),name+'.html carries the v1.95.0 main.css cache key');
-  assert.ok(html.includes('js/common.js?v=1.94.0'),name+'.html carries the v1.94.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html carries the v1.96.0 common.js cache key');
   assert.ok(!/main\.css\?v=1\.(94\.0|93\.0|92\.0|91\.0|90\.0|82\.0|7[0-7])/.test(html),name+'.html has no stale main.css key');
-  assert.ok(!/common\.js\?v=1\.(9[0-3]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
+  assert.ok(!/common\.js\?v=1\.(9[0-5]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2268,4 +2268,53 @@ test('v1.95.0: the odds ↻ button admits when it\'s working — disables, spins
  assert.ok(!/odds\\.js\\?v=1\\.(9[0-4]|8[0-9]|7[0-9]|6[0-9]|5[0-9]|[0-4][0-9])/.test(ohtml),'odds.html has no stale odds.js key');
  assert.ok(ohtml.includes('@kshot9000'),'the @kshot9000 attribution survives on odds.html');
  assert.ok(ohtml.includes('data-cf-copy="btc"'),'the BTC tip chip survives on odds.html');
+});
+
+test('v1.96.0: the weather strip says when the front was read — live wall-clock, cached age',async()=>{
+ // The strip above the fold on every page re-reads the front every 10
+ // minutes, but #wx-now never named WHEN the numbers were read — a fan
+ // couldn't tell a two-minute-old reading from one that predates the morning
+ // commute. Both weather loaders now stamp wx.readAt, and CF.wxReadStamp
+ // paints the stamp: a dim wall-clock ("read 10:00 PM CDT") on live reads,
+ // the reading's age ("cached 5m ago") on offline cache reads, in the same
+ // relative-age vocabulary as the v1.94.0 pill stamps. Old cache entries
+ // without a readAt keep the bare "cached" label rather than an invented age.
+ const common=fs.readFileSync(path.join(__dirname,'..','js','common.js'),'utf8');
+ assert.ok(/CF\.wxReadStamp\s*=/.test(common),'common.js carries the CF.wxReadStamp helper');
+ assert.equal((common.match(/wx\.readAt\s*=\s*Date\.now\(\)/g)||[]).length,2,'both weather loaders stamp the read moment');
+ // Behavioral, live path: the strip names its read time in #wx-now.
+ const p=await page('index');try{const w=p.w;
+  await settle(150);
+  const now=w.document.querySelector('#wx-now');
+  assert.ok(now,'the weather strip renders the now line');
+  assert.match(now.textContent,/read 10:00 PM CDT/,'the live strip names its read time: '+now.textContent);
+  assert.ok(/57°F/.test(now.textContent),'the live numbers still render: '+now.textContent);
+  const stamp=now.querySelector('[aria-hidden="true"]');
+  assert.ok(stamp,'the read stamp stays out of the screen-reader chatter, matching the v1.94.0 stamps');
+ }finally{p.close();}
+ // Behavioral, offline path: a cached read names the reading's age.
+ const fixedNow=+new Date('2026-09-26T03:00:00Z');
+ const stored={ts:fixedNow-5*60e3,ttl:600e3,data:{tempC:14,feelsC:12,wind:16,gusts:null,humidity:null,
+   code:0,phrase:null,time:null,snowProb:null,snowCm:null,daily:null,source:'open-meteo',
+   readAt:fixedNow-5*60e3,gauge:null}};
+ const q=await page('index',{offline:true,storage:{'cf.weather':JSON.stringify(stored)}});
+ try{const w=q.w;
+  await settle(150);
+  const now=w.document.querySelector('#wx-now');
+  assert.ok(now,'the offline weather strip renders the now line');
+  assert.match(now.textContent,/cached 5m ago/,'the cached strip names the reading\'s age: '+now.textContent);
+  assert.ok(!/read 10:00 PM/.test(now.textContent),'the cached read never claims a fresh wall-clock: '+now.textContent);
+ }finally{q.close();}
+ // Only common.js changed: it is cache-busted everywhere it loads, and the
+ // footer branding survives. main.css is untouched, so it holds at v1.95.0.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('js/common.js?v=1.96.0'),name+'.html carries the v1.96.0 common.js cache key');
+  assert.ok(!/common\.js\?v=1\.(9[0-5]|8[0-9]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('css/main.css?v=1.95.0'),name+'.html holds the v1.95.0 main.css cache key');
+  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+ }
+ assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
 });
