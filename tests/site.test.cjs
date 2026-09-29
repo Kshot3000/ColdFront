@@ -1616,8 +1616,8 @@ test('v1.79.0: snow toggle docks in the header on phones — never parks on cont
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/experience.css?v=1.102.0'),name+'.html carries the v1.101.0 experience.css cache key');
-  assert.ok(html.includes('js/snow.js?v=1.100.0'),name+'.html carries the v1.100.0 snow.js cache key');
-  assert.ok(!/experience\.css\?v=1\.(100|101|[0-7]|80|85|92|99)\.0"|snow\.js\?v=1\.(1[0-7]|18|79)\.0"/.test(html),name+'.html has no stale experience/snow cache key');
+  assert.ok(html.includes('js/snow.js?v=1.104.0'),name+'.html carries the v1.104.0 snow.js cache key');
+  assert.ok(!/experience\.css\?v=1\.(100|101|[0-7]|80|85|92|99)\.0"|snow\.js\?v=1\.(1[0-7]|18|79|100)\.0"/.test(html),name+'.html has no stale experience/snow cache key');
  }
 });
 
@@ -2571,5 +2571,38 @@ test('v1.103.0: games.html carries one photo-band — the stacked Navy Pier band
   assert.ok(!/Ferris glow/.test(p.w.document.querySelector('main').textContent),'the Ferris-glow copy is gone with it');
   assert.ok(p.w.document.querySelector('#next-opp'),'the Sunday desk card still leads the content');
   assert.ok(p.w.document.querySelector('.photo-band-copy p'),'the surviving band keeps its fan-facing copy');
+ }finally{p.close();}
+});
+
+test('v1.104.0: the snow pill rides above the footer instead of parking on the tip chip',async()=>{
+ // Live QA (2026-09-29) caught the desktop "Snow on" pill overlapping the
+ // footer "Tip the build · BTC" chip at the page bottom: both live at the
+ // viewport's bottom-right, so the pill buried the chip's Copy label. The
+ // pill now measures, on every scroll/resize, the overlap between its own
+ // bottom edge and the footer's top edge, and lifts by overlap + 12px —
+ // tracking 1:1 with the scroll, so it never lags. It re-parks at bottom:18
+ // once the footer scrolls away. Phones are exempt: the pill docks in the
+ // header there (position:static) and never meets the footer.
+ const p=await page('odds');try{
+  assert.deepEqual(p.errors,[]);
+  const w=p.w, tgl=w.document.querySelector('.snow-toggle'), foot=w.document.querySelector('.site-foot');
+  assert.ok(tgl&&foot,'the toggle and the footer exist');
+  // Simulate the page bottom: the pill parked at 836–882 in a 900px
+  // viewport, the footer's top edge at 700 — 182px of overlap.
+  tgl.getBoundingClientRect=()=>({top:836,bottom:882,left:0,right:0,width:0,height:46,x:0,y:836,toJSON(){}});
+  foot.getBoundingClientRect=()=>({top:700,bottom:1100,left:0,right:0,width:0,height:400,x:0,y:700,toJSON(){}});
+  w.dispatchEvent(new w.Event('scroll'));
+  await settle(50);
+  const lifted=parseFloat(tgl.style.bottom);
+  assert.ok(lifted>18,'the pill lifts above the footer (bottom:'+tgl.style.bottom+')');
+  assert.ok(Math.abs(lifted-(18+182+12))<1,'the lift equals overlap + 12px gap: '+tgl.style.bottom);
+  // Footer scrolled out of view: the pill re-parks at its CSS bottom:18.
+  foot.getBoundingClientRect=()=>({top:1200,bottom:1600,left:0,right:0,width:0,height:400,x:0,y:1200,toJSON(){}});
+  w.dispatchEvent(new w.Event('scroll'));
+  await settle(50);
+  assert.equal(tgl.style.bottom,'','the pill re-parks once the footer is out of view');
+  // The BTC tip chip the pill used to bury is intact.
+  assert.ok(w.document.querySelector('[data-cf-copy="btc"]'),'the footer tip chip is still there');
+  assert.ok(w.document.querySelector('.site-foot').textContent.includes('3GnR…8vZK'),'the tip chip still carries the BTC address');
  }finally{p.close();}
 });

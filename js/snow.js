@@ -40,8 +40,34 @@ CF.initSnow = () => {
       document.body.appendChild(control);
     }
   };
-  dockMq.addEventListener("change", placeSnowToggle);
+  dockMq.addEventListener("change", () => { placeSnowToggle(); dodgeFooter(); });
   placeSnowToggle();
+
+  // v1.104.0 — the desktop pill is position:fixed bottom-right, so at the
+  // page bottom it parked on top of the footer tip chip ("Tip the build ·
+  // BTC"), burying the Copy label. When the footer rises into the pill's
+  // parking zone the pill now rides just above it: every scroll/resize
+  // measures the overlap between the pill's bottom edge and the footer's
+  // top edge and raises the pill by that overlap plus a 12px breathing gap.
+  // It tracks 1:1 with the scroll — deliberately no CSS transition, so the
+  // pill never lags behind the footer edge. Phones are untouched: there the
+  // pill docks in the header (position:static) and never meets the footer.
+  let lastDodge = null;
+  const dodgeFooter = () => {
+    if (dockMq.matches) { if (lastDodge !== "") { control.style.bottom = ""; lastDodge = ""; } return; }
+    const foot = document.querySelector(".site-foot");
+    if (!foot) { if (lastDodge !== "") { control.style.bottom = ""; lastDodge = ""; } return; }
+    const overlap = control.getBoundingClientRect().bottom - foot.getBoundingClientRect().top;
+    let next = "";
+    if (overlap > 0) {
+      const parked = parseFloat(getComputedStyle(control).bottom) || 18;
+      next = (parked + overlap + 12) + "px";
+    }
+    if (next !== lastDodge) { control.style.bottom = next; lastDodge = next; }
+  };
+  window.addEventListener("scroll", dodgeFooter, { passive: true });
+  window.addEventListener("resize", dodgeFooter, { passive: true });
+  dodgeFooter();
 
   function resize() {
     width = window.innerWidth;
