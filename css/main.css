@@ -4688,3 +4688,20 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   .ref-card, .ref-card::before { transition: none; }
   .ref-card:hover, .ref-card:focus-within { transform: none; }
 }
+
+/* ============================================================
+   v1.94.0 — data-freshness stamps ride inside the live pills
+   The brand promise is honest data: when a source is unreachable the board
+   says so. The stamp makes the other half visible — when the numbers were
+   last read. It borrows the pill's voice (Inter, tabular-nums like the
+   v1.93.0 countdown digits) but drops to the ice-dim tone so the source
+   label keeps the accent; the exact wall-clock rides in the title tooltip.
+   Text-only updates, so reduced motion needs no special-casing.
+   ============================================================ */
+.fresh-stamp {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: var(--text-dim);
+  opacity: 0.85;
+}

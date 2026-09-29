@@ -53,7 +53,8 @@
       const line = CF.API.oddsForGame(r.data, gameId);
       if (!line || !line.lines.length) throw new Error("no lines");
       pill.className = "pill ok";
-      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + gameName;
+      // v1.94.0 — the pill names the source AND when it was last read.
+      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + gameName, Date.now());
       const side = bearsSideOf(nextGame);
       const best = side ? bestBearsPrices(line.lines, side) : null;
       box.innerHTML = (best ? bestStrip(best, line.lines, !wireEntered) : "") + line.lines.map((l, i) =>
@@ -169,6 +170,8 @@
         return;
       }
       let n = 0; // per-card stagger index for the first-paint entrance
+      // v1.94.0 — the Polymarket header carries its own freshness stamp.
+      CF.freshStamp(CF.$("#poly-pill"), "Polymarket · live", Date.now());
       box.innerHTML = bears.slice(0, 8).map((ev) => {
         const kpre = (ev.slug || ev.url || ev.title) + "::";
         return (ev.markets || []).map((m) => {

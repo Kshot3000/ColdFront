@@ -40,7 +40,6 @@
   async function load() {
     const enter = !wireEntered; // this render pass's entrance decision
     const pill = CF.$("#feed-pill");
-    const updated = CF.$("#feed-updated");
     pill.textContent = "connecting…";
     const newsList = CF.$("#news-list");
     const injBox = CF.$("#injury-news");
@@ -104,8 +103,8 @@
         style: "padding:18px 14px",
       });
       pill.className = "pill ok";
-      pill.textContent = src + " · " + count + " stories";
-      updated.textContent = "Checked " + new Date().toLocaleTimeString();
+      // v1.94.0 — the pill says when the wire was last read, not just its source.
+      CF.freshStamp(pill, src + " · " + count + " stories", Date.now());
     } else {
       pill.className = "pill sample";
       pill.textContent = "offline — snapshot unavailable";

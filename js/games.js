@@ -30,7 +30,8 @@
       const events = (r.data.events || []).slice();
       lastEvents = events;
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = CF.sourceLabel(r) + " · " + selectedDay;
+      // v1.94.0 — the pill names the source AND when it was last read.
+      CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, Date.now());
       if (!events.length) {
         box.innerHTML = '<div class="empty"><div class="big">🌫</div>No NFL games scheduled for this date.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
         return;
@@ -123,7 +124,8 @@
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
-      pill.textContent = (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + " games";
+      // v1.94.0 — the pill names the source AND when it was last read.
+      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + " games", Date.now());
       if (!rows.length) throw new Error("empty");
       // upcoming first, then most-recent results.
       const now = Date.now();
@@ -560,7 +562,8 @@
       return;
     }
     pill.className = "pill ok";
-    pill.textContent = label;
+    // v1.94.0 — the pill names the source AND when it was last read.
+    CF.freshStamp(pill, label, Date.now());
     /* v1.41.0 — standings glow-up: Bears row carries the 🐻 identity chip,
        the division leader carries a 👑 DIV LEAD chip (glowing when it's us),
        Pct reads in display numerals, streaks become pills. */

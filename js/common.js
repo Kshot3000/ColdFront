@@ -205,6 +205,42 @@ CF.fmtDate = (iso, opts) => {
   catch (e) { return String(iso).slice(0, 10); }
 };
 
+/* ---------- v1.94.0 — data-freshness stamps ----------
+   The auto-refreshing surfaces (odds, scores, wire, injuries) re-render on a
+   timer, but their section pills only named the source ("live", "snapshot"),
+   never when the numbers were last read — so a fan couldn't tell a line that
+   refreshed 10 seconds ago from one rendered an hour ago on the page where
+   recency matters most. freshStamp keeps the pill's existing label and
+   appends a dim, tabular-nums "· 42s ago" stamp. One shared 15-second ticker
+   re-reads every registered stamp (text-only, no fetches, so it's
+   reduced-motion safe and costs nothing); stamps whose span leaves the DOM
+   unregister themselves on the next tick. The exact wall-clock ("read
+   4:03 AM CT") rides in the stamp's title tooltip via CF.fmtTime. Call it
+   only on successful renders — offline/error pills keep their plain,
+   honest text. */
+const _freshStamps = new Map();
+let _freshTickerOn = false;
+CF.freshStamp = (pill, label, fetchedAt) => {
+  if (!pill) return;
+  const ts = Number(fetchedAt) || Date.now();
+  pill.innerHTML = CF.esc(label) +
+    ' <span class="fresh-stamp" title="' + CF.esc("read " + CF.fmtTime(ts)) + '"' +
+    ' aria-hidden="true">· <span class="fresh-age">' +
+    CF.esc(CF.timeAgo(new Date(ts).toISOString())) + "</span></span>";
+  const span = pill.querySelector(".fresh-age");
+  if (!span) return;
+  _freshStamps.set(pill, { span: span, ts: ts });
+  if (!_freshTickerOn) {
+    _freshTickerOn = true;
+    setInterval(() => {
+      _freshStamps.forEach((rec, el) => {
+        if (!rec.span.isConnected) { _freshStamps.delete(el); return; }
+        rec.span.textContent = CF.timeAgo(new Date(rec.ts).toISOString());
+      });
+    }, 15e3);
+  }
+};
+
 CF.fmtTime = (iso) => {
   if (!iso) return "";
   try { return new Date(iso).toLocaleTimeString(undefined, { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit", timeZoneName: "short" }); }

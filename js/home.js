@@ -202,13 +202,15 @@
       if (!items.length) throw new Error("No news");
       CF.$("#home-news").innerHTML = items.slice(0, 4).map(story).join("");
       paintTicker(items);
-      show("#wire-pill", CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN");
+      // v1.94.0 — the wire pill says when it was last read, not just its source.
+      CF.freshStamp(CF.$("#wire-pill"), CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN", Date.now());
     } catch (_) {
       try {
         const items = await CF.API.getGoogleNews("Chicago Bears", 4);
         CF.$("#home-news").innerHTML = items.map(story).join("");
         paintTicker(items);
-        show("#wire-pill", CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire");
+        // v1.94.0 — the wire pill says when it was last read, not just its source.
+        CF.freshStamp(CF.$("#wire-pill"), CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire", Date.now());
       } catch (_) {
         show("#wire-pill", "Feed unavailable");
         const ticker = CF.$("#wire-ticker");
@@ -224,7 +226,8 @@
       const report = CF.API.bearsInjuryRows(result.data);
       if (!report.found) throw new Error("No Bears report");
       const rows = report.rows.filter((row) => row.status?.toLowerCase() !== "active");
-      show("#inj-home-pill", CF.sourceLabel(result.source) + " · league report");
+      // v1.94.0 — the pill says when the report was last read, not just its source.
+      CF.freshStamp(CF.$("#inj-home-pill"), CF.sourceLabel(result.source) + " · league report", Date.now());
       if (result.source === "live") await paintHomeInjuryMove(rows);
       CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(CF.injStatusLabel(row.short || row.comment) || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status)) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
     } catch (_) {
@@ -388,7 +391,8 @@
       if (lineOk) bits.push("Wire line");
       if (polyOk) bits.push("Polymarket");
       if (g.home) bits.push("Game-day weather");
-      pill.textContent = bits.join(" · ");
+      // v1.94.0 — the pill names its sources AND when they were last read.
+      CF.freshStamp(pill, bits.join(" · "), Date.now());
       pill.className = "tag";
     }
 
@@ -522,7 +526,8 @@
       return;
     }
     if (pill) {
-      pill.textContent = (wireOk && polyOk) ? "wire + poly" : (wireOk ? "wire" : "polymarket");
+      // v1.94.0 — the pill says when the pulse was last read, not just its source.
+      CF.freshStamp(pill, (wireOk && polyOk) ? "wire + poly" : (wireOk ? "wire" : "polymarket"), Date.now());
       pill.className = "tag";
     }
     root.innerHTML = wireHTML + polyHTML;

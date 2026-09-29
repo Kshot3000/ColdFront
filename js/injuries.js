@@ -86,7 +86,8 @@
         const rows = await CF.API.apisportsInjuries();
         if (rows && rows.length) {
           pill.className = "pill ok";
-          pill.textContent = "live · API-Sports";
+          // v1.94.0 — the pill says when the report was last read, not just its source.
+          CF.freshStamp(pill, "live · API-Sports", Date.now());
           note.textContent = "Structured injury rows via API-Sports (key set on this device). Cross-check with the official pregame report.";
           body.innerHTML = rows.map((row) => reportRow(row, row.eta)).join("");
           paintSnapshot(rows);
@@ -103,7 +104,8 @@
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active");
       if (x.found && !rows.length) {
-        pill.textContent = CF.sourceLabel(r) + " · league report";
+        // v1.94.0 — the pill says when the report was last read, not just its source.
+        CF.freshStamp(pill, CF.sourceLabel(r) + " · league report", Date.now());
         note.textContent = "Check the official pregame report for final availability.";
         body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
         paintSnapshot([]);
@@ -111,7 +113,8 @@
       }
       if (rows.length) {
         pill.className = "pill ok";
-        pill.textContent = CF.sourceLabel(r) + " · League report";
+        // v1.94.0 — the pill says when the report was last read, not just its source.
+        CF.freshStamp(pill, CF.sourceLabel(r) + " · League report", Date.now());
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         paintSnapshot(rows);
@@ -126,7 +129,8 @@
       const rows = CF.API.rosterInjuryRows(r2.data);
       if (rows.length) {
         pill.className = "pill ok";
-        pill.textContent = CF.sourceLabel(r2) + " · Roster flags";
+        // v1.94.0 — the pill says when the report was last read, not just its source.
+        CF.freshStamp(pill, CF.sourceLabel(r2) + " · Roster flags", Date.now());
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         paintSnapshot(rows);
