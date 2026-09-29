@@ -885,9 +885,11 @@ body.nav-open .site-head {
   border-color: rgba(232, 84, 30, 0.35);
   box-shadow: 0 0 14px rgba(200, 56, 3, 0.12);
 }
+/* ---------- v1.93.0 — countdown digits hold still ---------- */
 .countdown .unit b {
   display: block;
   font-family: var(--display);
+  font-variant-numeric: tabular-nums;
   font-size: 24px;
   color: var(--snow);
   line-height: 1.1;
