@@ -20,6 +20,23 @@
     const pos = (player.pos && player.pos !== "—") ? player.pos : groupLabel(player.group);
     return [pos, player.jersey ? "#" + player.jersey : ""].filter(Boolean).join(" · ");
   };
+  // Shared jersey numbers are REAL on the live ESPN roster: practice-squad
+  // players reuse active-roster numbers (#52, #37, #43, #45, #38, #36 …).
+  // When a number is shared by two or more players in the current roster,
+  // the practice-squad holder gets a small dim PS tag so two cards/rows
+  // never read identically. Never tag from jersey alone, never invent.
+  const isPracticeSquad = (p) =>
+    /practice.?squad/i.test(String(p.statusType || "")) ||
+    /practice.?squad/i.test(String(p.statusName || ""));
+  const sharedJerseys = () => {
+    const counts = new Map();
+    all.forEach((p) => { if (p.jersey) counts.set(p.jersey, (counts.get(p.jersey) || 0) + 1); });
+    return new Set([...counts].filter(([, n]) => n > 1).map(([j]) => j));
+  };
+  const psBadge = (p, dupes) =>
+    (isPracticeSquad(p) && p.jersey && dupes.has(p.jersey))
+      ? '<span class="ps-tag" title="Practice squad — shares jersey number #' + CF.esc(p.jersey) + '" style="display:inline-block;margin-left:.35em;padding:.05em .35em;border:1px solid rgba(255,255,255,.35);border-radius:.35em;font-size:.62em;letter-spacing:.08em;opacity:.75">PS</span>'
+      : "";
 
   async function loadRoster() {
     const pill = CF.$("#roster-pill");
@@ -69,7 +86,10 @@
     CF.$("#roster-count").textContent = rows.length + " of " + all.length + " players";
     const empty = group === "favorites" ? 'No favorites match yet. Tap a star on a player card to add your Bears.' : 'No Bears match those filters. Try another name, number, or position.';
     // Entrance choreography runs once, on first paint — filters and search re-render instantly.
+    // Duplicate-number set is computed from the full roster, not the filtered
+    // rows, so the PS badge stays correct even when a filter hides one holder.
     const enter = firstPaint; firstPaint = false;
+    const dupes = sharedJerseys();
     CF.$("#roster-cards").innerHTML = rows.length ? rows.map((player, i) => {
       const key = playerKey(player), saved = favorites.has(key);
       const photo = CF.safeURL(player.headshot, "img/jersey-54.svg");
@@ -82,11 +102,15 @@
         ? '<span class="player-number" aria-hidden="true">' + CF.esc(player.jersey) + '</span>'
         : '<img class="player-emblem" src="img/paw-mark.svg" alt="" aria-hidden="true">';
       const portrait = player.headshot ? '<img loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.hidden=true">' : '';
+      // Height/weight come from ESPN's displayHeight/displayWeight via the
+      // mapper; only print the <br> when at least one value exists, so a
+      // player missing both never opens the card with a blank line.
+      const hw = [player.height, player.weight].filter(Boolean).join(" · ");
       return '<article class="player-card' + (enter ? " cf-enter" : "") + '" data-group="' + groupKey(player.group) + '"' +
         (enter ? ' style="--ni:' + Math.min(i, 11) + '"' : "") +
-        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait">' + mark + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(stLine(player)) + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + CF.esc([player.height, player.weight].filter(Boolean).join(" · ")) + '<br>' + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
+        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait">' + mark + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(stLine(player)) + psBadge(player, dupes) + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + (hw ? CF.esc(hw) + '<br>' : '') + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
     }).join("") : '<div class="empty">' + empty + '</div>';
-    CF.$("#roster-table tbody").innerHTML = rows.length ? rows.map((p) => '<tr><td class="num">' + CF.esc(p.jersey || "—") + '</td><td class="strong">' + CF.esc(p.name) + (p.url ? ' <a href="' + CF.esc(CF.safeURL(p.url)) + '" target="_blank" rel="noopener" aria-label="' + CF.esc(p.name + ' profile') + '">↗</a>' : '') + '</td><td>' + CF.esc(p.pos) + '</td><td class="num">' + CF.esc(p.age) + '</td><td class="num">' + CF.esc(p.exp) + '</td><td>' + CF.esc(p.height) + '</td><td>' + CF.esc(p.weight) + '</td><td>' + CF.esc(p.from) + '</td></tr>').join("") : '<tr><td colspan="8">' + empty + '</td></tr>';
+    CF.$("#roster-table tbody").innerHTML = rows.length ? rows.map((p) => '<tr><td class="num">' + CF.esc(p.jersey || "—") + psBadge(p, dupes) + '</td><td class="strong">' + CF.esc(p.name) + (p.url ? ' <a href="' + CF.esc(CF.safeURL(p.url)) + '" target="_blank" rel="noopener" aria-label="' + CF.esc(p.name + ' profile') + '">↗</a>' : '') + '</td><td>' + CF.esc(p.pos || "—") + '</td><td class="num">' + CF.esc(p.age) + '</td><td class="num">' + CF.esc(p.exp) + '</td><td>' + CF.esc(p.height) + '</td><td>' + CF.esc(p.weight) + '</td><td>' + CF.esc(p.from) + '</td></tr>').join("") : '<tr><td colspan="8">' + empty + '</td></tr>';
   }
 
   document.addEventListener("DOMContentLoaded", () => {

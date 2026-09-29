@@ -43,7 +43,7 @@
     const thumb = thumbHTML(n, img);
     return '<div class="news-item' + enterAttrs(i, enter) + '"><div>' +
       '<a class="headline" href="' + CF.esc(CF.safeURL(href)) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "Bears wire") + "</a>" +
-      (n.description ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(n.description) + "</p>" : "") +
+      (n.description ? '<p class="dim" style="font-size:13px;margin-top:5px">' + CF.esc(CF.truncateWords(n.description, 140)) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc((n.authors && n.authors[0] && n.authors[0].name) || "The Wire") + "</span><span>" + CF.timeAgo(n.published) + "</span></div>" +
       "</div>" + thumb + "</div>";
   }
@@ -52,16 +52,31 @@
   function wideHTML(it, i, enter) {
     return '<div class="news-item' + enterAttrs(i, enter) + '"><div>' +
       '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
-      (it.desc ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(it.desc) + "</p>" : "") +
+      (it.desc ? '<p class="dim" style="font-size:13px;margin-top:5px">' + CF.esc(CF.truncateWords(it.desc, 140)) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc(it.source || "the wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
       '</div>' + thumbHTML(it, null) + "</div>";
   }
   const wideInj = (it) => INJURY_RE.test(it.title || "") || INJURY_RE.test(it.desc || "");
 
+  /* Dedupe across the three feeds: the same story repeats on the main wire,
+     the injury rail, and the wide wire. The main wire and the injury rail
+     PARTITION each feed (non-injury vs injury-shaped), so no story appears
+     twice by construction; both rendered lists seed the seen set, and the
+     wide wire (loadGoogle, which awaits mainWireReady) skips any normalized
+     headline already shown in either. */
+  const normHeadline = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const wireSeen = new Set();
+  const markSeen = (items, head) => items.forEach((it) => wireSeen.add(normHeadline(head(it))));
+  let mainWireReady = Promise.resolve();
+
   /* Main wire: ESPN league wire first; when it's quiet (offseason) or
      unreachable, the Google News wide wire carries the panel. The injury
      rail pulls from whichever source(s) answered. */
   async function load() {
+    let resolveMain = null;
+    mainWireReady = new Promise((res) => { resolveMain = res; });
+    try {
+    wireSeen.clear(); // fresh pass — the main wire re-seeds the set below
     const enter = !wireEntered; // this render pass's entrance decision
     const pill = CF.$("#feed-pill");
     pill.textContent = "connecting…";
@@ -71,28 +86,43 @@
     if (injBox) injBox.innerHTML = CF.emptyHTML({ icon: "🩹", title: "Scanning the rail", sub: "Flagging report-shaped headlines.", loading: true, style: "padding:18px 14px" });
     let listHTML = "", injHTML = "", count = 0, src = "";
 
-    // 1) ESPN league wire.
+    // 1) ESPN league wire — partitioned, not subsetted: the main wire renders
+    //    the non-injury items and the injury rail renders the injury items, so
+    //    no story appears twice by construction. If every item is
+    //    injury-shaped, the main wire keeps the whole feed and the rail falls
+    //    back to the league-report rows (step 3).
     try {
       const news = await CF.API.getNews();
       const items = news || [];
       if (items.length) {
-        listHTML = items.map((n, i) => itemHTML(n, i, enter)).join("");
-        count = items.length;
-        src = CF.sourceLabel(CF.API.newsSource);
         const inj = items.filter((n) => INJURY_RE.test(n.heading || "") || INJURY_RE.test(n.description || ""));
-        injHTML = inj.map((n, i) => itemHTML(n, i, enter)).join("");
+        const rest = items.filter((n) => inj.indexOf(n) < 0);
+        const mainItems = rest.length ? rest : items;
+        const railItems = rest.length ? inj : [];
+        listHTML = mainItems.map((n, i) => itemHTML(n, i, enter)).join("");
+        count = mainItems.length;
+        src = CF.sourceLabel(CF.API.newsSource);
+        markSeen(mainItems, (n) => n.heading || n.title);
+        markSeen(railItems, (n) => n.heading || n.title);
+        injHTML = railItems.map((n, i) => itemHTML(n, i, enter)).join("");
       }
     } catch (e) { /* league wire silent or down */ }
 
-    // 2) Wide wire (Google News RSS, 100+ outlets).
+    // 2) Wide wire (Google News RSS, 100+ outlets) — same partition rule.
     if (!listHTML) {
       try {
         const items = await CF.API.getGoogleNews("Chicago Bears", 15);
         if (items.length) {
-          listHTML = items.map((it, i) => wideHTML(it, i, enter)).join("");
-          count = items.length;
+          const injAll = items.filter(wideInj);
+          const rest = items.filter((it) => injAll.indexOf(it) < 0);
+          const mainItems = rest.length ? rest : items;
+          const railItems = rest.length ? injAll : [];
+          listHTML = mainItems.map((it, i) => wideHTML(it, i, enter)).join("");
+          count = mainItems.length;
           src = "wide wire · " + (items[0].source ? items[0].source + " et al." : "multi-outlet");
-          injHTML = items.filter(wideInj).map((it, i) => wideHTML(it, i, enter)).join("");
+          markSeen(mainItems, (it) => it.title);
+          markSeen(railItems, (it) => it.title);
+          injHTML = railItems.map((it, i) => wideHTML(it, i, enter)).join("");
         }
       } catch (e) { /* both down */ }
     }
@@ -102,7 +132,10 @@
       try {
         const r = await CF.API.getLeagueInjuries();
         const x = CF.API.bearsInjuryRows(r.data);
-        const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
+        const rows = x.rows
+          .filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment)
+          .filter((row) => !wireSeen.has(normHeadline(row.name)));
+        markSeen(rows, (row) => row.name);
         if (rows.length) {
           // v1.68.0 — same compact rule as the injuries page: the player
           // name is the headline and the story becomes a 3-line excerpt.
@@ -148,10 +181,16 @@
         style: "padding:18px 14px",
       });
     }
+    } finally {
+      resolveMain(); // the wide wire may now build — it dedupes against the seen set
+    }
   }
 
   /* ---------- second source: Google News RSS ("Chicago Bears") ---------- */
   async function loadGoogle() {
+    // The main wire builds first; the wide wire skips anything already shown
+    // on the main wire or the injury rail.
+    try { await mainWireReady; } catch (e) { /* main wire never resolved — carry on */ }
     const enter = !wireEntered; // this render pass's entrance decision
     const pill = CF.$("#gn-pill");
     const list = CF.$("#gn-list");
@@ -160,15 +199,33 @@
     try {
       const items = await CF.API.getGoogleNews('Chicago Bears', 10);
       if (!items.length) throw new Error("empty wide wire");
-      list.innerHTML = items.map((it, i) =>
-        '<div class="news-item' + enterAttrs(i, enter) + '"><div>' +
-        '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
-        '<div class="meta"><span>' + CF.esc(it.source || "the wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
-        "</div></div>"
-      ).join("");
-      wireEntered = true; // first paint done — refreshes stay instant
-      pill.className = "pill ok";
-      pill.textContent = "live · " + items.length + " stories";
+      const fresh = items.filter((it) => {
+        const h = normHeadline(it.title);
+        if (!h || wireSeen.has(h)) return false;
+        wireSeen.add(h);
+        return true;
+      });
+      if (fresh.length) {
+        list.innerHTML = fresh.map((it, i) =>
+          '<div class="news-item' + enterAttrs(i, enter) + '"><div>' +
+          '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
+          '<div class="meta"><span>' + CF.esc(it.source || "the wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
+          "</div></div>"
+        ).join("");
+        wireEntered = true; // first paint done — refreshes stay instant
+        pill.className = "pill ok";
+        pill.textContent = "live · " + fresh.length + " stories";
+      } else {
+        // Every wide story already ran on the main wire or the injury rail —
+        // not an outage, just nothing new to show.
+        list.innerHTML = CF.emptyHTML({
+          icon: "📰",
+          title: "Nothing new on the wide wire",
+          sub: "Every story up top already ran on the main wire or the injury rail.",
+        });
+        pill.className = "pill ok";
+        pill.textContent = "live · all stories already shown";
+      }
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";

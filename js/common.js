@@ -247,6 +247,21 @@ CF.fmtTime = (iso) => {
   catch (e) { return ""; }
 };
 
+/* v1.108.0 — honest kickoff times. ESPN's schedule feed sometimes ships a
+   placeholder 11:00 PM CT (e.g. the Jan 9 playoff slot) for games whose
+   kickoff isn't set — flex scheduling can move them. No real NFL game kicks
+   off at or after 10 PM local, so treat local hour >= 22 as "not set" and
+   return "" (callers fall back to Time TBD). Never falsify: the date stays. */
+CF.kickoffTime = (iso) => {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const hour = Number(d.toLocaleString("en-US", { timeZone: "America/Chicago", hour: "numeric", hour12: false }));
+    if (!Number.isFinite(hour) || hour >= 22) return "";
+    return CF.fmtTime(iso);
+  } catch (e) { return ""; }
+};
+
 /* v1.49.0 — Polymarket line-movement chip: compares this render's price
    against the previous render and returns a tiny ▲/▼ chip when the price
    moved at least one cent, otherwise an empty string. Prices are 0..1. */
@@ -1164,6 +1179,19 @@ CF.injStatusLabel = (s) => {
   if (map[x]) return map[x];
   if (x === "physically unable to perform") return "PUP List";
   return s;
+};
+
+/* Truncate at a word boundary: text that fits returns as-is; longer text is
+   cut at the last space before maxChars and gains a trailing "…". Never cuts
+   mid-word (a single unbroken token longer than maxChars falls back to a hard
+   cut), and truncated output always ends with "…". */
+CF.truncateWords = (s, maxChars) => {
+  const t = String(s == null ? "" : s);
+  const max = Number(maxChars) || 0;
+  if (t.length <= max) return t;
+  const cut = t.lastIndexOf(" ", max);
+  if (cut <= 0) return t.slice(0, max) + "…";
+  return t.slice(0, cut) + "…";
 };
 
 /* ---- Injury movement vs prior snapshot ----

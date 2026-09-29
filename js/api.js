@@ -529,12 +529,29 @@ CF.API = {
       const a = r.athlete;
       const comment = (r.longComment && r.longComment !== r.shortComment) ? r.longComment : (r.shortComment || "");
       if (!a) { if (comment) notes.push(comment); return; }
+      // Compact injury designation from ESPN's details: type + detail + side,
+      // skipping junk values ("Not Specified", null/empty). e.g. "Hamstring —
+      // Strain (Right)", "Knee", "Leg", "Knee — ACL (Surgery)", "Undisclosed".
+      const cleanDetail = (v) => {
+        const s = String(v == null ? "" : v).trim();
+        return (!s || /^not specified$/i.test(s)) ? "" : s;
+      };
+      const d = r.details || {};
+      const dType = cleanDetail(d.type);
+      const dDetail = cleanDetail(d.detail);
+      const dSide = cleanDetail(d.side);
+      let injury = dType;
+      if (dDetail && dSide) injury += " — " + dDetail + " (" + dSide + ")";
+      else if (dDetail) injury += " (" + dDetail + ")";
+      else if (dSide) injury += " (" + dSide + ")";
+      injury = injury.replace(/ - /g, " — "); // house style: "Knee - ACL" → "Knee — ACL"
       rows.push({
         name: a.displayName || "—",
         pos: a.position ? (a.position.abbreviation || "") : "",
         status: r.status || "",
         date: r.date || "",
         comment: comment,
+        injury: injury,
         // v1.68.0 — the compact designation for table cells; the long
         // editorial comment stays on the wire as the story behind the row.
         short: r.shortComment || "",

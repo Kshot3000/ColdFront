@@ -14,14 +14,32 @@
   // CF.fmt printed the raw float (268.18067599999995 -> "268.2"), which reads
   // like a share count sitting next to compact K/M figures. Whole dollars
   // under 1K, compact K/M above, "$" prefix everywhere: $268, $6.7K, $1.8M.
+  // v1.108.0 — strip the useless ".0" from the compact form: "$63.0K" -> "$63K".
   const fmtPolyVol = (v) => {
     const n = Number(v);
     if (!Number.isFinite(n)) return "—";
-    const compact = (d, suf) => (n / d).toFixed(n % d === 0 ? 0 : 1) + suf;
+    const compact = (d, suf) => (n / d).toFixed(n % d === 0 ? 0 : 1).replace(/\.0$/, "") + suf;
     if (Math.abs(n) >= 1e6) return "$" + compact(1e6, "M");
     if (Math.abs(n) >= 1e3) return "$" + compact(1e3, "K");
     return "$" + Math.round(n);
   };
+
+  /* v1.108.0 — binary completion for the Polymarket board. The feed sometimes
+     ships only one side of a binary market (e.g. prices ["","0.7475"] -> yes
+     null, no 0.7475 after api.js's valid() clamps), and the old render path
+     then dropped the missing chip entirely. When a market has exactly the two
+     Yes/No outcomes and exactly ONE of yes/no is present and finite, derive
+     the missing side as (1 - present). Never derive when both are missing or
+     the market isn't binary. */
+  const looksBinary = (lbl) => /^(yes|no)$/i.test(String(lbl || "").trim());
+  function completeBinary(m) {
+    const yOk = Number.isFinite(m.yes), nOk = Number.isFinite(m.no);
+    if (yOk === nOk) return m; // both present, or both missing — nothing to do
+    if (!(looksBinary(m.yesLabel) && looksBinary(m.noLabel))) return m;
+    const out = Object.assign({}, m);
+    if (yOk) out.no = 1 - m.yes; else out.yes = 1 - m.no;
+    return out;
+  }
 
   /* ---------- 1) league-wire line for the next Bears game ---------- */
   async function loadWireOdds() {
@@ -56,7 +74,11 @@
       // v1.94.0 — the pill names the source AND when it was last read.
       CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + gameName, Date.now());
       const side = bearsSideOf(nextGame);
-      const best = side ? bestBearsPrices(line.lines, side) : null;
+      // v1.108.0 — "BEST" is a comparison: with a single book on the board
+      // there's nothing to compare against, so the best-strip and the per-row
+      // BEST chips stand down instead of stating the obvious.
+      const multiBook = new Set((line.lines || []).map((l) => l.book).filter(Boolean)).size > 1;
+      const best = side && multiBook ? bestBearsPrices(line.lines, side) : null;
       box.innerHTML = (best ? bestStrip(best, line.lines, !wireEntered) : "") + line.lines.map((l, i) =>
         '<div class="odds-card' + (wireEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(i, 12) + '">' +
         '<span class="book">' + CF.esc(l.book) + "</span>" +
@@ -180,12 +202,25 @@
       CF.freshStamp(CF.$("#poly-pill"), "Polymarket · live", Date.now());
       box.innerHTML = bears.slice(0, 8).map((ev) => {
         const kpre = (ev.slug || ev.url || ev.title) + "::";
-        return (ev.markets || []).map((m) => {
-          // v1.49.0 — line-movement chips vs the previous render
-          const kY = kpre + m.question + "::yes", kN = kpre + m.question + "::no";
-          const yesChip = CF.polyMoveChip(polyPrev[kY], m.yes);
-          const noChip = CF.polyMoveChip(polyPrev[kN], m.no);
-          polyPrev[kY] = m.yes; polyPrev[kN] = m.no;
+        return (ev.markets || []).map((m0) => {
+          // v1.49.0 — line-movement chips vs the previous render (tracked on
+          // the RAW feed values, so the chips report real feed movement even
+          // when a side had to be derived for display below).
+          const kY = kpre + m0.question + "::yes", kN = kpre + m0.question + "::no";
+          const yesChip = CF.polyMoveChip(polyPrev[kY], m0.yes);
+          const noChip = CF.polyMoveChip(polyPrev[kN], m0.no);
+          polyPrev[kY] = m0.yes; polyPrev[kN] = m0.no;
+          // v1.108.0 — complete a binary market before rendering, so both
+          // chips always render when at least one side arrived.
+          const m = completeBinary(m0);
+          // v1.108.0 — cent prices: yes rounds normally; when both sides are
+          // present the no side is 100 - yes so the pair always sums to 100
+          // (fixes "Yes 51¢ / No 50¢" -> 101%). A lone side (non-binary)
+          // rounds on its own.
+          const yesCents = Number.isFinite(m.yes) ? Math.round(m.yes * 100) : null;
+          const noCents = (yesCents != null && Number.isFinite(m.no))
+            ? 100 - yesCents
+            : (Number.isFinite(m.no) ? Math.round(m.no * 100) : null);
           // Implied-probability bar: a single fill against the track — the
           // convention every prediction-market fan already reads (Polymarket
           // and Kalshi both fill to the yes price). The old two-segment strip
@@ -193,21 +228,22 @@
           // the extreme leans that are normal in these markets; the fill plus
           // a 50/50 reference tick keeps the crowd's lean readable at any
           // price, next to the cent prices.
-          const yesPct = m.yes != null ? Math.max(0, Math.min(100, Math.round(m.yes * 100))) : null;
-          const bar = yesPct != null
-            ? '<span class="poly-bar" role="img" aria-label="Implied probability: ' + yesPct + "% yes, " + (100 - yesPct) + '% no">' +
-              '<i class="fill" style="width:' + yesPct + '%"></i></span>'
+          // v1.108.0 — the alt text derives from the SAME rounded cent values
+          // the chips use, so they can never disagree.
+          const bar = yesCents != null
+            ? '<span class="poly-bar" role="img" aria-label="Implied probability: ' + yesCents + "% yes, " + (100 - yesCents) + '% no">' +
+              '<i class="fill" style="width:' + Math.max(0, Math.min(100, yesCents)) + '%"></i></span>'
             : "";
           return '<div class="poly-card' + (polyEntered ? "" : " cf-enter") + '" style="--ni:' + Math.min(n++, 12) + '">' +
           '<span class="q">' + CF.esc(m.question) + "</span>" +
           '<span class="pr">' +
-          (m.yes != null ? '<span class="poly-price yes" title="implied ' + Math.round(m.yes * 100) + '%">' + CF.esc(m.yesLabel) + ' ' + Math.round(m.yes * 100) + "¢" + yesChip + "</span>" : "") +
-          (m.no != null ? '<span class="poly-price no" title="implied ' + Math.round(m.no * 100) + '%">' + CF.esc(m.noLabel) + ' ' + Math.round(m.no * 100) + "¢" + noChip + "</span>" : "") +
+          (yesCents != null ? '<span class="poly-price yes" title="implied ' + yesCents + '%">' + CF.esc(m.yesLabel) + ' ' + yesCents + "¢" + yesChip + "</span>" : "") +
+          (noCents != null ? '<span class="poly-price no" title="implied ' + noCents + '%">' + CF.esc(m.noLabel) + ' ' + noCents + "¢" + noChip + "</span>" : "") +
           "</span>" +
           bar +
           '<span class="sub">' +
           (m.volume != null ? "Vol " + fmtPolyVol(m.volume) : "") +
-          (m.endDate ? " · ends " + CF.fmtDate(m.endDate) : "") +
+          (m.endDate ? " · ends " + CF.fmtDate(m.endDate, { year: "numeric" }) : "") +
           ' · <a href="' + CF.esc(CF.safeURL(m.url)) + '" target="_blank" rel="noopener">market ↗</a>' +
           "</span></div>";
         }).join("");

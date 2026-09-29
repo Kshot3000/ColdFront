@@ -100,7 +100,7 @@
       side(home, true, st.state, winSide) +
       "</div>" +
       '<div class="game-meta">' +
-      (CF.fmtDate(e.date) + " · " + (CF.fmtTime(e.date) || "TBD")) +
+      (CF.fmtDate(e.date) + " · " + (CF.kickoffTime(e.date) || "TBD")) +
       (tv ? " · TV: <b>" + CF.esc(tv) + "</b>" : "") +
       (watch ? ' · <a href="' + CF.esc(CF.safeURL(watch)) + '" target="_blank" rel="noopener">Watch ↗</a>' : "") +
       ' · <a href="' + espn + '" target="_blank" rel="noopener">ESPN game ↗</a>' +
@@ -164,7 +164,10 @@
     // middot in dim, matching the site's own date-voice ("date · time" in
     // common.js). A bare space rendered as nothing, fusing date and kickoff
     // into "Thu, Oct 227:15 PM CDT".
-    "<td>" + CF.fmtDate(g.date) + (CF.fmtTime(g.date) ? ' <span class="dim">· ' + CF.fmtTime(g.date) + "</span>" : "") + "</td>" +
+    // v1.108.0 — kickoffTime returns "" for placeholder late-night source
+    // times (e.g. ESPN's 11 PM stand-in for TBD/flex slots); the date stays,
+    // the time honestly reads TBD instead of a fake 11 PM.
+    "<td>" + CF.fmtDate(g.date) + (CF.kickoffTime(g.date) ? ' <span class="dim">· ' + CF.kickoffTime(g.date) + "</span>" : ' <span class="dim" title="Kickoff time not set yet — flex scheduling can move it">· Time TBD</span>') + "</td>" +
       '<td class="strong">' + (g.home ? "vs " : "@ ") + CF.esc(g.opp) + "</td>" +
       '<td class="num dim">' + (g.home ? "H" : "A") + "</td>" +
       '<td class="num log-score">' + CF.esc(scoreTxt) + "</td>" +
@@ -402,15 +405,20 @@
         if (top) break;
       }
       if (top) {
-        const yes = Math.round(top.yes * 100);
+        // v1.108.0 — the chips carry the market's real outcome labels
+        // (yesLabel/noLabel), never hardcoded YES/NO: that hardcoding let
+        // this card disagree with the home desk and the odds board on which
+        // side was which. Cent rounding keeps yes+no at exactly 100.
+        const yesC = Math.round(top.yes * 100);
+        const noC = top.no != null ? 100 - yesC : null;
         polyHTML =
           '<div class="matchup-stat desk-poly">' +
           '<span class="k">Polymarket</span>' +
           '<div class="v" style="font-size:14px;line-height:1.35">' + CF.esc(top.question) + "</div>" +
           '<div class="desk-chips" style="margin-top:8px">' +
-          '<span class="desk-chip yes"><span class="k">YES</span><b>' + yes + "¢</b></span>" +
-          (top.no != null
-            ? '<span class="desk-chip no"><span class="k">NO</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
+          '<span class="desk-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + "</span><b>" + yesC + "¢</b></span>" +
+          (noC != null
+            ? '<span class="desk-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + "</span><b>" + noC + "¢</b></span>"
             : "") +
           "</div>" +
           '<div class="s"><a href="' + CF.esc(top.url) + '" target="_blank" rel="noopener">market ↗</a> · <a href="odds.html">more →</a></div></div>';
@@ -535,7 +543,7 @@
       }
     }
     meta.innerHTML =
-      "<b>" + CF.fmtDate(g.date) + "</b> · " + (CF.fmtTime(g.date) || "TBD") +
+      "<b>" + CF.fmtDate(g.date) + "</b> · " + (CF.kickoffTime(g.date) || "TBD") +
       " · " + CF.esc(site) +
       (g.venue ? " · " + CF.esc(g.venue) : (g.home ? " · Soldier Field" : "")) +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");

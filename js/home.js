@@ -75,9 +75,18 @@
       : game.state === "post" ? "Last result · Chicago Bears" : "Next up · Chicago Bears";
     for (const side of ["home", "away"]) show("#ng-" + side + "-score", game.state === "pre" ? "" : (game[side].score ?? "—"));
     show("#ng-mid", game.venue);
-    show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD") + (game.tv ? " · " + game.tv : ""));
+    show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? (CF.kickoffTime(game.date) || "Time TBD") : "Time TBD") + (game.tv ? " · " + game.tv : ""));
     CF.$("#game-detail-link").href = "games.html?date=" + CF.dateInput(game.date) + "&game=" + encodeURIComponent(game.id) + "#boxscore";
-    CF.$("#prediction-toggle").disabled = game.state !== "pre";
+    // v1.108.0 — "Make your call" is only enabled for the upcoming game.
+    // When disabled, say WHY so it doesn't read as a dead widget.
+    const pt = CF.$("#prediction-toggle");
+    const ptOpen = game.state === "pre";
+    pt.disabled = !ptOpen;
+    pt.title = ptOpen
+      ? "Make your call — lock in a score prediction before kickoff"
+      : (game.state === "in"
+        ? "Game's underway — predictions are closed; they reopen before the next game"
+        : "That game's in the books — predictions reopen before the next game");
     if (predictionGame?.id !== game.id) {
       predictionGame = game;
       const opponent = game.home.abbr === "CHI" ? game.away.abbr : game.home.abbr;
@@ -104,7 +113,7 @@
         String(n).padStart(2, "0") + '</b><span>' + ["days", "hours", "min", "sec"][i] + "</span></div>").join("");
       lastCountdown = values;
     };
-    if (game.state === "pre" && game.timeValid) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
+    if (game.state === "pre" && game.timeValid && CF.kickoffTime(game.date)) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
     else show("#ng-countdown", game.state === "in" ? game.display : "");
   }
 
@@ -176,7 +185,7 @@
           if (Number.isFinite(bears) && Number.isFinite(opp)) resultCls = bears > opp ? "bears-win" : (bears < opp ? "bears-loss" : "");
         }
         const chip = ours ? '<span class="our-chip">🐻 Our game</span>' : "";
-        return '<a class="mini-game ' + (ours ? ("our-game " + resultCls).trim() : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD")) + '</span>' + chip + '</div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
+        return '<a class="mini-game ' + (ours ? ("our-game " + resultCls).trim() : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? (CF.kickoffTime(game.date) || "Time TBD") : "Time TBD")) + '</span>' + chip + '</div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
       }).join("") : '<div class="empty">No NFC North games in this week’s feed. <a href="games.html">Explore the schedule ↗</a></div>';
     } catch (_) {
       show("#north-pill", "Unavailable");
@@ -236,7 +245,7 @@
       // v1.94.0 — the pill says when the report was last read, not just its source.
       CF.freshStamp(CF.$("#inj-home-pill"), CF.sourceLabel(result.source) + " · league report", Date.now());
       if (result.source === "live") await paintHomeInjuryMove(rows);
-      CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(CF.injStatusLabel(row.short || row.comment) || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status)) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
+      CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.injury || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status)) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
     } catch (_) {
       show("#inj-home-pill", "Report unavailable");
       CF.$("#home-injuries tbody").innerHTML = '<tr><td colspan="4" class="dim">The league report did not answer. <a href="injuries.html">Check roster flags and the full report ↗</a></td></tr>';
@@ -265,6 +274,13 @@
   }
 
   /* ---------- news (top 4) ---------- */
+  /* The injuries page (js/injuries.js paintMovement) is the canonical writer
+     of the device prior snapshot — the homepage only READS here. If the
+     homepage also wrote its rows as the prior, the first page viewed would
+     eat the movement: the homepage once reported "2 changes vs prior" while
+     injuries.html, diffing against the homepage's rows, saw "No report
+     movement". With only injuries.html writing, both pages diff against the
+     same stored snapshot and agree. */
   async function paintHomeInjuryMove(rows) {
     const host = CF.$("#home-inj-movement");
     if (!host || !CF.diffInjuryMovement) return;
@@ -274,7 +290,7 @@
       // Compact on home — skip quiet state to keep the snapshot lean.
       host.innerHTML = CF.injuryMovementHTML(diff, { maxNew: 3, maxUp: 2, maxRem: 2 });
     } catch (e) { host.innerHTML = ""; }
-    if (rows && rows.length) CF.injSnapSet(rows);
+    // No CF.injSnapSet here — injuries.html owns the prior snapshot (see above).
   }
 
   function formatDeskLineBits(line) {
@@ -379,11 +395,14 @@
       }
       if (top) {
         polyOk = true;
+        // v1.108.0 — cent rounding keeps yes+no at exactly 100 (no 51¢/50¢).
+        const yesC380 = Math.round(top.yes * 100);
+        const noC380 = top.no != null ? 100 - yesC380 : null;
         polyHTML =
           '<div class="desk-poly-row">' +
-          '<span class="desk-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + '</span><b>' + Math.round(top.yes * 100) + "¢</b></span>" +
-          (top.no != null
-            ? '<span class="desk-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + Math.round(top.no * 100) + "¢</b></span>"
+          '<span class="desk-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + '</span><b>' + yesC380 + "¢</b></span>" +
+          (noC380 != null
+            ? '<span class="desk-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + noC380 + "¢</b></span>"
             : "") +
           '<a class="dim" href="' + CF.esc(top.url) + '" target="_blank" rel="noopener" title="' +
           CF.esc(top.question) + '">Polymarket ↗</a></div>';
@@ -414,7 +433,7 @@
       '<div class="desk-kicker"><span class="k">Next kickoff</span></div>' +
       '<div class="desk-match">' + CF.esc(matchup) + "</div>" +
       '<div class="desk-when dim"><b>' + CF.esc(CF.fmtDate(g.date)) + "</b> · " +
-      CF.esc(CF.fmtTime(g.date) || "TBD") +
+      CF.esc(CF.kickoffTime(g.date) || "TBD") +
       (g.tv ? " · TV " + CF.esc(g.tv) : "") +
       (g.home ? " · Home · Soldier Field" : " · Away") +
       "</div></div>" +
@@ -510,14 +529,16 @@
       }
       if (top) {
         polyOk = true;
+        // v1.108.0 — cent rounding keeps yes+no at exactly 100 (no 51¢/50¢).
         const yes = Math.round(top.yes * 100);
+        const noC = top.no != null ? 100 - yes : null;
         polyHTML =
           '<div class="pulse-block">' +
           '<div class="pulse-label">Polymarket pulse</div>' +
           '<div class="pulse-q">' + CF.esc(top.question) + "</div>" +
           '<div class="pulse-chips">' +
           '<span class="pulse-chip yes"><span class="k">' + CF.esc(top.yesLabel || "Yes") + '</span><b>' + yes + "¢</b></span>" +
-          (top.no != null ? '<span class="pulse-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + Math.round(top.no * 100) + "¢</b></span>" : "") +
+          (noC != null ? '<span class="pulse-chip no"><span class="k">' + CF.esc(top.noLabel || "No") + '</span><b>' + noC + "¢</b></span>" : "") +
           "</div>" +
           '<div class="pulse-sub"><a href="' + CF.esc(top.url) + '" target="_blank" rel="noopener">market ↗</a> · <a href="odds.html">more →</a></div>' +
           "</div>";
@@ -557,7 +578,7 @@
       return { active: "practice", note: "Kickoff time unclear — showing the Midweek practice beat.", pill: "fallback" };
     }
     const hours = (kick - Date.now()) / 3600e3;
-    const when = CF.fmtDate(g.date) + (CF.fmtTime(g.date) ? " · " + CF.fmtTime(g.date) : "");
+    const when = CF.fmtDate(g.date) + (CF.kickoffTime(g.date) ? " · " + CF.kickoffTime(g.date) : "");
     const opp = g.opp || (g.away && g.home ? ((g.home.abbr === "CHI" ? g.away.abbr : g.home.abbr)) : "opponent");
     if (game && game.state === "in") {
       return { active: "gameday", note: "<b>Live now</b> — board is the beat. " + CF.esc(when), pill: "live" };
@@ -625,9 +646,11 @@
      Compact last-box leaders when a completed Bears game is fresh —
      deep-links to stats last-box + games. Hidden when nothing final. */
   function filmLeaderCell(l) {
+    // The separating space lives INSIDE the dim span's text so naive text
+    // extraction keeps it ("Case Keenum QB · CHI", not "Case KeenumQB · CHI").
     return CF.esc(l.player) +
       (l.pos || l.teamAbbr
-        ? ' <span class="dim">' + CF.esc([l.pos, l.teamAbbr].filter(Boolean).join(" · ")) + "</span>"
+        ? '<span class="dim">' + CF.esc(" " + [l.pos, l.teamAbbr].filter(Boolean).join(" · ")) + "</span>"
         : "");
   }
 
@@ -675,9 +698,9 @@
         '<div class="film-room-card">' +
         '<div class="film-room-head">' +
         '<div class="film-kicker"><span class="k">Film room</span></div>' +
-        '<div class="film-match"><b>' + CF.esc(result) + "</b> " +
-        CF.esc(site) + " " + CF.esc(last.oppAbbr || last.opp || "OPP") +
-        ' <span class="dim">' + CF.esc(score) + " · " + CF.esc(CF.fmtDate(last.date)) + "</span></div>" +
+        '<div class="film-match"><b>' + CF.esc(result + " ") + "</b>" +
+        CF.esc(site + " " + (last.oppAbbr || last.opp || "OPP") + " ") +
+        '<span class="dim">' + CF.esc(score + " · " + CF.fmtDate(last.date)) + "</span></div>" +
         "</div>" +
         (leaders.length
           ? '<div class="film-leaders" role="list">' +
