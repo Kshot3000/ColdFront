@@ -318,6 +318,19 @@ CF.emptyHTML = (opts) => {
     "</div>";
 };
 
+/* v1.106.0 — shared dead-thumbnail swap: a news <img class="thumb"> whose
+   source 404s (ESPN hotlink protection) is replaced with its designed
+   fallback tile. The glyph + tint ride on data attributes so the swap lands
+   with the same story-aware treatment as a story that shipped without an
+   image at all. */
+CF.thumbFallback = (img) => {
+  if (!img || !img.parentNode) return;
+  const d = document.createElement("div");
+  d.className = "thumb-fallback" + (img.getAttribute("data-tint") ? " " + img.getAttribute("data-tint") : "");
+  d.textContent = img.getAttribute("data-glyph") || "❄";
+  img.replaceWith(d);
+};
+
 /* Build N skeleton table rows spanning `cols` columns.
    widths: optional array of % widths (cycles). */
 CF.skelRows = (cols, n, widths) => {

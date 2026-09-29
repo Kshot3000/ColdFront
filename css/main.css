@@ -1050,6 +1050,12 @@ body.nav-open .site-head {
   flex: 0 0 auto;
   background: rgba(11, 22, 38, 0.4);
 }
+/* v1.106.0 — fallback tiles carry one of four whisper-quiet tints so
+   neighboring stories don't read as the same missing image. tf-t0 is the
+   untouched default above. */
+.news-item .thumb-fallback.tf-t1 { background: rgba(255, 106, 31, 0.07); }
+.news-item .thumb-fallback.tf-t2 { background: rgba(120, 190, 255, 0.07); }
+.news-item .thumb-fallback.tf-t3 { background: rgba(150, 180, 210, 0.06); }
 @media (max-width: 560px) {
   .news-item { grid-template-columns: 1fr; }
   .news-item .thumb, .news-item .thumb-fallback { width: 100%; height: 120px; }

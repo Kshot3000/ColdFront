@@ -11,12 +11,36 @@
     return enter ? ' cf-enter" style="--ni:' + Math.min(i, 12) : "";
   }
 
+  /* v1.106.0 — the wire's fallback thumbnails were all the same snowflake
+     box: when ESPN's images 404 (hotlink protection) or the wide wire ships
+     none, the list read as a wall of identical ❄ tiles. Fallbacks now carry
+     a story-aware glyph (injury / game / roster move / brand snowflake) and
+     one of four whisper-quiet tints keyed off the headline, so neighboring
+     cards read as distinct stories instead of the same missing image. */
+  function thumbGlyph(n) {
+    const t = ((n.heading || n.title || "") + " " + (n.description || n.desc || "")).toLowerCase();
+    if (INJURY_RE.test(t)) return "🩹";
+    if (/\b(game|win|wins|loss|beat|beats|recap|score|touchdown|field goal|overtime|playoff|playoffs|kickoff|sunday|monday|thursday)\b/.test(t)) return "🏈";
+    if (/\b(trade|traded|sign|signed|signing|contract|extension|roster|draft|drafted|waive|waived|release|hire|hired|fired|coach|gm)\b/.test(t)) return "📋";
+    return "❄";
+  }
+  function thumbTint(n) {
+    const s = String(n.heading || n.title || "");
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return "tf-t" + (h % 4);
+  }
+  function thumbHTML(n, img) {
+    const glyph = thumbGlyph(n), tint = thumbTint(n);
+    if (!img) return '<div class="thumb-fallback ' + tint + '">' + glyph + "</div>";
+    return '<img class="thumb" loading="lazy" src="' + CF.esc(img) + '" alt=""' +
+      ' data-glyph="' + glyph + '" data-tint="' + tint + '" onerror="CF.thumbFallback(this)">';
+  }
+
   function itemHTML(n, i, enter) {
     const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
     const img = n.images && n.images[0] ? n.images[0].url : null;
-    const thumb = img
-      ? '<img class="thumb" loading="lazy" src="' + CF.esc(img) + '" alt="" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'thumb-fallback\',textContent:\'❄\'}))">'
-      : '<div class="thumb-fallback">❄</div>';
+    const thumb = thumbHTML(n, img);
     return '<div class="news-item' + enterAttrs(i, enter) + '"><div>' +
       '<a class="headline" href="' + CF.esc(CF.safeURL(href)) + '" target="_blank" rel="noopener">' + CF.esc(n.heading || "Bears wire") + "</a>" +
       (n.description ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(n.description) + "</p>" : "") +
@@ -30,7 +54,7 @@
       '<a class="headline" href="' + CF.esc(CF.safeURL(it.link)) + '" target="_blank" rel="noopener">' + CF.esc(it.title) + "</a>" +
       (it.desc ? '<p class="dim" style="font-size:13px;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + CF.esc(it.desc) + "</p>" : "") +
       '<div class="meta"><span>' + CF.esc(it.source || "the wide wire") + "</span><span>" + CF.timeAgo(it.date) + "</span></div>" +
-      '</div><div class="thumb-fallback">❄</div></div>';
+      '</div>' + thumbHTML(it, null) + "</div>";
   }
   const wideInj = (it) => INJURY_RE.test(it.title || "") || INJURY_RE.test(it.desc || "");
 
