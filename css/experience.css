@@ -406,7 +406,12 @@ main:focus { outline: none; }
   .wrap { width: 92%; } .match-card { padding: 21px; } .match-card .abbr { font-size: 41px; }
   .hero h1 { font-size: clamp(36px, 13vw, 52px); line-height: 0.96; }
   .front-news { grid-template-columns: 1fr; } .story-image { height: 200px; }
-  .hero-actions .btn { flex: 1; justify-content: center; padding: 12px 10px; }
+  /* v1.101.0 — the hero CTAs stop squishing on narrow phones: flex:1 squeezed
+     both buttons to ~170px so "ENTER GAME / CENTER" wrapped two lines. Stacked
+     full-width they read as two clean single-line tap targets (the ESPN/Apple
+     mobile pattern) — white-space:nowrap guards the glyphs too. */
+  .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .hero-actions .btn { flex: none; width: 100%; justify-content: center; white-space: nowrap; padding: 14px 18px; }
   .player-portrait { height: 136px; } .player-info { padding: 13px; } .player-info h3 { font-size: 14px; }
   .roster-grid { gap: 10px; } .roster-grid .st { font-size: 9px; } .match-footer { font-size: 11px; }
 }
