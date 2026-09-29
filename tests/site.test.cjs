@@ -2556,3 +2556,20 @@ test('v1.102.0: the box-score card gets a real scoreboard header — the score i
  const fh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(fh.includes('3GnR…8vZK'),'the BTC tip chip address survives in the footer');
 });
+
+test('v1.103.0: games.html carries one photo-band — the stacked Navy Pier band is gone',async()=>{
+ // The games page was the only one with two decorative photo-bands stacked
+ // back-to-back (~600px of atmosphere before the Sunday desk card). Every
+ // other page has exactly one; the second (Navy Pier) band added nothing the
+ // Soldier Field band didn't already say, so the Sunday desk now sits ~300px
+ // higher. Pure markup deletion — no stylesheet or script changes.
+ const p=await page('games');try{
+  const bands=p.w.document.querySelectorAll('main .photo-band');
+  assert.equal(bands.length,1,'games.html has exactly one photo-band');
+  assert.ok(bands[0].classList.contains('soldier'),'the surviving band is the Soldier Field one');
+  assert.equal(p.w.document.querySelectorAll('main .photo-band.navy-pier').length,0,'the Navy Pier band is gone');
+  assert.ok(!/Ferris glow/.test(p.w.document.querySelector('main').textContent),'the Ferris-glow copy is gone with it');
+  assert.ok(p.w.document.querySelector('#next-opp'),'the Sunday desk card still leads the content');
+  assert.ok(p.w.document.querySelector('.photo-band-copy p'),'the surviving band keeps its fan-facing copy');
+ }finally{p.close();}
+});
