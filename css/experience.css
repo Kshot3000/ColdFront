@@ -117,7 +117,16 @@ main:focus { outline: none; }
   box-shadow: 0 18px 80px #0007, inset 0 1px #ffffff09, 0 0 34px rgba(255, 90, 31, 0.28);
 }
 .team-side-label { font: 500 10px var(--body); color: #7f9bb1; letter-spacing: .17em; text-transform: uppercase; margin-top: 7px; }
-.match-card .mid { font-size: 10px; line-height: 1.6; color: #9ab5c8; }
+/* v1.85.0 — the hero card's venue line reads as a shared stadium divider,
+   not a tag hanging off the away column: centered, tracked micro-label in
+   the family's uppercase voice with a stadium glyph and breathing room from
+   both teams, so "Soldier Field" can never read as "PHI · AWAY · Soldier
+   Field" (desktop live-QA catch — it sat left-aligned directly under the
+   away block). The frost skeleton inherits the centering; the glyph waits
+   until real content paints. */
+.match-card .mid { text-align: center; font: 600 10px/1.8 var(--body); letter-spacing: .22em; text-transform: uppercase; color: #9ab5c8; margin: 12px auto 16px; }
+.match-card .mid::before { content: "🏟\00A0\00A0"; letter-spacing: 0; }
+.match-card .mid:has(.skel)::before { content: none; }
 .match-card .game-meta { font-size: 12px; line-height: 1.8; padding: 14px 0; border-top: 1px solid #ffffff10; }
 .match-card .countdown { gap: 8px; margin-top: 8px; }
 .match-card .countdown .unit { min-width: 0; flex: 1; padding: 12px 8px; background: #030b176e; border-color: #d6ecff13; }
