@@ -1928,6 +1928,18 @@ input[type="date"]:focus {
   box-shadow: 0 0 0 3px rgba(200, 56, 3, 0.15);
 }
 
+/* v1.91.0 — iOS auto-zoom guard: Safari zooms the viewport whenever a focused
+   input is under 16px, so every iPhone fan who tapped the roster search, the
+   board date-picker, or the API-key field got yanked into a zoomed view and
+   had to pinch back out. Touch users get 16px fields on every text control —
+   the desktop type scale stays untouched. Bonus: roomier touch targets. */
+@media (pointer: coarse) {
+  .roster-controls input,
+  .roster-controls select,
+  input[type="date"],
+  .key-box input { font-size: 16px; }
+}
+
 /* ---------- Misc ---------- */
 .kicker-line {
   display: flex;
