@@ -1900,3 +1900,40 @@ test('v1.87.0: season-log date cells separate the date from kickoff with a middo
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
 });
+
+test('v1.88.0: team hero headline speaks the live roster count',async()=>{
+ // Fresh-eyes visual QA (2026-09-28, screenshot-confirmed): the team page's
+ // photo-band hero read "Fifty-three names. One city." while the roster pill
+ // directly below it reported the feed's real count ("live · 83 players") —
+ // a data contradiction in the page's most prominent copy. The headline is
+ // now live-aware: when the roster loads, team.js rewrites it to the same
+ // number the pill reports ("83 names. One city."). The poetic fifty-three
+ // line survives as the pre-load and feed-down fallback voice.
+ const html=fs.readFileSync(path.join(__dirname,'..','team.html'),'utf8');
+ assert.ok(html.includes('<h3 id="roster-hero-line">Fifty-three names. One city.</h3>'),
+   'the hero headline carries the roster-hero-line id with the fifty-three fallback');
+ const team=fs.readFileSync(path.join(__dirname,'..','js','team.js'),'utf8');
+ assert.ok(team.includes('roster-hero-line'),'team.js targets the hero headline');
+ assert.ok(team.includes('all.length + " names. One city."'),'the hero rewrite uses the live roster count');
+ // Behavioral: the fixture roster ships two players, so the hero and the
+ // pill must agree on "2" after the feed settles.
+ const p=await page('team');try{
+  await settle(300);
+  const hero=p.w.document.querySelector('#roster-hero-line').textContent.trim();
+  const pill=p.w.document.querySelector('#roster-pill').textContent.trim();
+  assert.equal(hero,'2 names. One city.','the hero headline carries the fixture count: '+hero);
+  assert.ok(pill.includes('2 players'),'the pill reports the same count: '+pill);
+ }finally{p.close();}
+ // Only team.html loads team.js, so only its key moves to v1.88.0 —
+ // common.js is untouched, so its v1.83.0 key holds everywhere. Footer
+ // branding survives.
+ assert.ok(html.includes('js/team.js?v=1.88.0'),'team.html carries the v1.88.0 team.js cache key');
+ assert.ok(!/team\.js\?v=1\.(8[0-7]|7[0-9]|[0-6][0-9])/.test(html),'team.html has no stale team.js key');
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const ph=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(ph.includes('js/common.js?v=1.83.0'),name+'.html keeps the v1.83.0 common.js cache key');
+  assert.ok(ph.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+  assert.ok(ph.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+ }
+});

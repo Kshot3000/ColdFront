@@ -29,6 +29,13 @@
       if (!all.length) throw new Error("Empty roster");
       loaded = true;
       pill.textContent = CF.sourceLabel(result.source) + " · " + all.length + " players";
+      // v1.88.0 — the hero headline speaks the live roster count, so it can
+      // never contradict the pill ("Fifty-three names" above "live · 83
+      // players"). The static fifty-three line stays as the pre-load and
+      // feed-down fallback voice; when the feed answers, the hero carries
+      // the same number the pill reports.
+      const hero = CF.$("#roster-hero-line");
+      if (hero) hero.textContent = all.length + " names. One city.";
       const select = CF.$("#roster-pos"), selected = select.value;
       const positions = [...new Set(all.map((p) => String(p.pos).toUpperCase()))].sort();
       select.innerHTML = '<option value="">All positions</option>' + positions.map((p) => '<option value="' + CF.esc(p) + '">' + CF.esc(p) + '</option>').join("");
