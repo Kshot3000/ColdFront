@@ -14,17 +14,34 @@ CF.initSnow = () => {
   control.type = "button";
   control.className = "snow-toggle";
   control.setAttribute("aria-controls", "snow");
-  // v1.79.0 — the toggle docks in the sticky header (left of the menu button),
-  // so on phones it can never park on readable content — the floating pill used
-  // to cover the responsible-gambling helpline number on odds.html and the
-  // matchup line on the NEXT UP card. Desktop keeps position:fixed via CSS, so
-  // the DOM location is irrelevant there; the header wrap is flex, so the
-  // mobile CSS simply sets position:static to pull it into the header flow.
-  const headBar = document.querySelector(".site-head .wrap");
-  const navToggle = headBar && headBar.querySelector(".nav-toggle");
-  if (navToggle) headBar.insertBefore(control, navToggle);
-  else if (headBar) headBar.appendChild(control);
-  else document.body.appendChild(control);
+  // v1.100.0 — the toggle's home follows the viewport, using the same
+  // max-width:760px breakpoint the CSS dock rule uses. On phones it docks in
+  // the sticky header (left of the menu button) so it can never park on
+  // readable content — the floating pill used to cover the
+  // responsible-gambling helpline number on odds.html and the matchup line on
+  // the NEXT UP card (v1.79.0). On desktop the CSS floats it bottom-right via
+  // position:fixed — but that only reaches the viewport when the toggle is NOT
+  // inside .site-head: the header's backdrop-filter makes it a containing
+  // block for fixed descendants, which trapped the pill at the header's
+  // bottom-right, burying the X nav link under it. So desktop parks the
+  // control on document.body (no filters or transforms there), and a change
+  // listener re-homes it across resizes and orientation flips.
+  const dockMq = window.matchMedia("(max-width: 760px)");
+  const placeSnowToggle = () => {
+    const headBar = document.querySelector(".site-head .wrap");
+    const navToggle = headBar && headBar.querySelector(".nav-toggle");
+    if (dockMq.matches) {
+      if (navToggle) headBar.insertBefore(control, navToggle);
+      else if (headBar) headBar.appendChild(control);
+      else document.body.appendChild(control);
+    } else {
+      // Desktop: escape the header's backdrop-filter trap so the CSS
+      // position:fixed actually floats the pill at the viewport's bottom-right.
+      document.body.appendChild(control);
+    }
+  };
+  dockMq.addEventListener("change", placeSnowToggle);
+  placeSnowToggle();
 
   function resize() {
     width = window.innerWidth;

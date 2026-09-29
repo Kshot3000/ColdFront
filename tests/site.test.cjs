@@ -1616,9 +1616,37 @@ test('v1.79.0: snow toggle docks in the header on phones — never parks on cont
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
-  assert.ok(html.includes('js/snow.js?v=1.79.0'),name+'.html carries the v1.79.0 snow.js cache key');
-  assert.ok(!/experience\.css\?v=1\.([0-7](\.0)?|80\.0|85\.0|92\.0)|snow\.js\?v=1\.1[0-8]/.test(html),name+'.html has no stale experience/snow cache key');
+  assert.ok(html.includes('js/snow.js?v=1.100.0'),name+'.html carries the v1.100.0 snow.js cache key');
+  assert.ok(!/experience\.css\?v=1\.([0-7](\.0)?|80\.0|85\.0|92\.0)|snow\.js\?v=1\.(1[0-7]\.0|18\.0|79\.0)/.test(html),name+'.html has no stale experience/snow cache key');
  }
+});
+
+test('v1.100.0: snow toggle escapes the header backdrop-filter trap on desktop',async()=>{
+ // Live QA (2026-09-29) caught the desktop "Snow on" pill parked inside the
+ // header, burying the X nav link: .site-head carries backdrop-filter, which
+ // makes it a containing block for fixed descendants, so the CSS
+ // position:fixed never reached the viewport — the pill sat at the header's
+ // bottom-right with right:18px/bottom:18px relative to the header. The toggle
+ // now re-homes by viewport: document.body on desktop (no filters there, so
+ // the fixed float works as drawn), header dock on phones. Same 760px
+ // breakpoint the CSS dock rule uses, with a change listener for resizes.
+ const p=await page('index');
+ try{
+  assert.deepEqual(p.errors,[]);
+  const tgl=p.w.document.querySelector('.snow-toggle');
+  assert.ok(tgl,'the toggle exists');
+  // jsdom's matchMedia stub defaults (max-width:760px) to no-match = desktop.
+  assert.equal(tgl.parentElement,p.w.document.body,'on desktop the toggle lives on document.body, outside the filtered header');
+  assert.ok(!p.w.document.querySelector('.site-head .snow-toggle'),'no toggle remains inside .site-head on desktop');
+  const mq=p.media.get('(max-width: 760px)');
+  assert.ok(mq,'the placement query uses the same 760px breakpoint as the CSS dock rule');
+  mq.fire(true);
+  assert.ok(p.w.document.querySelector('.snow-toggle').closest('.site-head .wrap'),'on phones the toggle docks back into the header bar');
+  mq.fire(false);
+  assert.equal(p.w.document.querySelector('.snow-toggle').parentElement,p.w.document.body,'flipping back to desktop re-homes it to the body');
+  // The toggle still announces itself the way the v1.79.0 contract requires.
+  assert.equal(p.w.document.querySelector('.snow-toggle').getAttribute('aria-pressed'),'true');
+ }finally{p.close();}
 });
 
 test('v1.80.0: Bears identity chip anchors to the Bears row — no stray floating bear',async()=>{
