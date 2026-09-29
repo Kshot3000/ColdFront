@@ -2367,3 +2367,27 @@ test('v1.97.0: the nav toggle is a real SVG hamburger→✕ morph, and the front
  }
  assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
 });
+
+test('v1.98.0: the hero rotator layers are pre-composed for their viewport — no raw portrait in the desktop rotation',async()=>{
+ // The third hero layer used the raw 1400x1867 portrait soldier-field-dark.webp
+ // as its desktop src, so every ~14s the front door crossfaded from composed
+ // landscape vistas into a thin CSS-cropped slice of the same stadium. Layer 2
+ // now points at an art-directed 1600x928 "gate" crop (dome sweep over the
+ // colonnade and gate 6) derived from that source; the portrait survives only
+ // as the mobile <source>, where the tall mobile hero suits it.
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ const layers=[...html.matchAll(/<picture class="hero-layer[^"]*"[^>]*>([\s\S]*?)<\/picture>/g)];
+ assert.equal(layers.length,3,'the hero rotator still has three layers');
+ layers.forEach((m,i)=>{
+  const img=m[1].match(/<img[^>]*src="([^"]+)"[^>]*width="(\d+)"[^>]*height="(\d+)"/);
+  assert.ok(img,'layer '+i+' has a sized desktop img');
+  assert.ok(+img[2]>=+img[3],'layer '+i+' desktop art is landscape ('+img[2]+'x'+img[3]+') — no portrait slice in the rotation');
+  assert.ok(fs.existsSync(path.join(__dirname,'..',img[1])),'layer '+i+' desktop art exists on disk: '+img[1]);
+ });
+ const l2=layers[2][1];
+ assert.ok(/src="img\/hero-soldier-gate-desk\.webp"/.test(l2),'layer 2 desktop art is the gate crop');
+ assert.ok(!/src="img\/soldier-field-dark\.webp"/.test(l2),'layer 2 no longer serves the raw portrait on desktop');
+ assert.ok(/srcset="img\/soldier-field-dark-sm\.webp"/.test(l2),'layer 2 keeps the portrait source for the tall mobile hero');
+ assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on index.html');
+ assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on index.html');
+});

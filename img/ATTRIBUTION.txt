@@ -24,4 +24,6 @@ Wikimedia Commons (v1.7.0):
 v1.8.0 stadium hero crops (derived from existing Wikimedia Soldier Field assets above — no new third-party photos):
 - hero-soldier-desk.webp / hero-soldier-mobile.webp ← art-directed crops of soldier-field-dark.webp
 - hero-soldier-alt-desk.webp / hero-soldier-alt-mobile.webp ← art-directed crops of soldier-field.webp
+- hero-soldier-gate-desk.webp (v1.98.0) ← art-directed landscape crop of soldier-field-dark.webp
+  (dome sweep over the colonnade and gate 6; replaces the raw portrait as hero rotator layer 2)
 Layered fail-soft: primary night stadium → alt stadium → CSS gridiron + original football SVG silhouette.
