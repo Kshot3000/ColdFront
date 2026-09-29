@@ -1216,7 +1216,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.71.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.84.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.87.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
@@ -1739,8 +1739,8 @@ test('v1.83.0: wind reads in mph everywhere — no km/h, no inflated kickoff num
   assert.ok(!/common\.js\?v=1\.(7[0-4]|([0-6][0-9]?))/.test(html),name+'.html has no stale common.js key');
  }
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.84.0'),'games.html carries the v1.84.0 games.js cache key');
- assert.ok(!/games\.js\?v=1\.(8[0-3]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.87.0'),'games.html carries the v1.87.0 games.js cache key');
+ assert.ok(!/games\.js\?v=1\.(8[0-6]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
  // Footer branding must survive the release.
  assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
  assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
@@ -1789,8 +1789,8 @@ test('v1.84.0: sunday-desk week pill reads "WK 3", never "WK Week 3"',async()=>{
  // Only games.html loads games.js, so only its key moves — but every page
  // loads common.js and must not pick up a stale key. Footer branding survives.
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.84.0'),'games.html carries the v1.84.0 games.js cache key');
- assert.ok(!/games\\.js\\?v=1\\.(8[0-3]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.87.0'),'games.html carries the v1.87.0 games.js cache key');
+ assert.ok(!/games\.js\?v=1\.(8[0-6]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
@@ -1861,4 +1861,42 @@ test('v1.86.0: Polymarket volumes render as dollar-compact figures',async()=>{
  assert.ok(!/odds\.js\?v=1\.(6[0-1]|5[0-9]|[0-4][0-9])/.test(html),'odds.html has no stale odds.js key');
  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on odds.html');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on odds.html');
+});
+
+test('v1.87.0: season-log date cells separate the date from kickoff with a middot',async()=>{
+ // Fresh-eyes visual QA (2026-09-28, screenshot-confirmed) caught the season
+ // log's first column reading "Thu, Oct 227:15 PM CDT" — the bare space
+ // between the date and the dim kickoff time had no visible presence in
+ // render, so date and time fused. The row builder now follows the site's own
+ // date voice (common.js already paints "date · time" the same way): date, a
+ // visible middot, then the kickoff in dim. A middot can never collapse like
+ // a space, so the fusion is structurally impossible.
+ const games=fs.readFileSync(path.join(__dirname,'..','js','games.js'),'utf8');
+ assert.ok(games.includes('class="dim">· '),'the log row separates date and kickoff with a middot in dim');
+ assert.ok(!games.includes('CF.fmtDate(g.date) + " <span'),'the bare-space date/time join is gone from the log row');
+ // Behavioral: the fixture schedule renders both log rows with a middot
+ // between date and kickoff, in the right order, with no empty cells.
+ const p=await page('games');try{
+  await settle(300);
+  const cells=Array.from(p.w.document.querySelectorAll('#log-table tbody tr:not(.log-divider) td:first-child'))
+    .map(td=>td.textContent.trim()).filter(t=>t.length);
+  assert.ok(cells.length>=2,'the season log renders date cells: '+JSON.stringify(cells));
+  for(const c of cells){
+   assert.ok(c.includes('·'),'the date cell carries a visible middot separator: '+c);
+   assert.match(c,/^[A-Za-z]{3}, [A-Za-z]{3} \d{1,2} · \d{1,2}:\d{2} [AP]M [A-Z]{3,4}$/,'the cell reads "date · kickoff": '+c);
+  }
+ }finally{p.close();}
+ // Only games.html loads games.js, so only its key moves to v1.87.0 —
+ // common.js is untouched, so its v1.83.0 key holds everywhere. Footer
+ // branding survives.
+ const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
+ assert.ok(ghtml.includes('js/games.js?v=1.87.0'),'games.html carries the v1.87.0 games.js cache key');
+ assert.ok(!/games\.js\?v=1\.(8[0-6]|7[0-9]|[0-6][0-9])/.test(ghtml),'games.html has no stale games.js key');
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('js/common.js?v=1.83.0'),name+'.html keeps the v1.83.0 common.js cache key');
+  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+ }
 });

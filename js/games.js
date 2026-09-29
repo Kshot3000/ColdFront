@@ -158,7 +158,11 @@
     const rcls = played ? (result === "W" ? " result-w" : result === "L" ? " result-l" : "") : "";
     const scoreTxt = played ? (g.scoreMe + "–" + g.scoreOpp) : "";
     return '<tr' + (played ? ' class="boxrow' + rcls + '" style="cursor:pointer" data-boxgame="' + g.id + '"' : "") + ">" +
-      "<td>" + CF.fmtDate(g.date) + " <span class=\"dim\">" + (CF.fmtTime(g.date) || "") + "</span></td>" +
+      // v1.87.0 — the kickoff time is separated from the date by a visible
+    // middot in dim, matching the site's own date-voice ("date · time" in
+    // common.js). A bare space rendered as nothing, fusing date and kickoff
+    // into "Thu, Oct 227:15 PM CDT".
+    "<td>" + CF.fmtDate(g.date) + (CF.fmtTime(g.date) ? ' <span class="dim">· ' + CF.fmtTime(g.date) + "</span>" : "") + "</td>" +
       '<td class="strong">' + (g.home ? "vs " : "@ ") + CF.esc(g.opp) + "</td>" +
       '<td class="num dim">' + (g.home ? "H" : "A") + "</td>" +
       '<td class="num log-score">' + CF.esc(scoreTxt) + "</td>" +
