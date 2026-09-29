@@ -1079,6 +1079,7 @@ CF.injStatusLabel = (s) => {
     "ir": "Injured Reserve",
     "pup": "PUP List",
     "nfi": "NFI List",
+    "inactive": "Inactive",
     "dtd": "Day-to-day",
     "out": "Out",
     "doubtful": "Doubtful",

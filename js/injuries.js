@@ -58,8 +58,13 @@
     // shortComment, e.g. "Hamstring — limited practice") so every row stays
     // scannable; the full editorial prose moves to a title tooltip, and the
     // injury wire on the right carries the story behind each row.
-    const designation = row.short || row.injury || row.comment || "—";
-    const full = row.comment && row.comment !== designation ? row.comment : null;
+    // v1.89.0 — run the compact designation through the fan-English
+    // status map so feed codes ("ir", "inactive") read as "Injured Reserve" /
+    // "Inactive"; descriptive notes ("Hamstring — limited practice") pass
+    // through verbatim, exactly as the home training-room table does.
+    const rawDesignation = row.short || row.injury || row.comment || "";
+    const designation = CF.injStatusLabel(rawDesignation) || "—";
+    const full = row.comment && row.comment !== rawDesignation ? row.comment : null;
     return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) +
       (row.url ? ' <a href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
       "</td>" +
