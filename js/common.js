@@ -1357,7 +1357,6 @@ CF.closeNav = (nav, toggle) => {
   if (toggle) {
     toggle.setAttribute("aria-expanded", "false");
     toggle.setAttribute("aria-label", "Open menu");
-    toggle.textContent = "\u2630";
   }
   const bd = CF.$(".nav-backdrop");
   if (bd) bd.hidden = true;
@@ -1374,7 +1373,6 @@ CF.openNav = (nav, toggle) => {
   if (toggle) {
     toggle.setAttribute("aria-expanded", "true");
     toggle.setAttribute("aria-label", "Close menu");
-    toggle.textContent = "\u2715";
   }
   let bd = CF.$(".nav-backdrop");
   if (!bd) {

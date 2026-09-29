@@ -525,6 +525,20 @@ body.is-scrolled .brand .name { font-size: 16px; }
   background: linear-gradient(135deg, rgba(36, 96, 180, 0.85), rgba(13, 28, 54, 0.9));
   box-shadow: 0 0 20px rgba(200, 56, 3, 0.35);
 }
+/* v1.97.0 — the toggle's mark is an inline SVG, not a text glyph: ☰ rendered
+   as a blurry emoji-ish block on several Android skins and desktop Linux
+   builds. The bars inherit currentColor, so the icon rides the button's
+   orange → white open-state for free, and the open state morphs them into a
+   real ✕ instead of rotating the glyph 90°. */
+.nav-toggle .nt-icon { width: 22px; height: 22px; display: block; }
+.nav-toggle .nt-bar {
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.34s var(--ease-out), opacity 0.22s ease;
+}
 
 @media (max-width: 960px) {
   .nav-toggle { display: block; position: relative; z-index: 70; }
@@ -4287,13 +4301,16 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 @media (prefers-reduced-motion: reduce) {
   .cf-progress { display: none; }
   .countdown .unit.tick { animation: none !important; }
+  .nav-toggle .nt-bar { transition: none; }
 }
 
 /* ---------- v1.28.0 — mobile drawer recomposition ----------
    The drawer graduates from a full-bleed drop panel to a floating
    frosted card: rounded, inset, staggered link entrance, an orange
    leading-edge thread on the active page, and a hamburger→✕ morph
-   on the toggle. Gated on prefers-reduced-motion. */
+   on the toggle. (v1.97.0: the bars are inline SVG and truly morph — the
+   outer bars swing down/up to meet and cross, the middle collapses —
+   replacing the old 90° glyph rotation.) Gated on prefers-reduced-motion. */
 @media (max-width: 960px) {
   .nav {
     left: 10px;
@@ -4317,8 +4334,6 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
     border: 1px solid rgba(232, 84, 30, 0.55);
     background: radial-gradient(circle at 35% 30%, rgba(36, 96, 180, 0.9), rgba(11, 22, 42, 0.95));
     color: var(--orange);
-    font-size: 19px;
-    line-height: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -4329,8 +4344,12 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
     background: radial-gradient(circle at 35% 30%, rgba(200, 56, 3, 0.85), rgba(120, 32, 2, 0.9));
     border-color: rgba(255, 255, 255, 0.25);
     color: #fff;
-    transform: rotate(90deg);
   }
+  /* The hamburger becomes the ✕: outer bars swing to 12 o'clock and cross,
+     the middle bar collapses from its own center. */
+  body.nav-open .nav-toggle .nt-top { transform: translateY(5px) rotate(45deg); }
+  body.nav-open .nav-toggle .nt-mid { transform: scaleX(0.15); opacity: 0; }
+  body.nav-open .nav-toggle .nt-bot { transform: translateY(-5px) rotate(-45deg); }
   .nav.open a {
     min-height: 48px;
     padding: 13px 14px;
