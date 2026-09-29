@@ -145,6 +145,14 @@ main:focus { outline: none; }
 .match-card .game-meta .skel { flex: 0 1 auto; min-width: 62%; }
 .match-card .countdown .skel-unit { flex: 1; min-height: 62px; border-radius: var(--radius-sm); }
 .text-button { background: none; color: #bcdff5; border: 0; cursor: pointer; padding: 9px 0; font: inherit; }
+/* v1.92.0 — the "Make your call" toggle reads as disabled instead of broken.
+   It sits disabled while the matchup loads (and stays disabled when the feed
+   has no game for it): dimmed steel-blue, not-allowed cursor, no hover tease. */
+.text-button:disabled,
+.text-button[disabled] {
+  cursor: not-allowed;
+  color: rgba(150, 178, 205, 0.42);
+}
 /* ---------- v1.58.0 — "Make your call" prediction glow-up ----------
    The score-prediction widget was the last plain form on the site. It becomes
    a tape-room pick card: an orange identity thread across the top (dim at rest,

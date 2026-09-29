@@ -962,6 +962,34 @@ body.nav-open .site-head {
   box-shadow: 0 10px 34px rgba(255, 90, 31, 0.65), 0 0 28px rgba(255, 90, 31, 0.35);
 }
 .btn.small { padding: 7px 12px; font-size: 11px; }
+/* ---------- v1.92.0 — disabled buttons stop pretending ----------
+   The hero "Make your call" toggle and the odds "Load full board" button
+   both sit disabled during loads (the toggle also stays disabled when the
+   schedule feed has no matchup for it). Until now they looked fully live
+   while silently swallowing clicks — the dead-button papercut. Flattened,
+   muted, and never glowing or lifting again. */
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
+}
+.btn:disabled:hover,
+.btn[disabled]:hover {
+  background: rgba(92, 122, 153, 0.2);
+  border-color: var(--line-2);
+  color: var(--snow);
+  transform: none;
+  box-shadow: none;
+}
+.btn.primary:disabled,
+.btn.primary[disabled],
+.btn.primary:disabled:hover,
+.btn.primary[disabled]:hover {
+  background: rgba(109, 72, 58, 0.45);
+  border-color: transparent;
+}
 
 /* ---------- News ---------- */
 .news-list { display: grid; gap: 10px; }
