@@ -199,20 +199,67 @@
       const leaders = CF.API.eventLeaders(ev);
       const espn = "https://www.espn.com/nfl/game/_/gameId/" + ev.id;
       const st = (ev.status && ev.status.type) || {};
-      const scoreBit = (hs != null || as_ != null)
-        ? '<span style="font-size:15px"><b>' + CF.esc((away.team || {}).displayName || "?") + "</b> " + CF.esc(as_ != null ? as_ : "—") +
-          " · <b>" + CF.esc((home.team || {}).displayName || "?") + "</b> " + CF.esc(hs != null ? hs : "—") +
-          ' <span class="dim">(' + CF.esc((c.venue && (c.venue.fullName || c.venue.displayName)) || "field") + ")</span></span>"
-        : "";
+      /* v1.102.0 — the box-score card gets a real scoreboard header. The score
+         is the headline now: a scoreboard duel (away left, home right) in the
+         family .duel language, the final in display numerals, the winner's
+         number carrying the orange identity glow, the Bears side wearing the
+         .bears treatment + 🐻 chip. Pre-game shows em-dash numerals with the
+         kickoff pill up top. The visual duel is aria-hidden; the sr-only
+         sentence carries the same facts for assistive tech (v1.35.0 pattern). */
+      const awayTeam = away.team || {}, homeTeam = home.team || {};
+      const awayName = awayTeam.displayName || "?", homeName = homeTeam.displayName || "?";
+      const bearsSide = homeTeam.abbreviation === "CHI" ? "home" : (awayTeam.abbreviation === "CHI" ? "away" : null);
+      const hsN = hs != null ? Number(hs) : null, asN = as_ != null ? Number(as_) : null;
+      const winner = (hsN != null && asN != null && !isNaN(hsN) && !isNaN(asN))
+        ? (hsN > asN ? "home" : (asN > hsN ? "away" : "tie")) : null;
+      const venue = (c.venue && (c.venue.fullName || c.venue.displayName)) || "";
+      const statusTxt = st.shortDetail || st.detail || CF.fmtDate(ev.date);
+      const duelSide = (team, score, side) => {
+        const isBears = bearsSide === side, isWin = winner === side;
+        return '<div class="duel-side box-side' + (side === "away" ? " opp" : "") + (isBears ? " bears" : "") + '">' +
+          '<span class="box-team">' + CF.esc(team.displayName || "?") +
+          (isBears ? ' <span class="duel-bear" aria-hidden="true">🐻</span>' : "") + "</span>" +
+          '<span class="box-num' + (isWin ? " win" : "") + (score == null ? " tbd" : "") + '">' +
+          (score != null ? CF.esc(score) : "–") + "</span></div>";
+      };
+      const srScore = (hs != null || as_ != null)
+        ? awayName + " " + as_ + ", " + homeName + " " + hs + ". "
+        : awayName + " at " + homeName + ". ";
+      const duel =
+        '<p class="sr-only">' + CF.esc(srScore + statusTxt + (venue ? ", " + venue : "")) + "</p>" +
+        '<div class="duel box-duel" aria-hidden="true">' +
+        duelSide(awayTeam, as_, "away") +
+        '<div class="duel-mid box-mid">' +
+        (venue ? '<span class="box-venue">' + CF.esc(venue) + "</span>" : "") +
+        "</div>" +
+        duelSide(homeTeam, hs, "home") +
+        "</div>";
+      const pillCls = st.state === "post" ? "final" : (st.state === "in" ? "live" : "");
+      const pillDot = st.state === "in" ? '<span class="dot" aria-hidden="true"></span>' : "";
+      /* Category glyph chips — same family mapping as the stats-page leaders
+         (v1.39.0), so the box-score rows read as the same leaderboard. */
+      const boxGlyph = (category) => {
+        const s = String(category || "").toLowerCase();
+        if (/intercept/.test(s)) return "🎯";
+        if (/sack/.test(s)) return "💥";
+        if (/tackle/.test(s)) return "🛡";
+        if (/fumble/.test(s)) return "🤲";
+        if (/receiv/.test(s)) return "🙌";
+        if (/rush/.test(s)) return "💨";
+        if (/pass/.test(s)) return "🏈";
+        if (/kick|punt|field/.test(s)) return "🦵";
+        if (/return/.test(s)) return "🏃";
+        return "❄";
+      };
       let html =
         '<div class="card pad-lg"><div class="badge-row" style="justify-content:space-between">' +
         "<h3 style=\"margin:0\">" + CF.esc(ev.name || "Box score") + "</h3>" +
-        '<span class="pill ' + (st.state === "post" ? "final" : "") + '">' + CF.esc(st.shortDetail || st.detail || CF.fmtDate(ev.date)) + "</span></div>" +
-        '<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' + scoreBit + '</div>' +
+        '<span class="pill ' + pillCls + '">' + pillDot + CF.esc(statusTxt) + "</span></div>" +
+        duel +
         '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl"><thead><tr><th>Category</th><th>Leader</th><th class="num">Line</th></tr></thead><tbody>' +
         leaders.map((l) => {
           const nm = l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
-          return '<tr><td class="strong">' + CF.esc(l.label) + "</td>" +
+          return '<tr><td class="strong ld-cat"><span class="ld-glyph" aria-hidden="true">' + boxGlyph(l.category || l.label) + "</span>" + CF.esc(l.label) + "</td>" +
             "<td>" + nm + ' <span class="dim">' + CF.esc(l.pos || "") + (l.jersey ? " #" + CF.esc(l.jersey) : "") + (l.teamAbbr ? " · " + CF.esc(l.teamAbbr) : "") + "</span></td>" +
             '<td class="num">' + CF.esc(l.display) + "</td></tr>";
         }).join("") +
@@ -222,7 +269,7 @@
       box.innerHTML = html;
     } catch (e) {
       if (request !== boxRequest) return;
-      box.innerHTML = '<div class="empty"><div class="big">📋</div>Box score unavailable right now — the feed for that game didn\'t answer.</div>';
+      box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Box score unavailable", sub: "The feed for that game didn\u2019t answer — try another game from the log." });
     }
   }
 
