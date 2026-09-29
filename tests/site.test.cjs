@@ -911,7 +911,7 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
  assert.match(css,/\.city-tile:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible focus ring');
  assert.match(css,/\.city-tile:hover \.city-tile-label strong,\s*\.city-tile:focus-within \.city-tile-label strong\s*\{\s*color:\s*var\(--orange-hot\)/s,'the call to action warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
- for(const [f,v] of [['index.html','1.82.0'],['about.html','1.82.0']]){
+ for(const [f,v] of [['index.html','1.90.0'],['about.html','1.90.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes('css/main.css?v='+v),f+' busts the stylesheet cache at v'+v);
  }
@@ -994,7 +994,7 @@ test('whiteout 404 page carries the family treatment: identity thread, frost num
  assert.match(css,/\.whiteout-card\s*\{[^}]*animation:\s*cfSnapIn/s,'the card enters with a frost-fade on first paint');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.whiteout-card,\s*\.whiteout-snow span\s*\{\s*animation:\s*none/s,'reduced motion snaps the whiteout animations');
  const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.82.0'),'404.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.90.0'),'404.html busts the stylesheet cache');
  assert.ok(html.includes('class="whiteout-card"'),'the 404 page uses the whiteout card markup');
  assert.ok(!html.includes('font-size:64px'),'inline snowflake styling is gone');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
@@ -1010,7 +1010,7 @@ test('playbook quick-cards get keyboard parity and a staggered entrance',()=>{
  assert.match(css,/\.grid\.quick a:nth-child\(9\)\s*\{\s*--qi:\s*8;\s*\}/s,'the stagger covers all nine playbook cards');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.quick a,\s*\.quick a::before,\s*\.quick a \.ico\s*\{\s*transition:\s*none/s,'reduced motion snaps the quick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.82.0'),'index.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.90.0'),'index.html busts the stylesheet cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1096,7 +1096,7 @@ test('v1.60.0: odds-board cards join the family — identity thread, keyboard pa
  assert.match(css,/\.odds-card:hover \.book,\s*\.odds-card:focus-within \.book\s*\{[^}]*text-shadow:/s,'the book label warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.odds-card::before,\s*\.poly-card::before,\s*\.poly-price\s*\{\s*transition:\s*none/,'reduced motion snaps the odds-card transitions');
  const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
- assert.ok(odds.includes('css/main.css?v=1.82.0'),'odds.html busts the stylesheet cache');
+ assert.ok(odds.includes('css/main.css?v=1.90.0'),'odds.html busts the stylesheet cache');
  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1345,7 +1345,7 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.89.0'),'injuries.html busts the injuries.js cache');
  assert.ok(injuries.includes('js/api.js?v=1.72.0'),'injuries.html busts the api.js cache');
- assert.ok(injuries.includes('css/main.css?v=1.82.0'),'injuries.html busts the main.css cache');
+ assert.ok(injuries.includes('css/main.css?v=1.90.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.89.0'),'index.html busts the home.js cache');
@@ -1567,8 +1567,8 @@ test('v1.78.0: section dividers read as field markings, not loading bars',async(
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.82.0'),name+'.html carries the v1.82.0 main.css cache key');
-  assert.ok(!/main\.css\?v=1\.7[0-7]/.test(html),name+'.html has no stale main.css key');
+  assert.ok(html.includes('css/main.css?v=1.90.0'),name+'.html carries the v1.90.0 main.css cache key');
+  assert.ok(!/main\.css\?v=1\.(82\.0|7[0-7])/.test(html),name+'.html has no stale main.css key');
  }
 });
 
@@ -1683,8 +1683,8 @@ test('v1.82.0: the playbook grid\'s closing card spans the row — no orphan til
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const p=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(p.includes('css/main.css?v=1.82.0'),name+'.html carries the v1.82.0 main.css cache key');
-  assert.ok(!/main\.css\?v=1\.78\.0/.test(p),name+'.html has no stale main.css key');
+  assert.ok(p.includes('css/main.css?v=1.90.0'),name+'.html carries the v1.90.0 main.css cache key');
+  assert.ok(!/main\.css\?v=1\.(82\.0|78\.0)/.test(p),name+'.html has no stale main.css key');
  }
  // Footer branding must survive the release.
  const common=fs.readFileSync(path.join(__dirname,'..','js','common.js'),'utf8');
@@ -1995,4 +1995,35 @@ test('v1.89.0: injury designations speak fan English — "ir" and "inactive" nev
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
+});
+
+test('v1.90.0: the injury rail stacks like a callout on phones — no leftover sidebar edge',async()=>{
+ // Fresh-eyes review (2026-09-29): on news.html and injuries.html the `.rail`
+ // div sits in a 2-col grid that collapses to one column under 860px — but the
+ // rail kept its desktop sidebar styling (3px orange left rule + 14px left
+ // indent). On a phone that left edge reads as a layout glitch and eats scarce
+ // width. Stacked, the rail keeps the orange identity as a top rule.
+ const css=fs.readFileSync(path.join(__dirname,'..','css','main.css'),'utf8');
+ const mq=css.match(/@media\s*\(max-width:\s*860px\)\s*\{[^}]*\.rail\s*\{[^}]*\}/s);
+ assert.ok(mq,'an 860px media block carries the stacked .rail override');
+ assert.ok(/border-left:\s*0/.test(mq[0]),'the leftover sidebar edge is removed (border-left: 0)');
+ assert.ok(/padding-left:\s*0/.test(mq[0]),'the left indent is reclaimed (padding-left: 0)');
+ assert.ok(/border-top:\s*3px solid var\(--orange\)/.test(mq[0]),'the orange identity thread moves to a top rule');
+ assert.ok(/padding-top:\s*16px/.test(mq[0]),'the top rule gets breathing room (padding-top: 16px)');
+ // The desktop rail rule itself is untouched.
+ const desktop=css.match(/\.rail\s*\{\s*border-left:\s*3px solid var\(--orange\);\s*padding-left:\s*14px;\s*\}/s);
+ assert.ok(desktop,'the desktop sidebar rail treatment survives unchanged');
+ // Both rails live inside grids that stack at 860px.
+ assert.ok(/#news-grid,\s*#injury-grid\s*\{\s*grid-template-columns:\s*1fr !important/.test(css),'both rail grids still collapse under 860px');
+ // The stylesheet changed, so every page must carry the fresh cache key —
+ // a stale key would serve CSS where the phone rail still leans on the sidebar edge.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('css/main.css?v=1.90.0'),name+'.html carries the v1.90.0 main.css cache key');
+  assert.ok(!/main\.css\?v=1\.(82\.0|7[0-7])/.test(html),name+'.html has no stale main.css key');
+ }
+ // Footer branding must survive the release.
+ const common=fs.readFileSync(path.join(__dirname,'..','js','common.js'),'utf8');
+ assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
 });

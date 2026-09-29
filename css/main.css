@@ -766,6 +766,22 @@ body.nav-open .site-head {
 @media (max-width: 560px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 @media (max-width: 860px) { #news-grid, #injury-grid { grid-template-columns: 1fr !important; } }
 
+/* ============================================================
+   v1.90.0 — the injury/wire rail stacks like a callout on phones,
+   not a leftover sidebar edge. The desktop `.rail` wears a 3px
+   orange left rule with a 14px left indent; when #news-grid /
+   #injury-grid collapse to one column under 860px, that left edge
+   keeps hanging on the full-width rail, reading as a layout
+   glitch and eating scarce horizontal width. Stacked, the rail
+   keeps its orange identity as a top rule — a deliberate section
+   divider, matching the site's section-head language — while the
+   heading and cards ride the full width. Reduced motion is
+   untouched (no animation involved).
+   ============================================================ */
+@media (max-width: 860px) {
+  .rail { border-left: 0; padding-left: 0; border-top: 3px solid var(--orange); padding-top: 16px; }
+}
+
 /* Next game card */
 .game-card { position: relative; overflow: hidden; }
 .game-card::before {
