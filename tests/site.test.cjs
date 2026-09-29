@@ -1161,6 +1161,35 @@ test('v1.72.0: RSS titles decode stack-escaped entities to a fixpoint',async()=>
  }finally{p.close();}
 });
 
+test('v1.107.0: snapshot wide-wire headlines decode stacked entities like the live path',async()=>{
+ // Force the snapshot branch: the harness mock answers the live RSS
+ // upstreams with a 1-item fixture, so block them and let the delayed
+ // baked-snapshot race win (1400ms).
+ const noLive=async(u)=>{
+   if(u.hostname==='www.bing.com'||u.hostname==='news.google.com') throw new Error('no live RSS in test');
+ };
+ const p=await page('news',{fetch:noLive}); try{
+  const api=p.w.CF.API;
+  // The shared decoder: the exact entity-stacked string baked into
+  // data/snapshots/gnews.json collapses to real quotes, and clean text
+  // passes through untouched (idempotent on already-decoded input).
+  assert.equal(api.unescRss('Season: &quot;What is going on, man?&quot;'),'Season: "What is going on, man?"','snapshot-style single-level entities decode');
+  assert.equal(api.unescRss('Plain headline — no entities'), 'Plain headline — no entities','clean text is untouched');
+  assert.equal(api.unescRss(null), null,'null stays null');
+  // End to end through the snapshot branch: with live RSS blocked, the
+  // baked gnews.json wins — and the Beverley headline must arrive decoded.
+  const items=await api.getGoogleNews('Chicago Bears',12);
+  assert.equal(api.rssSource,'cache','the snapshot branch served the items');
+  const bev=items.find((it)=>/Beverley/.test(it.title||''));
+  assert.ok(bev,'the baked snapshot still carries the Beverley headline');
+  assert.ok(!bev.title.includes('&quot;'),'snapshot title carries no literal entity');
+  assert.ok(bev.title.includes('"What is going on, man?"'),'snapshot title shows real quotes');
+  const rendered=p.w.CF.esc(bev.title);
+  assert.ok(!rendered.includes('&amp;quot;'),'rendered HTML carries no double-escaped entity');
+  assert.ok(rendered.includes('&quot;'),'quotes are safely escaped exactly once');
+ }finally{p.close();}
+});
+
 test('v1.61.0: crowd probability bars use the single-fill convention with a 50/50 tick',async()=>{
  const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
  assert.match(css,/\.poly-bar::after\s*\{[^}]*left:\s*50%/s,'the bar carries a 50/50 reference tick');
@@ -1364,12 +1393,12 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*overflow:\s*hidden/s,'wire excerpts hide the overflow');
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.94.0'),'injuries.html busts the injuries.js cache');
- assert.ok(injuries.includes('js/api.js?v=1.72.0'),'injuries.html busts the api.js cache');
+ assert.ok(injuries.includes('js/api.js?v=1.107.0'),'injuries.html busts the api.js cache');
  assert.ok(injuries.includes('css/main.css?v=1.106.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
- assert.ok(index.includes('js/api.js?v=1.72.0'),'index.html busts the api.js cache');
+ assert.ok(index.includes('js/api.js?v=1.107.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.'}]}]};
  const resp={ok:true,text:async()=>JSON.stringify(payload),json:async()=>payload};

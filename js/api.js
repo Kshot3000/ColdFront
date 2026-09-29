@@ -159,28 +159,34 @@ CF.API = {
        2) Bing News RSS   — same stories; public CORS proxies can reach it
           even when Google News is blocked from the browser
      The first upstream that answers with items wins. */
+  /* v1.72.0 — Google/Bing RSS (and the CORS proxies ferrying it) can stack
+     entity-escaping: the XML may carry &amp;quot; (two levels) or
+     &amp;amp;quot; (three levels) for the same quote. Decoding exactly
+     once leaves "&quot;" in the string, which the render path then
+     re-escapes, so headlines printed the literal text "&quot;" on the
+     page (seen live on the Wide Wire). Decode to a fixpoint so any
+     stacking level collapses to the real character. Bounded at 5 passes;
+     textContent never adds entities, so this always terminates.
+     v1.107.0 — hoisted out of parseRss: the baked-snapshot branch of
+     getGoogleNews never ran this decoder, so snapshot-served headlines
+     printed literal "&quot;" (seen live on the Wide Wire). Both paths
+     now share it. */
+  unescRss: (s) => {
+    if (!s) return s;
+    let cur = s;
+    for (let i = 0; i < 5; i++) {
+      const next = new DOMParser().parseFromString(cur, "text/html").body.textContent;
+      if (next === cur) return next;
+      cur = next;
+    }
+    return cur;
+  },
+
   parseRss: (xml) => {
     const doc = new DOMParser().parseFromString(xml, "text/xml");
     const items = Array.from(doc.querySelectorAll("item")).map((el) => {
       const t = (n) => { const x = el.getElementsByTagName(n)[0]; return x ? x.textContent.trim() : null; };
-      // v1.72.0 — Google/Bing RSS (and the CORS proxies ferrying it) can stack
-      // entity-escaping: the XML may carry &amp;quot; (two levels) or
-      // &amp;amp;quot; (three levels) for the same quote. Decoding exactly
-      // once leaves "&quot;" in the string, which the render path then
-      // re-escapes, so headlines printed the literal text "&quot;" on the
-      // page (seen live on the Wide Wire). Decode to a fixpoint so any
-      // stacking level collapses to the real character. Bounded at 5 passes;
-      // textContent never adds entities, so this always terminates.
-      const unesc = (s) => {
-        if (!s) return s;
-        let cur = s;
-        for (let i = 0; i < 5; i++) {
-          const next = new DOMParser().parseFromString(cur, "text/html").body.textContent;
-          if (next === cur) return next;
-          cur = next;
-        }
-        return cur;
-      };
+      const unesc = CF.API.unescRss;
       // Bing wraps the source in a namespace: <News:Source>.
       const srcEl = el.getElementsByTagName("source")[0] || el.getElementsByTagNameNS("*", "Source")[0];
       let link = t("link") || null;
@@ -229,11 +235,14 @@ CF.API = {
         const list = snap && (snap.items || snap);
         if (!Array.isArray(list)) return [];
         return list.slice(0, max || 12).map((it) => ({
-          title: it.title,
+          // v1.107.0 — baked snapshots can carry the same stacked entities
+          // the live RSS path decodes (seen live: "&quot;" printed in a
+          // Wide Wire headline). Run the shared decoder here too.
+          title: CF.API.unescRss(it.title),
           link: it.link,
-          source: it.source || null,
+          source: CF.API.unescRss(it.source) || null,
           date: it.date || it.pubDate || it.isoDate || null,
-          desc: it.desc || null,
+          desc: CF.API.unescRss(it.desc) || null,
         }));
       } catch (e) { return []; }
     })();
