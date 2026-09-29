@@ -373,6 +373,11 @@ main:focus { outline: none; }
 .player-portrait { height: 170px; overflow: hidden; background: radial-gradient(ellipse at bottom,#52758c66,transparent 72%); position: relative; display: flex; justify-content: center; }
 .player-portrait img { position: relative; height: 100%; max-width: 100%; object-fit: contain; z-index: 1; }
 .player-number { position: absolute; top: 10px; left: 16px; color: #bcd7e821; font: 700 92px/1 var(--display); }
+/* v1.105.0 — jersey-less cards carry the paw emblem in the number slot instead
+   of giant "CHI" fallback text: the badge ghost keeps the portrait composed at
+   every card size and never clips the card edge the way three 92px letters did
+   on phones. Decorative (aria-hidden in markup); opacity keeps it a watermark. */
+.player-portrait img.player-emblem { position: absolute; top: 16px; left: 18px; width: 104px; height: 104px; opacity: .17; z-index: 0; }
 .player-info { position: relative; padding: 18px; border-top: 1px solid #d2eaff15; }
 .player-info h3 { font: 600 17px var(--body); text-transform: none; letter-spacing: -.02em; margin: 7px 0; }
 .player-info p { font-size: 11px; color: #8ca7bd; line-height: 1.7; margin: 8px 0; }
@@ -412,7 +417,7 @@ main:focus { outline: none; }
      mobile pattern) — white-space:nowrap guards the glyphs too. */
   .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; }
   .hero-actions .btn { flex: none; width: 100%; justify-content: center; white-space: nowrap; padding: 14px 18px; }
-  .player-portrait { height: 136px; } .player-info { padding: 13px; } .player-info h3 { font-size: 14px; }
+  .player-portrait { height: 136px; } .player-portrait img.player-emblem { top: 12px; left: 12px; width: 72px; height: 72px; } .player-info { padding: 13px; } .player-info h3 { font-size: 14px; }
   .roster-grid { gap: 10px; } .roster-grid .st { font-size: 9px; } .match-footer { font-size: 11px; }
 }
 @media (prefers-reduced-motion:reduce) {

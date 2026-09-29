@@ -73,11 +73,18 @@
     CF.$("#roster-cards").innerHTML = rows.length ? rows.map((player, i) => {
       const key = playerKey(player), saved = favorites.has(key);
       const photo = CF.safeURL(player.headshot, "img/jersey-54.svg");
-      // Neutral jersey-number typography is the fallback, never another player's image.
+      // v1.105.0 — the portrait's number slot is a watermark, so it must stay
+      // a number. When the feed omits a jersey (practice-squad call-ups,
+      // specialists) the slot carries the paw emblem instead of giant "CHI"
+      // fallback text that clipped the card edge on phones — a designed mark,
+      // never another player's image.
+      const mark = player.jersey
+        ? '<span class="player-number" aria-hidden="true">' + CF.esc(player.jersey) + '</span>'
+        : '<img class="player-emblem" src="img/paw-mark.svg" alt="" aria-hidden="true">';
       const portrait = player.headshot ? '<img loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.hidden=true">' : '';
       return '<article class="player-card' + (enter ? " cf-enter" : "") + '" data-group="' + groupKey(player.group) + '"' +
         (enter ? ' style="--ni:' + Math.min(i, 11) + '"' : "") +
-        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait"><span class="player-number" aria-hidden="true">' + CF.esc(player.jersey || "CHI") + '</span>' + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(stLine(player)) + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + CF.esc([player.height, player.weight].filter(Boolean).join(" · ")) + '<br>' + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
+        '><button type="button" class="favorite-button" data-favorite="' + CF.esc(key) + '" aria-pressed="' + saved + '" aria-label="' + CF.esc((saved ? 'Remove ' : 'Save ') + player.name + (saved ? ' from favorites' : ' to favorites')) + '">' + (saved ? '★' : '☆') + '</button><div class="player-portrait">' + mark + portrait + '</div><div class="player-info"><span class="st">' + CF.esc(stLine(player)) + '</span><h3>' + CF.esc(player.name) + '</h3><p>' + CF.esc([player.height, player.weight].filter(Boolean).join(" · ")) + '<br>' + CF.esc(player.college || player.from || "Chicago Bears") + '</p>' + (player.url ? '<a class="player-link" href="' + CF.esc(CF.safeURL(player.url)) + '" target="_blank" rel="noopener">Player profile ↗</a>' : '') + '</div></article>';
     }).join("") : '<div class="empty">' + empty + '</div>';
     CF.$("#roster-table tbody").innerHTML = rows.length ? rows.map((p) => '<tr><td class="num">' + CF.esc(p.jersey || "—") + '</td><td class="strong">' + CF.esc(p.name) + (p.url ? ' <a href="' + CF.esc(CF.safeURL(p.url)) + '" target="_blank" rel="noopener" aria-label="' + CF.esc(p.name + ' profile') + '">↗</a>' : '') + '</td><td>' + CF.esc(p.pos) + '</td><td class="num">' + CF.esc(p.age) + '</td><td class="num">' + CF.esc(p.exp) + '</td><td>' + CF.esc(p.height) + '</td><td>' + CF.esc(p.weight) + '</td><td>' + CF.esc(p.from) + '</td></tr>').join("") : '<tr><td colspan="8">' + empty + '</td></tr>';
   }
