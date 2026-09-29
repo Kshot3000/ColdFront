@@ -162,11 +162,17 @@
   /* ---------- 2) Polymarket ---------- */
   async function loadPoly() {
     const box = CF.$("#poly-board");
+    const pill = CF.$("#poly-pill");
+    // v1.95.0 — the Polymarket pill joins the wire pill in saying "checking…"
+    // while the fetch is in flight; the success path restores the real label
+    // and the empty/error branches restore honest plain ones.
+    if (pill) pill.textContent = "checking…";
     try {
       const events = await CF.API.getPolymarket(100);
       const bears = CF.API.polymarketBears(events);
       if (!bears.length) {
         box.innerHTML = '<div class="empty"><div class="big">🔮</div>No Bears markets found in the current feed. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">Browse all NFL markets ↗</a></div>';
+        if (pill) pill.textContent = "Polymarket · no Bears markets";
         return;
       }
       let n = 0; // per-card stagger index for the first-paint entrance
@@ -209,6 +215,8 @@
       polyEntered = true;
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';
+      // v1.95.0 — stop saying "checking…" when the feed already said no.
+      if (pill) pill.textContent = "Polymarket · unavailable";
     }
   }
 
@@ -279,11 +287,33 @@
     } finally { loadingFullBoard = false; CF.$("#odds-key-go").disabled = false; }
   }
 
+  /* ---------- v1.95.0 — the ↻ button admits when it's working ----------
+     Manual refresh and the 60s auto-beat both funnel through refreshOdds: the
+     button disables (v1.92.0's honest :disabled affordance does the visuals),
+     flips to a spinning "Checking…", and the two boards can never double-
+     render from a spam-clicked or overlapping refresh. An auto-beat that lands
+     mid-refresh stands down — the in-flight run already has the fresh data. */
+  let oddsBusy = false;
+  function setOddsBusy(busy) {
+    oddsBusy = busy;
+    const btn = CF.$("#odds-refresh");
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.setAttribute("aria-busy", String(busy));
+    btn.innerHTML = busy
+      ? '<span class="cf-spin" aria-hidden="true">↻</span> Checking…'
+      : "↻ Refresh";
+  }
+  function refreshOdds() {
+    if (oddsBusy) return;
+    setOddsBusy(true);
+    Promise.allSettled([loadWireOdds(), loadPoly()]).finally(() => setOddsBusy(false));
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     loadStoredKey();
-    loadWireOdds();
-    loadPoly();
-    CF.$("#odds-refresh").addEventListener("click", () => { loadWireOdds(); loadPoly(); });
+    refreshOdds();
+    CF.$("#odds-refresh").addEventListener("click", refreshOdds);
     CF.$("#odds-key-go").addEventListener("click", loadFullBoard);
     CF.$("#odds-key").addEventListener("keydown", (event) => { if (event.key === "Enter") loadFullBoard(); });
     CF.$("#odds-key-clear").addEventListener("click", () => {
@@ -293,9 +323,9 @@
       CF.toast("Key cleared from this browser");
     });
     // Auto-refresh odds + markets every 60 s while the tab is open (CF.refresh
-    // in common.js handles hidden-tab skip + catch-up on return).
+    // in common.js handles hidden-tab skip + catch-up on return; refreshOdds
+    // carries the in-flight guard so a beat that lands mid-refresh stands down).
     // The Odds API full board stays manual on purpose: free tier is 500 req/mo.
-    CF.refresh.register(loadWireOdds, 60e3);
-    CF.refresh.register(loadPoly, 60e3);
+    CF.refresh.register(refreshOdds, 60e3);
   });
 })();

@@ -4705,3 +4705,20 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   color: var(--text-dim);
   opacity: 0.85;
 }
+
+/* ============================================================
+   v1.95.0 — the busy refresh button spins its glyph
+   The odds page's ↻ button now disables and flips to "Checking…" while the
+   feeds are in flight (js/odds.js refreshOdds). The lone ↻ glyph rotates so
+   the in-flight state reads at a glance from across the page — a single
+   inline element, no extra chrome. Reduced motion gets the honest static
+   label instead, per the site's reduced-motion convention.
+   ============================================================ */
+@keyframes cfBusySpin { to { transform: rotate(360deg); } }
+#odds-refresh .cf-spin {
+  display: inline-block;
+  animation: cfBusySpin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  #odds-refresh .cf-spin { animation: none; }
+}
