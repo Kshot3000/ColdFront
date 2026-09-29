@@ -10,6 +10,18 @@
   // v1.49.0 — previous Polymarket prices per market (event slug + question),
   // so the next render can flag line movement with ▲/▼ chips
   const polyPrev = {};
+  // v1.86.0 — Polymarket volumes are dollars; show them that way. The bare
+  // CF.fmt printed the raw float (268.18067599999995 -> "268.2"), which reads
+  // like a share count sitting next to compact K/M figures. Whole dollars
+  // under 1K, compact K/M above, "$" prefix everywhere: $268, $6.7K, $1.8M.
+  const fmtPolyVol = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "—";
+    const compact = (d, suf) => (n / d).toFixed(n % d === 0 ? 0 : 1) + suf;
+    if (Math.abs(n) >= 1e6) return "$" + compact(1e6, "M");
+    if (Math.abs(n) >= 1e3) return "$" + compact(1e3, "K");
+    return "$" + Math.round(n);
+  };
 
   /* ---------- 1) league-wire line for the next Bears game ---------- */
   async function loadWireOdds() {
@@ -185,7 +197,7 @@
           "</span>" +
           bar +
           '<span class="sub">' +
-          (m.volume != null ? "Vol " + CF.fmt(m.volume) : "") +
+          (m.volume != null ? "Vol " + fmtPolyVol(m.volume) : "") +
           (m.endDate ? " · ends " + CF.fmtDate(m.endDate) : "") +
           ' · <a href="' + CF.esc(CF.safeURL(m.url)) + '" target="_blank" rel="noopener">market ↗</a>' +
           "</span></div>";

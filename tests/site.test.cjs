@@ -1159,7 +1159,7 @@ test('v1.61.0: crowd probability bars use the single-fill convention with a 50/5
   assert.ok(odds.includes('tick = the 50/50 line'),'the legend names the tick');
   assert.ok(!odds.includes('bar = crowd is'),'the old two-bar legend copy is gone');
   assert.ok(odds.includes('css/experience.css?v=1.85.0'),'odds.html busts the stylesheet cache');
-  assert.ok(odds.includes('js/odds.js?v=1.61.0'),'odds.html busts the odds script cache');
+  assert.ok(odds.includes('js/odds.js?v=1.86.0'),'odds.html busts the odds script cache');
   assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
 });
@@ -1826,4 +1826,39 @@ test('v1.85.0: hero venue line reads as a shared stadium divider, not an away-co
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
+});
+
+test('v1.86.0: Polymarket volumes render as dollar-compact figures',async()=>{
+ // Fresh-eyes visual QA (2026-09-28) caught Polymarket cards on odds.html
+ // mixing "Vol 268.2" (a bare float with no unit) next to "Vol 6.7K" and
+ // "Vol 1.7M". Volumes are dollars, so every card now reads the same
+ // dollar-compact voice: $268, $6.7K, $1.8M. The stray float
+ // 268.18067599999995 rounds to a whole dollar, not 268.2.
+ const odds=fs.readFileSync(path.join(__dirname,'..','js','odds.js'),'utf8');
+ assert.ok(/fmtPolyVol/.test(odds),'odds.js formats Polymarket volume with the dollar-compact helper');
+ assert.ok(/"\$"\s*\+\s*compact\(1e6,\s*"M"\)/.test(odds),'millions compact with a $ prefix');
+ assert.ok(!/"Vol " \+ CF\.fmt\(m\.volume\)/.test(odds),'the bare shared formatter is gone from the volume line');
+ // Behavioral: mocked Polymarket feed renders all three volume bands.
+ const ev=(vol)=>({title:'Chicago Bears win?',slug:'bears',markets:[{question:'Chicago Bears win?',outcomes:['Yes','No'],outcomePrices:['0.6','0.4'],slug:'bears',volume:vol}]});
+ const p=await page('odds',{fetch:async u=>{
+  if(u.hostname==='gamma-api.polymarket.com'&&u.pathname.includes('/events/keyset')){
+   const body=JSON.stringify({events:[ev(268.18067599999995),ev(6721.5),ev(1800000)]});
+   return {ok:true,json:async()=>JSON.parse(body),text:async()=>body};
+  }
+ }});
+ try{
+  await settle(300);
+  const subs=Array.from(p.w.document.querySelectorAll('#poly-board .sub')).map(el=>el.textContent.trim());
+  assert.ok(subs.length>=3,'three poly cards render with volumes: '+JSON.stringify(subs));
+  assert.ok(subs.some(s=>s.includes('Vol $268')&&!s.includes('268.2')),'stray float renders as Vol $268: '+subs[0]);
+  assert.ok(subs.some(s=>s.includes('Vol $6.7K')),'thousands compact as Vol $6.7K');
+  assert.ok(subs.some(s=>s.includes('Vol $1.8M')),'millions compact as Vol $1.8M');
+ }finally{p.close();}
+ // Only odds.html loads odds.js, so only its key moves to v1.86.0. Footer
+ // branding and all other cache keys are untouched.
+ const html=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
+ assert.ok(html.includes('js/odds.js?v=1.86.0'),'odds.html carries the v1.86.0 odds.js cache key');
+ assert.ok(!/odds\.js\?v=1\.(6[0-1]|5[0-9]|[0-4][0-9])/.test(html),'odds.html has no stale odds.js key');
+ assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on odds.html');
+ assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on odds.html');
 });
