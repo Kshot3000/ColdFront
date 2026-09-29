@@ -68,23 +68,18 @@ main:focus { outline: none; }
   color: #ff7941;
   text-shadow: 0 0 26px rgba(255, 110, 40, 0.42), 0 2px 12px rgba(0, 0, 0, 0.4);
 }
-/* v1.81.0 — the hero card's matchup rows stack vertically (the .vs grid
-   columns are never applied), so a chip centered at left:50% of the
-   full-width Bears row floated detached in mid-card (fixed in v1.80.0 by
-   anchoring it to the row start) — but hovering it 10px ABOVE the row
-   dropped the glyph onto the venue line ("Soldier Field") sitting directly
-   above the Bears row, and would hit the match title when the Bears are the
-   away side. The chip now rides the row itself: pinned to the row's left
-   edge and vertically centered, attached to the Bears block with clear air
-   above and below. */
+/* v1.99.0 — fresh-eyes live QA (2026-09-29) caught the absolutely-centered
+   chip landing ON the score digits: the hero card's matchup rows stack
+   vertically and left-aligned, so left:0/top:50% of the full side block put
+   the paw over the "27". v1.81.0's vertical centering is retired — the chip
+   now rides in flow as a small paw mark above the Bears' abbreviation, so
+   it can never touch the digits again. */
 .match-card .bears-chip {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  font-size: 13px;
-  line-height: 1;
+  position: static;
   display: none;
+  margin: 0 0 5px;
+  font-size: 14px;
+  line-height: 1;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.55));
 }
 .match-card .side.is-bears .bears-chip { display: block; }

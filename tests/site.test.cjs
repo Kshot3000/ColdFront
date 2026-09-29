@@ -1042,8 +1042,8 @@ test('v1.58.0: the "Make your call" pick-card gets the family treatment',()=>{
  assert.match(css,/\.prediction-diff\.is-bears\s*\{[^}]*box-shadow/s,'the Bears differential glows');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*#prediction-toggle \.toggle-mark[\s\S]*transition:\s*none/,'reduced motion snaps the pick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/experience.css?v=1.92.0'),'index.html busts the experience.css cache');
- assert.ok(html.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('css/experience.css?v=1.99.0'),'index.html busts the experience.css cache');
+ assert.ok(html.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('id="prediction-diff"'),'the live differential chip exists');
  assert.ok(html.includes('class="toggle-mark"'),'the toggle carries the morph mark');
  assert.ok(html.includes('id="prediction-opponent-abbr"'),'the opponent well names the matchup');
@@ -1080,10 +1080,10 @@ test('v1.59.0: social tiles join the family — identity thread, icon warm-up, f
  assert.match(css,/\.social-grid a:focus-visible\s*\{\s*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible family focus ring');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.social-grid a::before[\s\S]*transition:\s*none/,'reduced motion snaps the social-tile transitions');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('css/experience.css?v=1.92.0'),'index.html busts the experience.css cache');
+ assert.ok(index.includes('css/experience.css?v=1.99.0'),'index.html busts the experience.css cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
- assert.ok(practice.includes('css/experience.css?v=1.92.0'),'practice.html busts the experience.css cache');
+ assert.ok(practice.includes('css/experience.css?v=1.99.0'),'practice.html busts the experience.css cache');
  assert.ok(practice.includes('data-cf-copy="btc"'),'footer tip chip is intact on practice.html');
 });
 
@@ -1174,7 +1174,7 @@ test('v1.61.0: crowd probability bars use the single-fill convention with a 50/5
   const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
   assert.ok(odds.includes('tick = the 50/50 line'),'the legend names the tick');
   assert.ok(!odds.includes('bar = crowd is'),'the old two-bar legend copy is gone');
-  assert.ok(odds.includes('css/experience.css?v=1.92.0'),'odds.html busts the stylesheet cache');
+  assert.ok(odds.includes('css/experience.css?v=1.99.0'),'odds.html busts the stylesheet cache');
   assert.ok(odds.includes('js/odds.js?v=1.95.0'),'odds.html busts the odds script cache');
   assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
@@ -1197,8 +1197,8 @@ test('v1.62.0: hero next-game card paints a frost skeleton before the schedule a
   assert.ok(html.includes('id="ng-skel-status"'),'the skeleton status announces the load in markup');
   assert.ok(html.includes('class="pill is-loading" id="ng-pill"'),'the status pill shimmers while connecting');
   assert.ok(html.includes('aria-hidden="true"'),"skeletons stay out of the accessibility tree");
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),'index.html busts the experience.css cache');
-  assert.ok(html.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),'index.html busts the experience.css cache');
+  assert.ok(html.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
   assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  }finally{p.close();}
 });
@@ -1231,7 +1231,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  }finally{hp.close();}
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ih.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(ih.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(gh.includes('js/games.js?v=1.94.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
@@ -1293,7 +1293,7 @@ test('last-game box score leaders split into team blocks, Bears first, with acce
  }finally{q.close();}
  const sh=fs.readFileSync(path.join(__dirname,'..','stats.html'),'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.65.0'),'stats.html busts the stats.js cache');
- assert.ok(sh.includes('css/experience.css?v=1.92.0'),'stats.html busts the experience.css cache');
+ assert.ok(sh.includes('css/experience.css?v=1.99.0'),'stats.html busts the experience.css cache');
  assert.ok(sh.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1364,7 +1364,7 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.ok(injuries.includes('css/main.css?v=1.97.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(index.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(index.includes('js/api.js?v=1.72.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.'}]}]};
@@ -1407,7 +1407,7 @@ test('v1.69.0: sunday-desk status pill and footnote speak plain fan-facing words
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(html.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
  const js=fs.readFileSync(path.join(__dirname,'..','js/home.js'),'utf8');
  assert.ok(!js.includes('"live sched"') && !js.includes('"poly"') && !js.includes('"home wx"'),'the shorthand bits are gone from home.js');
@@ -1465,7 +1465,7 @@ test('v1.71.0: injury status pills speak fan English — cryptic feed codes beco
  const ih=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(ih.includes('js/injuries.js?v=1.94.0'),'injuries.html busts the injuries.js cache');
  const xh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(xh.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(xh.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(xh.includes('data-cf-copy="btc"'),'footer tip chip is intact on the homepage');
 });
 
@@ -1615,9 +1615,9 @@ test('v1.79.0: snow toggle docks in the header on phones — never parks on cont
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),name+'.html carries the v1.92.0 experience.css cache key');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
   assert.ok(html.includes('js/snow.js?v=1.79.0'),name+'.html carries the v1.79.0 snow.js cache key');
-  assert.ok(!/experience\.css\?v=1\.([0-7](\.0)?|80\.0|85\.0)|snow\.js\?v=1\.1[0-8]/.test(html),name+'.html has no stale experience/snow cache key');
+  assert.ok(!/experience\.css\?v=1\.([0-7](\.0)?|80\.0|85\.0|92\.0)|snow\.js\?v=1\.1[0-8]/.test(html),name+'.html has no stale experience/snow cache key');
  }
 });
 
@@ -1633,7 +1633,10 @@ test('v1.80.0: Bears identity chip anchors to the Bears row — no stray floatin
  const css=fs.readFileSync(path.join(__dirname,'..','css','experience.css'),'utf8');
  const chip=css.match(/\.match-card \.bears-chip\s*\{[^}]*\}/s);
  assert.ok(chip,'the .match-card .bears-chip block exists');
- assert.ok(/left:\s*0/.test(chip[0]),'the chip anchors to the row start, not the card middle');
+ // v1.99.0 superseded the absolute anchoring: fresh-eyes live QA caught the
+ // left:0/top:50% chip landing ON the score digits (rows stack full-width and
+ // left-aligned). The chip now rides in flow above the Bears' abbreviation.
+ assert.ok(/position:\s*static/.test(chip[0]),'the chip left the absolute layer (position:static)');
  assert.ok(!/left:\s*50%/.test(chip[0]),'no left:50% centering remains on the chip');
  assert.ok(!/translateX\(-50%\)/.test(chip[0]),'no -50% x-shift remains on the chip');
  const pred=css.match(/\.match-card \.predict-team \.bears-chip\s*\{[^}]*\}/s);
@@ -1644,8 +1647,8 @@ test('v1.80.0: Bears identity chip anchors to the Bears row — no stray floatin
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),name+'.html carries the v1.92.0 experience.css cache key');
-  assert.ok(!/experience\.css\?v=1\.(80\.0|85\.0)/.test(html),name+'.html has no stale experience.css key');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
+  assert.ok(!/experience\.css\?v=1\.(80\.0|85\.0|92\.0)/.test(html),name+'.html has no stale experience.css key');
  }
 });
 
@@ -1660,9 +1663,13 @@ test('v1.81.0: Bears identity chip rides the Bears row — no overlap with the v
  const css=fs.readFileSync(path.join(__dirname,'..','css','experience.css'),'utf8');
  const chip=css.match(/\.match-card \.bears-chip\s*\{[^}]*\}/s);
  assert.ok(chip,'the .match-card .bears-chip block exists');
- assert.ok(/top:\s*50%/.test(chip[0]),'the chip centers vertically on the Bears row (top:50%)');
- assert.ok(/transform:\s*translateY\(-50%\)/.test(chip[0]),'the chip is pulled back by half its height (translateY(-50%))');
- assert.ok(/left:\s*0/.test(chip[0]),'the chip still anchors to the row start, not the card middle');
+ // v1.99.0 superseded the absolute vertical centering: fresh-eyes live QA
+ // caught the top:50% chip landing ON the score digits. The chip now rides
+ // in flow above the Bears' abbreviation and can never touch the digits.
+ assert.ok(/position:\s*static/.test(chip[0]),'the chip left the absolute layer (position:static)');
+ assert.ok(!/position:\s*absolute/.test(chip[0]),'no absolute positioning remains on the chip');
+ assert.ok(!/top:\s*50%/.test(chip[0]),'no top:50% vertical centering remains');
+ assert.ok(!/translateY\(-50%\)/.test(chip[0]),'no -50% y-shift remains');
  assert.ok(!/top:\s*-10px/.test(chip[0]),'no top:-10px hover-above-the-row remains');
  assert.ok(!/left:\s*50%/.test(chip[0]),'no left:50% centering remains on the chip');
  // The predict-team override from v1.80.0 survives untouched.
@@ -1673,8 +1680,8 @@ test('v1.81.0: Bears identity chip rides the Bears row — no overlap with the v
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),name+'.html carries the v1.92.0 experience.css cache key');
-  assert.ok(!/experience\.css\?v=1\.(80\.0|85\.0)/.test(html),name+'.html has no stale experience.css key');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
+  assert.ok(!/experience\.css\?v=1\.(80\.0|85\.0|92\.0)/.test(html),name+'.html has no stale experience.css key');
  }
 });
 
@@ -1837,8 +1844,8 @@ test('v1.85.0: hero venue line reads as a shared stadium divider, not an away-co
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),name+'.html carries the v1.92.0 experience.css cache key');
-  assert.ok(!/experience\.css\?v=1\.(8[0-5]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale experience.css key');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
+  assert.ok(!/experience\.css\?v=1\.(9[0-2]|8[0-5]|7[0-9]|[0-6][0-9])/.test(html),name+'.html has no stale experience.css key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2001,7 +2008,7 @@ test('v1.89.0: injury designations speak fan English — "ir" and "inactive" nev
  assert.ok(ih.includes('js/injuries.js?v=1.94.0'),'injuries.html busts the injuries.js cache');
  assert.ok(ih.includes('js/common.js?v=1.97.0'),'injuries.html busts the common.js cache');
  const xh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(xh.includes('js/home.js?v=1.94.0'),'index.html busts the home.js cache');
+ assert.ok(xh.includes('js/home.js?v=1.99.0'),'index.html busts the home.js cache');
  assert.ok(xh.includes('js/common.js?v=1.97.0'),'index.html busts the common.js cache');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
@@ -2112,9 +2119,9 @@ test('v1.92.0: dead buttons admit it — disabled .btn/.text-button stop looking
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.97.0'),name+'.html carries the v1.97.0 main.css cache key');
-  assert.ok(html.includes('css/experience.css?v=1.92.0'),name+'.html carries the v1.92.0 experience.css cache key');
+  assert.ok(html.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
   assert.ok(!/main\.css\?v=1\.(96|95|94|93|92|91)\.0/.test(html),name+'.html has no stale main.css key');
-  assert.ok(!/experience\.css\?v=1\.85\.0/.test(html),name+'.html has no stale experience.css key');
+  assert.ok(!/experience\.css\?v=1\.(85\.0|92\.0)/.test(html),name+'.html has no stale experience.css key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2215,7 +2222,7 @@ test('v1.94.0: live pills carry data-freshness stamps — source AND when it was
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
  const locks=[['odds.html','js/odds.js?v=1.95.0'],['games.html','js/games.js?v=1.94.0'],
-              ['index.html','js/home.js?v=1.94.0'],['injuries.html','js/injuries.js?v=1.94.0'],
+              ['index.html','js/home.js?v=1.99.0'],['injuries.html','js/injuries.js?v=1.94.0'],
               ['news.html','js/news.js?v=1.94.0']];
  for(const [file,key] of locks){
   const html=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
@@ -2390,4 +2397,58 @@ test('v1.98.0: the hero rotator layers are pre-composed for their viewport — n
  assert.ok(/srcset="img\/soldier-field-dark-sm\.webp"/.test(l2),'layer 2 keeps the portrait source for the tall mobile hero');
  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on index.html');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on index.html');
+});
+
+test('v1.99.0: the hero card stops lying about finals — kicker follows game state, bear chip leaves the digits',async()=>{
+ // Fresh-eyes live QA (2026-09-29): the hero next-game card read "NEXT UP ·
+ // CHICAGO BEARS" while its own pill read "BEARS WIN · Final" for yesterday's
+ // game — a self-contradiction in the hero's credibility anchor. The kicker
+ // now follows the game state (Next up / Live now / Last result). The same
+ // review caught the 🐻 identity chip sitting directly on top of the score
+ // digits: the matchup rows stack vertically and left-aligned, so the
+ // absolute left:0/top:50% chip overlapped the "27". The chip now rides in
+ // flow above the Bears' abbreviation and can never touch the digits.
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+ assert.ok(html.includes('<span id="ng-kicker">Next up · Chicago Bears</span>'),'the kicker is addressable and defaults to the next-game voice');
+ const js=fs.readFileSync(path.join(__dirname,'..','js','home.js'),'utf8');
+ assert.ok(/ng-kicker/.test(js),'home.js paints the kicker');
+ assert.ok(/Last result · Chicago Bears/.test(js),'a final flips the kicker to "Last result"');
+ assert.ok(/Live now · Chicago Bears/.test(js),'a live game flips the kicker to "Live now"');
+ const css=fs.readFileSync(path.join(__dirname,'..','css','experience.css'),'utf8');
+ const chip=css.match(/\.match-card \.bears-chip\s*\{[^}]*\}/s);
+ assert.ok(chip,'the .match-card .bears-chip block exists');
+ assert.ok(/position:\s*static/.test(chip[0]),'the chip left the absolute layer (position:static)');
+ assert.ok(!/position:\s*absolute/.test(chip[0]),'no absolute positioning remains on the chip');
+ assert.ok(/display:\s*none/.test(chip[0]),'the chip still hides until the Bears side claims it');
+ assert.ok(/\.match-card \.side\.is-bears \.bears-chip\s*\{\s*display:\s*block/s.test(css),'the Bears side still reveals the identity chip');
+ // Behavioral: a pre-game card reads "Next up", a final reads "Last result".
+ const p=await page('index');try{
+  assert.equal(p.w.document.querySelector('#ng-kicker').textContent,'Next up · Chicago Bears','the pre-game kicker names the next game');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const q=await page('index',{fetch:async(u)=>{
+  if(u.pathname.endsWith('/scoreboard')){
+   const data={events:[event('100','CHI','MIN','post','2026-09-20T17:00:00Z',24,17)]};
+   return {ok:true,text:async()=>JSON.stringify(data),json:async()=>data};
+  }
+ }});try{
+  const d=q.w.document;
+  assert.equal(d.querySelector('#ng-kicker').textContent,'Last result · Chicago Bears','the final kicker never says "Next up" about a finished game');
+  assert.match(d.querySelector('#ng-pill').textContent,/BEARS WIN/,'the pill still names the win beside the honest kicker');
+  const chipEl=d.querySelector('#ng-home-abbr').closest('.side').querySelector('.bears-chip');
+  const pos=q.w.getComputedStyle(chipEl).position;
+  assert.equal(pos,'static','the painted bear chip is in flow, never over the digits');
+  assert.deepEqual(q.errors,[]);
+ }finally{q.close();}
+ // The stylesheet and page script changed, so the fresh keys ride everywhere.
+ const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for(const name of pages){
+  const h=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(h.includes('css/experience.css?v=1.99.0'),name+'.html carries the v1.99.0 experience.css cache key');
+  assert.ok(!/experience\.css\?v=1\.(9[0-2]|8[0-5]|7[0-9]|[0-6][0-9])/.test(h),name+'.html has no stale experience.css key');
+  assert.ok(h.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+  assert.ok(h.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+ }
+ assert.ok(html.includes('js/home.js?v=1.99.0'),'index.html carries the v1.99.0 home.js cache key');
+ assert.ok(html.includes('3GnR…8vZK'),'the BTC tip chip address survives in the footer');
 });

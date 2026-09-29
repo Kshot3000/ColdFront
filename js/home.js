@@ -66,6 +66,13 @@
     }
     show("#ng-pill", pillText37);
     CF.$("#ng-pill").className = pillCls37;
+    /* v1.99.0 — the kicker must not lie about a final: the pill can read
+       "BEARS WIN · Final" while the static kicker still says "Next up",
+       a self-contradiction in the hero's credibility anchor (fresh-eyes
+       live QA, 2026-09-29). The kicker now follows the game state. */
+    const kicker99 = CF.$("#ng-kicker");
+    if (kicker99) kicker99.textContent = game.state === "in" ? "Live now · Chicago Bears"
+      : game.state === "post" ? "Last result · Chicago Bears" : "Next up · Chicago Bears";
     for (const side of ["home", "away"]) show("#ng-" + side + "-score", game.state === "pre" ? "" : (game[side].score ?? "—"));
     show("#ng-mid", game.venue);
     show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? CF.fmtTime(game.date) : "Time TBD") + (game.tv ? " · " + game.tv : ""));
