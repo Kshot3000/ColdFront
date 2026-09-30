@@ -1395,8 +1395,22 @@ CF.initScrollChrome = () => {
         if (r.left < hr.right && r.right > hr.left && r.top < hr.bottom && r.bottom > hr.top) { overHead = true; break; }
       }
       if (overHead !== top.classList.contains("is-dimmed")) top.classList.toggle("is-dimmed", overHead);
-    } else if (top.classList.contains("is-dimmed")) {
+      // v1.125.0 — hide the back-to-top button when it parks over the site
+      // footer. On phones the fixed circle lands squarely on the footer's
+      // "Tip the build · BTC" chip and social links, and a glass ghost over
+      // the donation chip reads broken. Hiding (not dimming): at the page
+      // bottom the control is one short scroll away from reappearing, and
+      // the visibility flip keeps it out of the keyboard tab order.
+      const foot = document.querySelector("footer.site-foot");
+      let overFoot = false;
+      if (foot) {
+        const fr = foot.getBoundingClientRect();
+        overFoot = r.left < fr.right && r.right > fr.left && r.top < fr.bottom && r.bottom > fr.top;
+      }
+      if (overFoot !== top.classList.contains("is-parked")) top.classList.toggle("is-parked", overFoot);
+    } else if (top.classList.contains("is-dimmed") || top.classList.contains("is-parked")) {
       top.classList.remove("is-dimmed");
+      top.classList.remove("is-parked");
     }
     // Compact the sticky header once the page moves: the chrome shrinks and
     // deepens so more content stays in view. Keep --cf-head-h (mobile nav
