@@ -1450,12 +1450,12 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*overflow:\s*hidden/s,'wire excerpts hide the overflow');
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.108.0'),'injuries.html busts the injuries.js cache');
- assert.ok(injuries.includes('js/api.js?v=1.108.0'),'injuries.html busts the api.js cache');
+ assert.ok(injuries.includes('js/api.js?v=1.113.0'),'injuries.html busts the api.js cache');
  assert.ok(injuries.includes('css/main.css?v=1.111.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.108.0'),'index.html busts the home.js cache');
- assert.ok(index.includes('js/api.js?v=1.108.0'),'index.html busts the api.js cache');
+ assert.ok(index.includes('js/api.js?v=1.113.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.',details:{type:'Hamstring',detail:'',side:''}}]}]};
  const resp={ok:true,text:async()=>JSON.stringify(payload),json:async()=>payload};
@@ -2942,7 +2942,7 @@ test('v1.108.0: footer spacing, season-log header, 404 title, prediction toggle,
 });
 
 test('v1.108.0: every changed script carries the release cache key on every page',async()=>{
- const changed=[['js/common.js','1.111.0'],['js/api.js','1.108.0'],['js/home.js','1.108.0'],['js/games.js','1.108.0'],['js/odds.js','1.108.0'],['js/news.js','1.108.0'],['js/injuries.js','1.108.0'],['js/team.js','1.108.0']];
+ const changed=[['js/common.js','1.111.0'],['js/api.js','1.113.0'],['js/home.js','1.108.0'],['js/games.js','1.108.0'],['js/odds.js','1.108.0'],['js/news.js','1.108.0'],['js/injuries.js','1.108.0'],['js/team.js','1.108.0']];
  const pages={index:['js/common.js','js/api.js','js/home.js'],games:['js/common.js','js/api.js','js/games.js'],odds:['js/common.js','js/api.js','js/odds.js'],news:['js/common.js','js/api.js','js/news.js'],injuries:['js/common.js','js/api.js','js/injuries.js'],team:['js/common.js','js/api.js','js/team.js'],stats:['js/common.js','js/api.js'],about:['js/common.js','js/api.js'],practice:['js/common.js','js/api.js'],highlights:['js/common.js','js/api.js'],'404':['js/common.js']};
  for(const [page,scripts] of Object.entries(pages)){
   const html=fs.readFileSync(path.join(__dirname,'..',page+'.html'),'utf8');
@@ -3060,5 +3060,40 @@ test('v1.112.0: the wire cards compose — padded copy, meta row pinned to the c
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
   assert.ok(html.includes('css/experience.css?v=1.112.0'),f+'.html busts the experience.css cache');
+ }
+});
+
+test('v1.113.0: injury designations drop ESPN\'s echoed detail — "Concussion (Concussion)" reads as "Concussion"',async()=>{
+ // Fresh-eyes QA on injuries.html caught Tyson Bagent's INJURY cell reading
+ // "Concussion (Concussion)": ESPN's payload echoes the type as the detail.
+ // The designation composer now drops a detail that case-insensitively equals
+ // the type, while genuinely different details still compose ("Hamstring —
+ // Strain (Right)"). The fix lives in js/api.js, so its cache key moves to
+ // v1.113.0 on all ten pages that load it; footer branding is untouched.
+ const payload={injuries:[{displayName:'Chicago Bears',injuries:[
+  {athlete:{displayName:'Echo Test QB',position:{abbreviation:'QB'}},status:'Questionable',date:'2026-09-25',shortComment:'Concussion protocol',longComment:'The quarterback entered the concussion protocol on Tuesday and did not practice Friday.',details:{type:'Concussion',detail:'Concussion',side:'Not Specified'}},
+  {athlete:{displayName:'Echo Case Test WR',position:{abbreviation:'WR'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring strain',longComment:'The receiver was limited Friday with a hamstring strain.',details:{type:'hamstring',detail:'HAMSTRING',side:''}},
+  {athlete:{displayName:'Normal Test LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring strain',longComment:'The linebacker was limited Friday with a hamstring strain.',details:{type:'Hamstring',detail:'Strain',side:'Right'}}
+ ]}]};
+ const resp={ok:true,text:async()=>JSON.stringify(payload),json:async()=>payload};
+ const p=await page('injuries',{fetch:async(u)=>u.pathname.endsWith('/injuries')?resp:undefined});
+ try{
+  const w=p.w;await settle(300);
+  const rows=[...w.document.querySelectorAll('#report-table tbody tr')];
+  assert.ok(rows.length>=3,'the report table paints the fixture rows');
+  const cells=rows.map(r=>r.children[2].textContent);
+  assert.ok(cells.includes('Concussion'),'the echoed detail is dropped: '+cells.join(' | '));
+  assert.ok(cells.includes('hamstring'),'the echo drop is case-insensitive: '+cells.join(' | '));
+  assert.ok(!cells.some(c=>/\(Concussion\)/i.test(c)&&c.toLowerCase()!=='concussion'),'no "Concussion (Concussion)" remains: '+cells.join(' | '));
+  assert.ok(cells.includes('Hamstring — Strain (Right)'),'a genuinely different detail still composes: '+cells.join(' | '));
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ // Source-level pins: the dedupe ships in js/api.js, and all ten pages that
+ // load api.js bust its cache at the release key.
+ const api=fs.readFileSync(path.join(__dirname,'..','js','api.js'),'utf8');
+ assert.ok(api.includes('dDetailEcho'),'the echo-dropping designation composer ships in js/api.js');
+ for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights']){
+  const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
+  assert.ok(html.includes('js/api.js?v=1.113.0'),f+'.html busts the api.js cache');
  }
 });

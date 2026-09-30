@@ -540,9 +540,14 @@ CF.API = {
       const dType = cleanDetail(d.type);
       const dDetail = cleanDetail(d.detail);
       const dSide = cleanDetail(d.side);
+      // v1.113.0 — ESPN sometimes echoes the type as the detail ("Concussion" /
+      // "Concussion"); drop the echo so the cell reads "Concussion", never
+      // "Concussion (Concussion)". Comparison is case-insensitive; a genuinely
+      // different detail ("Strain" vs "Hamstring") still composes as before.
+      const dDetailEcho = (dDetail && dType && dDetail.toLowerCase() === dType.toLowerCase()) ? "" : dDetail;
       let injury = dType;
-      if (dDetail && dSide) injury += " — " + dDetail + " (" + dSide + ")";
-      else if (dDetail) injury += " (" + dDetail + ")";
+      if (dDetailEcho && dSide) injury += " — " + dDetailEcho + " (" + dSide + ")";
+      else if (dDetailEcho) injury += " (" + dDetailEcho + ")";
       else if (dSide) injury += " (" + dSide + ")";
       injury = injury.replace(/ - /g, " — "); // house style: "Knee - ACL" → "Knee — ACL"
       rows.push({
