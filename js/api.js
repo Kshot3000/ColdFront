@@ -324,6 +324,15 @@ CF.API = {
     return null;
   },
 
+  /* v1.114.0 — a "pre" game whose kickoff is long past is a stale snapshot,
+     not the next game (the nightly-baked scoreboard goes stale after Monday
+     night). Same 6h grace window as nextBearsGameFromSchedule. */
+  preGameKickoffStale: (game, graceMs) => {
+    if (!game || game.state !== "pre") return false;
+    const t = Date.parse(game.date);
+    return Number.isFinite(t) && t < Date.now() - (graceMs || 6 * 3600e3);
+  },
+
   /* Opponent-city notes for away games (static geography — not fake scores).
      Used when the schedule payload has no geolocation. */
   NFL_CITIES: {

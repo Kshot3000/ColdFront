@@ -11,6 +11,11 @@
     let source = game ? board.value.source : null;
     if (schedule.status === "fulfilled") {
       renderSeason(schedule.value);
+      /* v1.114.0 — a scoreboard game still flagged "pre" hours after kickoff
+         is a stale snapshot, not the next game (the nightly-baked board goes
+         stale after Monday night). Trust the schedule instead, so the hero
+         never bills last night's game as "Next kickoff". */
+      if (CF.API.preGameKickoffStale(game)) game = null;
       if (!game) {
         const next = CF.API.nextBearsGameFromSchedule(schedule.value.data);
         game = next?.game;
