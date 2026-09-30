@@ -350,6 +350,16 @@ main:focus { outline: none; }
   border: 1px solid rgba(255, 148, 95, 0.4); border-radius: 999px;
   background: rgba(255, 122, 65, 0.1);
 }
+/* v1.112.0 — the wire cards finally compose. .story-copy never had padding
+   (headlines sat ~4px from the card edge while the frost skeleton kept a
+   comfortable 18px), and it never grew to fill the grid-stretched card, so
+   the margin-top:auto on .story-end was dead and the "time ago / Read story"
+   row floated at a different height on every card. The copy block is now a
+   growing flex column with the skeleton's 18px padding and 10px rhythm, so
+   the meta row pins to the card's bottom edge and every row of cards lands
+   on one clean baseline. The align-self on .story-source (above) keeps the
+   chip from stretching now that its parent is flex. */
+.story-card .story-copy { display: flex; flex-direction: column; flex: 1 1 auto; gap: 10px; padding: 18px; }
 .story-copy h3 { transition: color 0.2s ease; }
 .story-card:hover .story-copy h3, .story-card:focus-within .story-copy h3 { color: var(--orange-hot); }
 .story-copy .story-end { margin-top: auto; display: flex; justify-content: space-between; color: #8aa5ba; font-size: 11px; }
