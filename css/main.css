@@ -4517,14 +4517,14 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 
 /* ============================================================
    v1.51.0 — display-ad slots (AdSense-ready)
-   ============================================================ */
-/* Slots are removed from the DOM entirely until a publisher ID is set,
-   so these styles only ever apply to live, filled ad units. Kept quiet:
-   a hairline frame and a small "Advertisement" label, never a big box. */
+   v1.111.0 — the slot is a zero-height placeholder until AdSense actually
+   fills it. The "Advertisement" chrome (label, hairline frame, reserved
+   height) only ever applies to live, filled ad units — a pending or
+   unfilled slot never renders an empty labeled band or shifts the page. */
 .ad-slot {
-  margin: 26px auto;
+  margin: 0 auto;
   max-width: 970px;
-  padding: 0 12px;
+  padding: 0;
 }
 .ad-slot.is-live::before {
   content: "Advertisement";
@@ -4537,10 +4537,10 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   margin-bottom: 6px;
 }
 .ad-slot.is-live {
+  margin: 26px auto;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 10px;
-  padding-bottom: 12px;
+  padding: 10px 12px 12px;
   min-height: 90px;
 }
 .ad-slot .adsbygoogle { background: rgba(255, 255, 255, 0.015); }

@@ -1462,9 +1462,6 @@ CF.initAds = () => {
     const name = nameFor(el);
     const slotId = slotIdFor(name);
     if (!slotId) { el.remove(); return; } // placement without an ad-unit ID stays empty
-    el.classList.add("is-live");
-    el.setAttribute("role", "complementary");
-    el.setAttribute("aria-label", "Advertisement");
     const ins = document.createElement("ins");
     ins.className = "adsbygoogle";
     ins.style.display = "block";
@@ -1473,6 +1470,25 @@ CF.initAds = () => {
     ins.setAttribute("data-ad-format", "auto");
     ins.setAttribute("data-full-width-responsive", "true");
     el.appendChild(ins);
+    /* v1.111.0 — the "Advertisement" chrome (is-live label, hairline frame,
+       reserved height) is applied only once AdSense actually fills the slot.
+       Until then the slot is a zero-height placeholder: no empty labeled
+       band between sections, no layout shift when it collapses. */
+    const markLive = () => {
+      if (!el.isConnected || el.classList.contains("is-live")) return;
+      const filled = ins.getAttribute("data-ad-status") === "filled" || ins.querySelector("iframe");
+      if (!filled) return;
+      el.classList.add("is-live");
+      el.setAttribute("role", "complementary");
+      el.setAttribute("aria-label", "Advertisement");
+      if (obs) obs.disconnect();
+    };
+    let obs = null;
+    if (typeof MutationObserver !== "undefined") {
+      obs = new MutationObserver(markLive);
+      obs.observe(ins, { attributes: true, attributeFilter: ["data-ad-status"], childList: true, subtree: true });
+    }
+    markLive();
     try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* ad-blocked or offline — slot stays quiet */ }
   });
   // v1.66.0 — while the site awaits AdSense approval, no ad fills and an
