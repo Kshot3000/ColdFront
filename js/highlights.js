@@ -215,17 +215,31 @@
 
   function posterFor(v) {
     // Poster with big play button; first click swaps in the real player.
+    // v1.121.0 — the thumbnail is probed before it paints: while it loads
+    // (or when it can't, e.g. adblockers, a YouTube outage, offline) the
+    // poster wears a composed ice-steel surface and a frost glyph instead
+    // of a black void. The glyph retires once the real thumb lands.
     var box = CF.$("#hl-feature");
+    var thumbURL = CF.safeURL(v.thumb);
     box.innerHTML =
       '<div class="hl-ratio"><div class="hl-poster" id="hl-poster" role="button" tabindex="0" ' +
-      'aria-label="Play: ' + esc(v.title) + '" ' +
-      'style="background-image:url(\'' + esc(CF.safeURL(v.thumb)) + '\')">' +
+      'aria-label="Play: ' + esc(v.title) + '">' +
+      '<span class="hl-frost" aria-hidden="true">❄</span>' +
       '<span class="hl-play" aria-hidden="true"></span></div></div>' +
       '<div class="hl-now"><span class="hl-eyebrow">❄ Now playing</span>' +
       '<h2>' + esc(v.title) + '</h2>' +
       '<span class="meta dim">' + esc(CF.timeAgo(v.published)) + srcMeta(v) + "</span>" +
       '<a class="btn small" href="' + esc(CF.safeURL(v.link)) + '" target="_blank" rel="noopener">YouTube ↗</a></div>';
     nowIn(box);
+    var poster = CF.$("#hl-poster");
+    var probe = new Image();
+    probe.onload = function () {
+      poster.style.backgroundImage = "url(\"" + thumbURL + "\")";
+      var frost = poster.querySelector(".hl-frost");
+      if (frost) frost.parentNode.removeChild(frost);
+    };
+    probe.onerror = function () { poster.classList.add("hl-poster-bad"); };
+    probe.src = thumbURL;
     var play = function () { featureVideo(v, true); };
     CF.$("#hl-poster").addEventListener("click", play);
     CF.$("#hl-poster").addEventListener("keydown", function (e) {

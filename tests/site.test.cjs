@@ -501,8 +501,8 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
  const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
  assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
  const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
- assert.ok(!/highlights\.js\?v=(?!1\.110\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
- assert.ok(!/highlights\.css\?v=(?!1\.110\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
+ assert.ok(!/highlights\.js\?v=(?!1\.121\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.css\?v=(?!1\.121\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
  assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
  const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
   items.map(i=>'<entry><yt:videoId>'+i.id+'</yt:videoId><title>'+i.title+'</title><published>'+i.pub+'</published><media:thumbnail url="https://i.ytimg.com/vi/'+i.id+'/hqdefault.jpg"/></entry>').join('')+'</feed>';
@@ -3403,4 +3403,46 @@ test('v1.120.0: the hero matchup becomes a real side-by-side duel',async()=>{
  }
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('3GnR…8vZK'),'the BTC tip chip address survives in the footer');
+});
+
+test('v1.121.0: the featured highlights poster is never a black void',async()=>{
+ // Fresh-eyes QA on the highlights page (thumbnail host unreachable) caught
+ // the featured player as a black rectangle with a lone play button: cards
+ // have the hlThumbFail frost-glyph fallback, but the poster div painted its
+ // background-image straight from the (failed) thumb. The poster now wears a
+ // composed ice-steel gradient + frost glyph while the thumb loads or when
+ // it can't; a probe paints the thumb and retires the glyph on success, and
+ // marks the poster hl-poster-bad (brighter glyph, gentle breathe) on error.
+ const css=fs.readFileSync(path.join(__dirname,'../css/highlights.css'),'utf8');
+ const poster=css.match(/\.hl-feature \.hl-poster\s*\{[^}]*background-color:[^}]*\}/s);
+ assert.ok(poster,'the poster fallback-surface block exists');
+ assert.match(poster[0],/background-color:\s*#0c1628/,'the poster has a fallback base color');
+ assert.match(poster[0],/background-image:\s*linear-gradient\(135deg,[^)]*#16304e 100%\)/s,'the poster wears an ice-steel gradient while the thumb loads');
+ assert.match(css,/\.hl-feature \.hl-poster \.hl-frost\s*\{[^}]*left:\s*50%[^}]*top:\s*50%/s,'the frost glyph centers on the poster');
+ assert.match(css,/\.hl-feature \.hl-poster\.hl-poster-bad \.hl-frost\s*\{[^}]*opacity:\s*0\.5/s,'the failed-thumb state brightens the glyph');
+ assert.match(css,/@keyframes hl-frost-breathe/,'the failure glyph breathes');
+ assert.match(css,/@media \(prefers-reduced-motion: no-preference\) \{\s*\.hl-feature \.hl-poster\.hl-poster-bad \.hl-frost/s,'the breathe animation respects reduced motion');
+ const js=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
+ assert.ok(js.includes('new Image()'),'the poster probes the thumbnail before painting it');
+ assert.ok(/probe\.onload\s*=\s*function\s*\(\)\s*\{[^}]*style\.backgroundImage/.test(js),'probe success paints the real thumbnail');
+ assert.ok(/probe\.onload\s*=\s*function\s*\(\)\s*\{[\s\S]*?querySelector\("\.hl-frost"\)[\s\S]*?removeChild/.test(js),'probe success retires the frost glyph');
+ assert.ok(/probe\.onerror\s*=\s*function\s*\(\)\s*\{\s*poster\.classList\.add\("hl-poster-bad"\)/.test(js),'probe failure marks the poster instead of leaving a void');
+ assert.ok(!/id="hl-poster"[^>]*style="background-image/.test(js),'the poster no longer paints the thumb inline before it is verified');
+ // Behavioral (jsdom never resolves the probe — exactly the stuck-loading
+ // case): the poster shows the composed surface, not a black void.
+ const p=await page('highlights');try{
+  const d=p.w.document;
+  const el=d.querySelector('#hl-poster');
+  assert.ok(el,'the featured poster renders');
+  assert.ok(el.querySelector('.hl-frost'),'the frost glyph waits while the thumbnail loads');
+  assert.equal(el.style.backgroundImage,'','no unverified thumbnail is painted inline');
+  assert.equal(el.getAttribute('role'),'button','the poster stays a keyboard-operable button');
+  assert.ok(el.getAttribute('aria-label').startsWith('Play: '),'the play action keeps its accessible name');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
+ assert.ok(html.includes('css/highlights.css?v=1.121.0'),'highlights.html busts the highlights.css cache');
+ assert.ok(html.includes('js/highlights.js?v=1.121.0'),'highlights.html busts the highlights.js cache');
+ assert.ok(!/highlights\.(css|js)\?v=1\.110\.0/.test(html),'highlights.html has no stale highlights cache keys');
+ assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on highlights.html');
 });
