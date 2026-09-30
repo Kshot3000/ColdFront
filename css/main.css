@@ -779,6 +779,16 @@ body.nav-open .site-head {
 @media (max-width: 900px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 @media (max-width: 860px) { #news-grid, #injury-grid { grid-template-columns: 1fr !important; } }
+/* v1.123.0 — phones stop bleeding the injury report past the viewport edge.
+   table.tbl carries min-width: 560px by design (it scrolls horizontally inside
+   .tbl-wrap), but as a grid item .tbl-wrap's automatic minimum is that
+   min-content width — and a 1fr track is really minmax(auto, 1fr), so the
+   collapsed single column inflated to ~562px on a 390px phone. The report
+   column, the "keep it honest" callout, and the wire rail all spilled past
+   the right edge, where body overflow-x: clip simply cut the text mid-word.
+   Zeroing the items' minimum keeps the track at the viewport width; the
+   table keeps its own horizontal scroll. Desktop two-column layout untouched. */
+#injury-grid > * { min-width: 0; }
 
 /* ============================================================
    v1.90.0 — the injury/wire rail stacks like a callout on phones,

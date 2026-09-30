@@ -993,7 +993,7 @@ test('city-tile glow-up: identity thread, keyboard parity, focus ring, reduced m
  assert.match(css,/\.city-tile:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--orange-hot\)/s,'the tile shows a visible focus ring');
  assert.match(css,/\.city-tile:hover \.city-tile-label strong,\s*\.city-tile:focus-within \.city-tile-label strong\s*\{\s*color:\s*var\(--orange-hot\)/s,'the call to action warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.city-tile,/s,'reduced motion snaps the tile transitions');
- for(const [f,v] of [['index.html','1.118.0'],['about.html','1.118.0']]){
+ for(const [f,v] of [['index.html','1.123.0'],['about.html','1.123.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes('css/main.css?v='+v),f+' busts the stylesheet cache at v'+v);
  }
@@ -1086,7 +1086,7 @@ test('whiteout 404 page carries the family treatment: identity thread, frost num
  assert.match(css,/\.whiteout-card\s*\{[^}]*animation:\s*cfSnapIn/s,'the card enters with a frost-fade on first paint');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.whiteout-card,\s*\.whiteout-snow span\s*\{\s*animation:\s*none/s,'reduced motion snaps the whiteout animations');
  const html=fs.readFileSync(path.join(__dirname,'..','404.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.118.0'),'404.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.123.0'),'404.html busts the stylesheet cache');
  assert.ok(html.includes('class="whiteout-card"'),'the 404 page uses the whiteout card markup');
  assert.ok(!html.includes('font-size:64px'),'inline snowflake styling is gone');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
@@ -1102,7 +1102,7 @@ test('playbook quick-cards get keyboard parity and a staggered entrance',()=>{
  assert.match(css,/\.grid\.quick a:nth-child\(9\)\s*\{\s*--qi:\s*8;\s*\}/s,'the stagger covers all nine playbook cards');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.quick a,\s*\.quick a::before,\s*\.quick a \.ico\s*\{\s*transition:\s*none/s,'reduced motion snaps the quick-card transitions');
  const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(html.includes('css/main.css?v=1.118.0'),'index.html busts the stylesheet cache');
+ assert.ok(html.includes('css/main.css?v=1.123.0'),'index.html busts the stylesheet cache');
  assert.ok(html.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1188,7 +1188,7 @@ test('v1.60.0: odds-board cards join the family — identity thread, keyboard pa
  assert.match(css,/\.odds-card:hover \.book,\s*\.odds-card:focus-within \.book\s*\{[^}]*text-shadow:/s,'the book label warms under attention');
  assert.match(css,/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.odds-card::before,\s*\.poly-card::before,\s*\.poly-price\s*\{\s*transition:\s*none/,'reduced motion snaps the odds-card transitions');
  const odds=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
- assert.ok(odds.includes('css/main.css?v=1.118.0'),'odds.html busts the stylesheet cache');
+ assert.ok(odds.includes('css/main.css?v=1.123.0'),'odds.html busts the stylesheet cache');
  assert.ok(odds.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 
@@ -1466,7 +1466,7 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.108.0'),'injuries.html busts the injuries.js cache');
  assert.ok(injuries.includes('js/api.js?v=1.114.0'),'injuries.html busts the api.js cache');
- assert.ok(injuries.includes('css/main.css?v=1.118.0'),'injuries.html busts the main.css cache');
+ assert.ok(injuries.includes('css/main.css?v=1.123.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.116.0'),'index.html busts the home.js cache');
@@ -1691,7 +1691,7 @@ test('v1.78.0: section dividers read as field markings, not loading bars',async(
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
  }
 });
@@ -1842,7 +1842,7 @@ test('v1.82.0: the playbook grid\'s closing card spans the row — no orphan til
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const p=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(p.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(p.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90|82|78)\.0"/.test(p),name+'.html has no stale main.css key');
  }
  // Footer branding must survive the release.
@@ -2180,7 +2180,7 @@ test('v1.90.0: the injury rail stacks like a callout on phones — no leftover s
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
  }
  // Footer branding must survive the release.
@@ -2212,7 +2212,7 @@ test('v1.91.0: touch users get 16px fields — no iOS auto-zoom on form controls
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90)\.0"/.test(html),name+'.html has no stale main.css key');
  }
  // Footer branding must survive the release.
@@ -2255,7 +2255,7 @@ test('v1.92.0: dead buttons admit it — disabled .btn/.text-button stop looking
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(html.includes('css/experience.css?v=1.120.0'),name+'.html carries the v1.120.0 experience.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|96|95|94|93|92|91)\.0/.test(html),name+'.html has no stale main.css key');
   assert.ok(!/experience\.css\?v=1\.(100|101|102|117|119|85|92|99)\.0"/.test(html),name+'.html has no stale experience.css key');
@@ -2288,7 +2288,7 @@ test('v1.93.0: the kickoff countdown digits hold still — tabular-nums on the h
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|96|95|94|93|92|91)\.0/.test(html),name+'.html has no stale main.css key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
@@ -2351,7 +2351,7 @@ test('v1.94.0: live pills carry data-freshness stamps — source AND when it was
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(html.includes('js/common.js?v=1.122.0'),name+'.html carries the v1.111.0 common.js cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
   assert.ok(!/common\.js\?v=(?!1.122.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
@@ -2420,7 +2420,7 @@ test('v1.95.0: the odds ↻ button admits when it\'s working — disables, spins
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\\.css\\?v=1\\.(111\\.0|97\\.0|96\\.0|95\\.0|94\\.0|93\\.0|92\\.0|91\\.0|90\\.0|82\\.0|7[0-7])/.test(html),name+'.html has no stale main.css key');
  }
  const ohtml=fs.readFileSync(path.join(__dirname,'..','odds.html'),'utf8');
@@ -2472,7 +2472,7 @@ test('v1.96.0: the weather strip says when the front was read — live wall-cloc
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('js/common.js?v=1.122.0'),name+'.html carries the v1.111.0 common.js cache key');
   assert.ok(!/common\.js\?v=(?!1.122.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html holds the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html holds the v1.111.0 main.css cache key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2503,7 +2503,7 @@ test('v1.97.0: the nav toggle is a real SVG hamburger→✕ morph, and the front
   assert.ok(!/☰/.test(m[1]),name+'.html toggle has no text glyph left');
   assert.ok(html.includes('js/common.js?v=1.122.0'),name+'.html carries the v1.111.0 common.js cache key');
   assert.ok(!/common\.js\?v=(?!1.122.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),name+'.html carries the v1.111.0 main.css cache key');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html carries the v1.111.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
   assert.ok(/<meta name="theme-color" content="#060d18">/.test(html),name+'.html names the brand theme color');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
@@ -2810,7 +2810,7 @@ test('v1.106.0: the wire\'s fallback thumbnails are story-aware, not one snowfla
  assert.ok(/\.thumb-fallback\.tf-t1\s*\{[^}]*background:\s*rgba\(255,\s*106,\s*31,\s*0\.07\)/.test(css),'the fallback tiles carry the warm orange whisper tint');
  assert.ok(/\.thumb-fallback\.tf-t3\s*\{[^}]*background:\s*rgba\(150,\s*180,\s*210,\s*0\.06\)/.test(css),'the fallback tiles carry the cool steel whisper tint');
  // Cache-bust pins: all three changed assets carry the release key everywhere.
- for(const [f,key] of [['news.html','js/news.js?v=1.122.0'],['index.html','js/common.js?v=1.122.0'],['news.html','css/main.css?v=1.118.0']]){
+ for(const [f,key] of [['news.html','js/news.js?v=1.122.0'],['index.html','js/common.js?v=1.122.0'],['news.html','css/main.css?v=1.123.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes(key),f+' carries the '+key+' cache key');
  }
@@ -3042,7 +3042,7 @@ test('v1.111.0: an unfilled ad slot is a zero-height placeholder — no empty Ad
  assert.ok(common.includes('new MutationObserver(markLive)'),'initAds applies live chrome only after a real fill');
  for(const f of ['index','news','odds']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('css/main.css?v=1.118.0'),f+'.html busts the main.css cache');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),f+'.html busts the main.css cache');
   assert.ok(html.includes('js/common.js?v=1.122.0'),f+'.html busts the common.js cache');
  }
 });
@@ -3473,4 +3473,37 @@ test('v1.122.0: recovery-shaped stories wear the injury bandage, not the brand s
  assert.ok(newsHtml.includes('js/common.js?v=1.122.0'),'news.html busts the common.js cache');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/common.js?v=1.122.0'),'index.html busts the common.js cache');
+});
+
+test('v1.123.0: the injury grid stops bleeding past the phone viewport',async()=>{
+ // Behavioral: table.tbl carries min-width: 560px by design (it scrolls
+ // inside .tbl-wrap), but as a grid item .tbl-wrap's automatic minimum is
+ // that min-content width — and a 1fr track is really minmax(auto, 1fr), so
+ // the collapsed single column inflated to ~562px on a 390px phone. The
+ // report column, the "keep it honest" callout, and the wire rail spilled
+ // past the right edge, where body overflow-x: clip cut the text mid-word.
+ // The fix zeroes the items' minimum; the table keeps its own scroll.
+ // Source pins (jsdom has no layout engine, so the width behavior is
+ // pinned at the source level; the actual 390px rendering was verified in
+ // headless Chromium: the collapsed track measured 562px before the fix
+ // and 358.8px after, with the table still scrolling inside .tbl-wrap).
+ const css=fs.readFileSync(path.join(__dirname,'../css/main.css'),'utf8');
+ assert.ok(css.includes('#injury-grid > * { min-width: 0; }'),'main.css carries the injury-grid min-width reset');
+ assert.ok(/table\.tbl\s*\{[^}]*min-width:\s*560px/s.test(css),'the table keeps its designed 560px floor');
+ assert.ok(/\.tbl-wrap\s*\{[^}]*overflow-x:\s*auto/s.test(css),'the wrapper still scrolls the table horizontally');
+ const p=await page('injuries',{mobile:true});
+ try{
+  const d=p.w.document;
+  assert.ok(d.getElementById('injury-grid'),'#injury-grid exists on injuries.html');
+  assert.ok(d.querySelector('#injury-grid .tbl-wrap table.tbl'),'the report table rides inside .tbl-wrap in the grid');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+ // Cache-bust pin: the stylesheet changed, so all 11 pages carry the key.
+ for(const name of ['404','about','games','highlights','index','injuries','news','odds','practice','stats','team']){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('css/main.css?v=1.123.0'),name+'.html busts the main.css cache');
+  assert.ok(!/main\.css\?v=(?!1\.123\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale main.css key');
+  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+ }
 });
