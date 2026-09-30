@@ -600,6 +600,23 @@ main:focus { outline: none; }
   .wire-ticker             { animation: cf-hero-rise 0.8s cubic-bezier(0.22,0.61,0.21,1) 0.78s both; }
 }
 
+/* v1.126.0 — the hero family joins the v1.124.0 entrance hatch: the same
+   `.motion-paused` freeze (snow paused by a visitor whose
+   prefers-reduced-motion is "no-preference") holds cf-hero-rise's
+   opacity-0/blurred from-frame forever, so the whole hero — headline,
+   deck, CTAs, matchup card, season strip, wire ticker — vanishes for
+   anyone with snow off. Sits AFTER the hero entrance block (v1.124.0's
+   hatch at the top of this file loses the source-order tie with the
+   media-query rules above), snaps the family to its finished state. */
+.motion-paused .hero-copy .eyebrow,
+.motion-paused .hero-copy h1,
+.motion-paused .hero-copy .sub,
+.motion-paused .hero-actions,
+.motion-paused .hero-note,
+.motion-paused .hero-layout .match-card,
+.motion-paused .season-strip,
+.motion-paused .wire-ticker { opacity: 1; transform: none; filter: none; animation: none; }
+
 /* v1.23.0 — photo-band recomposition: sub-page bands stop reading as a
    "floating sticker in a dark void". The dark overlay now falls off toward
    the right so the Chicago photography shows through, every crushed
