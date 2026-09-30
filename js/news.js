@@ -156,7 +156,11 @@
       });
       pill.className = "pill ok";
       // v1.94.0 — the pill says when the wire was last read, not just its source.
-      CF.freshStamp(pill, src + " · " + count + " stories", Date.now());
+      // v1.127.0 — the stamp wears the winning feed's own age: the ESPN path
+      // reads the news payload's timestamp; the wide-wire path reads the RSS
+      // snapshot's harvest time when it served one.
+      const wideSnap = src.indexOf("wide wire") === 0 && CF.API.rssSource === "cache" && CF.API.rssEpoch;
+      CF.freshStamp(pill, src + " · " + count + " stories", wideSnap ? CF.API.rssEpoch : CF.dataEpoch(CF.API.newsSource));
     } else {
       pill.className = "pill sample";
       pill.textContent = "offline — snapshot unavailable";

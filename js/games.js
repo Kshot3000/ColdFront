@@ -31,7 +31,9 @@
       lastEvents = events;
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
       // v1.94.0 — the pill names the source AND when it was last read.
-      CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, Date.now());
+      // v1.127.0 — the stamp wears the data's own age (a saved snapshot
+      // stops claiming "1s ago" for days-old numbers).
+      CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, CF.dataEpoch(r));
       if (!events.length) {
         box.innerHTML = '<div class="empty"><div class="big">🌫</div>No NFL games scheduled for this date.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
         return;
@@ -125,7 +127,9 @@
       const rows = CF.API.scheduleList(r.data);
       pill.className = "pill " + (r.source === "live" ? "ok" : "cache");
       // v1.94.0 — the pill names the source AND when it was last read.
-      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + " games", Date.now());
+      // v1.127.0 — the stamp wears the data's own age (a saved snapshot
+      // stops claiming "1s ago" for days-old numbers).
+      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + " games", CF.dataEpoch(r));
       if (!rows.length) throw new Error("empty");
       // upcoming first, then most-recent results.
       const now = Date.now();

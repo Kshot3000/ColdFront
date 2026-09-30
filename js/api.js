@@ -108,7 +108,11 @@ CF.API = {
      full Bears list: status per player + editorial notes on the wire. */
   getLeagueInjuries: async () => {
     const url = CF.API.base() + "/injuries";
-    const compact = (data) => ({ timestamp: data?.timestamp, injuries: (data?.injuries || []).filter((team) =>
+    const compact = (data) => ({ timestamp: data?.timestamp,
+      // v1.127.0 — keep the harvest time visible: the snapshot file carries
+      // it as meta.harvestedAt, and the freshness stamp wears the data's age.
+      harvestedAt: data?.harvestedAt || data?.meta?.harvestedAt,
+      injuries: (data?.injuries || []).filter((team) =>
       team.displayName === "Chicago Bears" || team.team?.abbreviation === "CHI") });
     const result = await CF.getSource("injuries", async () => compact(await CF.fetchJSON(url, { timeout: 15000 })), "injuries", url);
     result.data = compact(result.data);
@@ -210,6 +214,9 @@ CF.API = {
 
   getGoogleNews: async (query, max) => {
     const q = query || 'Chicago Bears';
+    // v1.127.0 — the RSS snapshot carries its own harvest time (see snapP);
+    // reset here so a stale epoch never leaks into a live/localStorage win.
+    CF.API.rssEpoch = null;
     const cached = CF.cacheGet("gnews." + q);
     const feeds = [
       // Bing first: public CORS proxies reach it more often than Google News.
@@ -234,6 +241,9 @@ CF.API = {
         const snap = CF.snapshotGet ? await CF.snapshotGet("gnews") : null;
         const list = snap && (snap.items || snap);
         if (!Array.isArray(list)) return [];
+        // v1.127.0 — stash the snapshot's harvest time so the wire pill can
+        // wear the data's age ("Cached wire · 4d ago"), not the paint time.
+        CF.API.rssEpoch = Date.parse(snap.harvestedAt) || null;
         return list.slice(0, max || 12).map((it) => ({
           // v1.107.0 — baked snapshots can carry the same stacked entities
           // the live RSS path decodes (seen live: "&quot;" printed in a

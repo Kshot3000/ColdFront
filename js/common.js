@@ -217,7 +217,13 @@ CF.fmtDate = (iso, opts) => {
    unregister themselves on the next tick. The exact wall-clock ("read
    4:03 AM CT") rides in the stamp's title tooltip via CF.fmtTime. Call it
    only on successful renders — offline/error pills keep their plain,
-   honest text. */
+   honest text.
+   v1.127.0 — the stamp now wears the DATA's age, not the paint time. The
+   epoch was always Date.now() ("this panel just painted"): true for live
+   feeds, but a saved snapshot harvested days ago would still claim "1s
+   ago" — the same badge meaning two different things. Single-source pills
+   now pass CF.dataEpoch(result) instead; composite pills (hero desk, odds
+   pulse) keep the assembly time, which is what they describe. */
 const _freshStamps = new Map();
 let _freshTickerOn = false;
 CF.freshStamp = (pill, label, fetchedAt) => {
@@ -245,6 +251,29 @@ CF.fmtTime = (iso) => {
   if (!iso) return "";
   try { return new Date(iso).toLocaleTimeString(undefined, { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit", timeZoneName: "short" }); }
   catch (e) { return ""; }
+};
+
+/* v1.127.0 — freshness stamps wear the data's own age. freshStamp's epoch
+   was always Date.now() ("this panel just painted"): for live feeds that's
+   also the data's age, but a saved snapshot or localStorage cache harvested
+   days ago would still claim "1s ago". Pass a getSource-style result
+   ({data, source}); snapshot/cache results resolve to the payload's own
+   harvest time (timestamp, harvestedAt, fetched, or meta.harvestedAt —
+   the snapshot files don't agree on a field name), live results stay
+   Date.now(). Anything unparseable falls back to now: never older than the
+   truth we can prove, never newer than the paint. */
+CF.dataEpoch = (r) => {
+  const src = r && r.source;
+  const d = r && r.data;
+  if ((src === "snapshot" || src === "cache") && d && typeof d === "object") {
+    const cands = [d.timestamp, d.harvestedAt, d.fetched,
+      d.meta && d.meta.timestamp, d.meta && d.meta.harvestedAt];
+    for (const c of cands) {
+      const t = Date.parse(c);
+      if (Number.isFinite(t)) return t;
+    }
+  }
+  return Date.now();
 };
 
 /* v1.108.0 — honest kickoff times. ESPN's schedule feed sometimes ships a

@@ -239,14 +239,18 @@
       CF.$("#home-news").innerHTML = items.slice(0, 4).map(story).join("");
       paintTicker(items);
       // v1.94.0 — the wire pill says when it was last read, not just its source.
-      CF.freshStamp(CF.$("#wire-pill"), CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN", Date.now());
+      // v1.127.0 — the stamp wears the payload's own age, not the paint time.
+      CF.freshStamp(CF.$("#wire-pill"), CF.sourceLabel(CF.API.newsSource?.source) + " · ESPN", CF.dataEpoch(CF.API.newsSource));
     } catch (_) {
       try {
         const items = await CF.API.getGoogleNews("Chicago Bears", 4);
         CF.$("#home-news").innerHTML = items.map(story).join("");
         paintTicker(items);
         // v1.94.0 — the wire pill says when it was last read, not just its source.
-        CF.freshStamp(CF.$("#wire-pill"), CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire", Date.now());
+        // v1.127.0 — a snapshot-served wire wears the snapshot's harvest
+        // time ("Cached wire · 4d ago"), not the paint time.
+        CF.freshStamp(CF.$("#wire-pill"), CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire",
+          (CF.API.rssSource === "cache" && CF.API.rssEpoch) ? CF.API.rssEpoch : Date.now());
       } catch (_) {
         show("#wire-pill", "Feed unavailable");
         const ticker = CF.$("#wire-ticker");
@@ -263,7 +267,8 @@
       if (!report.found) throw new Error("No Bears report");
       const rows = report.rows.filter((row) => row.status?.toLowerCase() !== "active");
       // v1.94.0 — the pill says when the report was last read, not just its source.
-      CF.freshStamp(CF.$("#inj-home-pill"), CF.sourceLabel(result.source) + " · league report", Date.now());
+      // v1.127.0 — the stamp wears the payload's own age, not the paint time.
+      CF.freshStamp(CF.$("#inj-home-pill"), CF.sourceLabel(result.source) + " · league report", CF.dataEpoch(result));
       if (result.source === "live") await paintHomeInjuryMove(rows);
       CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.injury || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status)) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
     } catch (_) {

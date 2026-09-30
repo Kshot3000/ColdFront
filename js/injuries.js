@@ -102,7 +102,8 @@
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active");
       if (x.found && !rows.length) {
         // v1.94.0 — the pill says when the report was last read, not just its source.
-        CF.freshStamp(pill, CF.sourceLabel(r) + " · league report", Date.now());
+        // v1.127.0 — the stamp wears the payload's own age, not the paint time.
+        CF.freshStamp(pill, CF.sourceLabel(r) + " · league report", CF.dataEpoch(r));
         note.textContent = "Check the official pregame report for final availability.";
         body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
         paintSnapshot([]);
@@ -111,7 +112,8 @@
       if (rows.length) {
         pill.className = "pill ok";
         // v1.94.0 — the pill says when the report was last read, not just its source.
-        CF.freshStamp(pill, CF.sourceLabel(r) + " · League report", Date.now());
+        // v1.127.0 — the stamp wears the payload's own age, not the paint time.
+        CF.freshStamp(pill, CF.sourceLabel(r) + " · League report", CF.dataEpoch(r));
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         paintSnapshot(rows);
@@ -127,7 +129,8 @@
       if (rows.length) {
         pill.className = "pill ok";
         // v1.94.0 — the pill says when the report was last read, not just its source.
-        CF.freshStamp(pill, CF.sourceLabel(r2) + " · Roster flags", Date.now());
+        // v1.127.0 — the stamp wears the payload's own age, not the paint time.
+        CF.freshStamp(pill, CF.sourceLabel(r2) + " · Roster flags", CF.dataEpoch(r2));
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
         paintSnapshot(rows);

@@ -75,7 +75,9 @@
       if (!line || !line.lines.length) throw new Error("no lines");
       pill.className = "pill ok";
       // v1.94.0 — the pill names the source AND when it was last read.
-      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + gameName, Date.now());
+      // v1.127.0 — the stamp wears the data's own age (a saved snapshot
+      // stops claiming "1s ago" for days-old numbers).
+      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + gameName, CF.dataEpoch(r));
       const side = bearsSideOf(nextGame);
       // v1.108.0 — "BEST" is a comparison: with a single book on the board
       // there's nothing to compare against, so the best-strip and the per-row
