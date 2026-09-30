@@ -378,6 +378,13 @@ main:focus { outline: none; }
    every card size and never clips the card edge the way three 92px letters did
    on phones. Decorative (aria-hidden in markup); opacity keeps it a watermark. */
 .player-portrait img.player-emblem { position: absolute; top: 16px; left: 18px; width: 104px; height: 104px; opacity: .17; z-index: 0; }
+/* v1.109.0 — the paw emblem only ghosts the number slot when there is no
+   headshot photo to fill it: with a real photo the paw peeking out from
+   behind read as a broken-image state on jersey-less cards (Nick McCloud,
+   Zavier Scott, Keidron Smith…). The emblem stays in the DOM, so a photo
+   that fails to load (its onerror hides the <img>) still degrades to the
+   composed badge instead of an empty frame. */
+.player-portrait:has(> img:not(.player-emblem):not([hidden])) img.player-emblem { display: none; }
 .player-info { position: relative; padding: 18px; border-top: 1px solid #d2eaff15; }
 .player-info h3 { font: 600 17px var(--body); text-transform: none; letter-spacing: -.02em; margin: 7px 0; }
 .player-info p { font-size: 11px; color: #8ca7bd; line-height: 1.7; margin: 8px 0; }
