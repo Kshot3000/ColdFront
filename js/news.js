@@ -16,20 +16,12 @@
      none, the list read as a wall of identical ❄ tiles. Fallbacks now carry
      a story-aware glyph (injury / game / roster move / brand snowflake) and
      one of four whisper-quiet tints keyed off the headline, so neighboring
-     cards read as distinct stories instead of the same missing image. */
-  function thumbGlyph(n) {
-    const t = ((n.heading || n.title || "") + " " + (n.description || n.desc || "")).toLowerCase();
-    if (INJURY_RE.test(t)) return "🩹";
-    if (/\b(game|win|wins|loss|beat|beats|recap|score|touchdown|field goal|overtime|playoff|playoffs|kickoff|sunday|monday|thursday)\b/.test(t)) return "🏈";
-    if (/\b(trade|traded|sign|signed|signing|contract|extension|roster|draft|drafted|waive|waived|release|hire|hired|fired|coach|gm)\b/.test(t)) return "📋";
-    return "❄";
-  }
-  function thumbTint(n) {
-    const s = String(n.heading || n.title || "");
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return "tf-t" + (h % 4);
-  }
+     cards read as distinct stories instead of the same missing image.
+     v1.116.0 — the glyph/tint logic moved to CF.thumbGlyph/CF.thumbTint in
+     common.js so the home page's Fresh-off-the-wire cards share the exact
+     same story-aware treatment. */
+  function thumbGlyph(n) { return CF.thumbGlyph(n); }
+  function thumbTint(n) { return CF.thumbTint(n); }
   function thumbHTML(n, img) {
     const glyph = thumbGlyph(n), tint = thumbTint(n);
     if (!img) return '<div class="thumb-fallback ' + tint + '">' + glyph + "</div>";

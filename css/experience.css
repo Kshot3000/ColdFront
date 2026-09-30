@@ -345,6 +345,17 @@ main:focus { outline: none; }
 .story-card:hover .story-art::after, .story-card:focus-within .story-art::after { opacity: 1; }
 .story-image { width: 100%; height: 164px; object-fit: cover; background: #152638; transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .story-card:hover .story-image, .story-card:focus-within .story-image { transform: scale(1.07); }
+/* v1.116.0 — composed fallback art for imageless wire stories (see home.js
+   storyArt): a story-aware glyph on a headline-hashed whisper tint, sized to
+   the art slot. The hover zoom lands on the glyph so fallback cards keep the
+   v1.21.0 micro-interaction language of their photographic siblings. */
+.story-art-fallback { display: flex; align-items: center; justify-content: center; height: 164px;
+  background: linear-gradient(160deg, rgba(13, 26, 43, .97), rgba(13, 26, 43, .6)), radial-gradient(circle at 50% 36%, rgba(140, 200, 240, .16), transparent 66%); }
+.story-art-fallback .story-art-glyph { font-size: 56px; line-height: 1; opacity: .94; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .55)); transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.story-card:hover .story-art-fallback .story-art-glyph, .story-card:focus-within .story-art-fallback .story-art-glyph { transform: scale(1.07); }
+.story-art-fallback.tf-t1 { background: linear-gradient(160deg, rgba(48, 23, 9, .97), rgba(48, 23, 9, .6)), radial-gradient(circle at 50% 36%, rgba(255, 122, 65, .18), transparent 66%); }
+.story-art-fallback.tf-t2 { background: linear-gradient(160deg, rgba(10, 30, 54, .97), rgba(10, 30, 54, .6)), radial-gradient(circle at 50% 36%, rgba(120, 190, 255, .18), transparent 66%); }
+.story-art-fallback.tf-t3 { background: linear-gradient(160deg, rgba(22, 33, 50, .97), rgba(22, 33, 50, .6)), radial-gradient(circle at 50% 36%, rgba(150, 180, 210, .16), transparent 66%); }
 .story-copy .story-source {
   align-self: flex-start; padding: 4px 10px;
   border: 1px solid rgba(255, 148, 95, 0.4); border-radius: 999px;
@@ -427,7 +438,7 @@ main:focus { outline: none; }
 @media (max-width:440px) {
   .wrap { width: 92%; } .match-card { padding: 21px; } .match-card .abbr { font-size: 41px; }
   .hero h1 { font-size: clamp(36px, 13vw, 52px); line-height: 0.96; }
-  .front-news { grid-template-columns: 1fr; } .story-image { height: 200px; }
+  .front-news { grid-template-columns: 1fr; } .story-image { height: 200px; } .story-art-fallback { height: 200px; }
   /* v1.101.0 — the hero CTAs stop squishing on narrow phones: flex:1 squeezed
      both buttons to ~170px so "ENTER GAME / CENTER" wrapped two lines. Stacked
      full-width they read as two clean single-line tap targets (the ESPN/Apple

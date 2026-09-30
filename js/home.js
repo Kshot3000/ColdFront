@@ -198,11 +198,26 @@
     }
   }
 
+  /* v1.116.0 — the home wire's imageless cards were all the same photo: the
+     fallback (and the dead-image onerror swap) pointed at the single
+     soldier-field.webp, so whenever the feed shipped no images — the wide
+     wire never ships any — the row read as a wall of identical pictures.
+     Fallback art is now composed in place with the same story-aware
+     glyph + tint the news list got in v1.106.0 (CF.thumbGlyph/CF.thumbTint),
+     and a 404ing feed image swaps to that composed art instead of the one
+     shared photo. */
+  function storyArt(item, img) {
+    const glyph = CF.thumbGlyph(item), tint = CF.thumbTint(item);
+    if (!img) return '<span class="story-art story-art-fallback ' + tint + '" aria-hidden="true"><span class="story-art-glyph">' + glyph + '</span></span>';
+    return '<span class="story-art"><img class="story-image" loading="lazy" src="' + CF.esc(img) + '" alt=""' +
+      ' data-glyph="' + glyph + '" data-tint="' + tint + '" onerror="CF.storyArtFallback(this)"></span>';
+  }
   function story(item) {
     const title = item.heading || item.title || "Bears news";
     const url = CF.safeURL(item.links?.web?.href || item.link, "https://www.chicagobears.com/news");
-    const photo = CF.safeURL(item.images?.[0]?.url, "img/soldier-field.webp");
-    return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener"><span class="story-art"><img class="story-image" loading="lazy" src="' + CF.esc(photo) + '" alt="" onerror="this.onerror=null;this.src=\'img/soldier-field.webp\'"></span><div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
+    const raw = item.images && item.images[0] && item.images[0].url;
+    const photo = raw ? CF.safeURL(raw, "") : "";
+    return '<a class="story-card" href="' + CF.esc(url) + '" target="_blank" rel="noopener">' + storyArt(item, photo) + '<div class="story-copy"><span class="story-source">' + CF.esc(item.source || "ESPN · Bears wire") + '</span><h3>' + CF.esc(title) + '</h3><div class="story-end"><span>' + CF.esc(CF.timeAgo(item.published || item.date)) + '</span><span aria-hidden="true">Read story ↗</span></div></div></a>';
   }
   function tickerGroup(items, hidden) {
     return '<span class="wt-group"' + (hidden ? ' aria-hidden="true"' : "") + ">" + items.map((item) => {

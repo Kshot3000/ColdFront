@@ -346,6 +346,44 @@ CF.thumbFallback = (img) => {
   img.replaceWith(d);
 };
 
+/* v1.116.0 — story-aware fallback art, shared by the news wire list
+   (v1.106.0) and the home page's Fresh-off-the-wire cards: the glyph follows
+   the story shape — bandage for injury-shaped stories (mirrors the INJURY_RE
+   the injury rail uses in news.js), football for game stories, clipboard for
+   roster moves, the brand snowflake otherwise — and the tint is one of four
+   whisper-quiet backgrounds hashed from the headline, so neighboring cards
+   read as distinct stories instead of the same missing image. */
+CF.thumbGlyph = (n) => {
+  const t = (((n.heading || n.title) || "") + " " + ((n.description || n.desc) || "")).toLowerCase();
+  if (/\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report)\b/i.test(t)) return "🩹";
+  if (/\b(game|win|wins|loss|beat|beats|recap|score|touchdown|field goal|overtime|playoff|playoffs|kickoff|sunday|monday|thursday)\b/.test(t)) return "🏈";
+  if (/\b(trade|traded|sign|signed|signing|contract|extension|roster|draft|drafted|waive|waived|release|hire|hired|fired|coach|gm)\b/.test(t)) return "📋";
+  return "❄";
+};
+CF.thumbTint = (n) => {
+  const s = String(n.heading || n.title || "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return "tf-t" + (h % 4);
+};
+
+/* v1.116.0 — home-card dead-image swap: an <img class="story-image"> whose
+   source 404s (ESPN hotlink protection) is replaced with the composed
+   story-aware fallback art — the same glyph + tint it would have carried had
+   the feed shipped no image at all. The glyph + tint ride on data attributes
+   so the swap lands with the identical treatment. */
+CF.storyArtFallback = (img) => {
+  if (!img || !img.parentNode) return;
+  const d = document.createElement("span");
+  d.className = "story-art story-art-fallback " + (img.getAttribute("data-tint") || "");
+  d.setAttribute("aria-hidden", "true");
+  const g = document.createElement("span");
+  g.className = "story-art-glyph";
+  g.textContent = img.getAttribute("data-glyph") || "❄";
+  d.appendChild(g);
+  img.parentNode.replaceWith(d);
+};
+
 /* Build N skeleton table rows spanning `cols` columns.
    widths: optional array of % widths (cycles). */
 CF.skelRows = (cols, n, widths) => {
