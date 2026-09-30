@@ -637,6 +637,14 @@
     try {
       const sb = await CF.API.getScoreboard();
       game = CF.API.bearsGameFromScoreboard(sb.data);
+      /* v1.115.0 — the nightly-baked scoreboard can sit ~24h stale after a
+         game (a "pre" game whose kickoff is past the 6h grace window). The
+         week clock used to crown that stale game the active GAMEDAY phase —
+         hours <= 30 catches negative hours too — so a calm Wednesday read
+         "gameday NOW vs the team that already played". The stale-pre game
+         gets the same guard as the hero (v1.114.0) and the clock falls back
+         to the schedule's true next game. */
+      if (CF.API.preGameKickoffStale(game)) game = null;
     } catch (e) { /* board quiet */ }
     try {
       const sc = await CF.API.getSchedule();

@@ -58,7 +58,10 @@
       try {
         const sb = await CF.API.getScoreboard();
         const g = CF.API.bearsGameFromScoreboard(sb.data);
-        if (g && (g.home.abbr === "CHI" || g.away.abbr === "CHI")) {
+        /* v1.115.0 — a stale "pre" scoreboard game (kickoff past the 6h grace
+           window) is last night's news, not a fallback identity for the odds
+           board — the same guard the hero and week clock use. */
+        if (g && !CF.API.preGameKickoffStale(g) && (g.home.abbr === "CHI" || g.away.abbr === "CHI")) {
           gameId = g.id;
           gameName = g.name + " · " + CF.fmtDate(g.date);
           nextGame = g;
