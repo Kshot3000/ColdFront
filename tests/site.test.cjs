@@ -479,6 +479,53 @@ test('highlights feature frame carries the identity thread, display-type title, 
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
+test('highlights NFL league reels merge with a source badge, and the freshness line names both sources',async()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../css/highlights.css'),'utf8');
+ assert.match(css,/\.hl-src\s*\{[^}]*color:\s*#bcd7f5/s,'the league source badge sets in ice steel, not brand orange');
+ assert.match(css,/\.hl-feature:hover \.hl-now \.hl-src/s,'the league badge answers hover/focus like the Highlight chip');
+ const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
+ assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
+ const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
+ assert.ok(!/highlights\.js\?v=(?!1\.110\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.css\?v=(?!1\.110\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
+ assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
+ const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
+  items.map(i=>'<entry><yt:videoId>'+i.id+'</yt:videoId><title>'+i.title+'</title><published>'+i.pub+'</published><media:thumbnail url="https://i.ytimg.com/vi/'+i.id+'/hqdefault.jpg"/></entry>').join('')+'</feed>';
+ const bears=[
+  {id:'bear1',title:'Bears Weekly: Eagles preview',pub:'2026-09-28T20:00:00Z'},
+  {id:'bear2',title:'Press Conference: Ben Johnson',pub:'2026-09-27T20:00:00Z'}
+ ];
+ const nfl=[
+  {id:'nfl1',title:'Bears vs. Vikings | NFL Week 2 Game Highlights',pub:'2026-09-28T23:00:00Z'},
+  {id:'nfl2',title:'Chiefs vs. Eagles | NFL Week 2 Game Highlights',pub:'2026-09-28T22:00:00Z'},
+  {id:'nfl3',title:'Top 10 plays of Week 2',pub:'2026-09-28T21:00:00Z'}
+ ];
+ const p=await page('highlights',{fetch:async(u)=>{
+  if(u.hostname==='www.youtube.com'&&u.pathname==='/feeds/videos.xml'){
+   if(u.searchParams.get('channel_id')==='UCDVYQ4Zhbm3S2dlz7P1GBDg')return{ok:true,text:async()=>atom(nfl)};
+   return{ok:true,text:async()=>atom(bears)};
+  }
+ }});
+ try{
+  const d=p.w.document;
+  const cards=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.equal(cards.length,3,'the Bears feed plus the gated league reel render');
+  const titles=cards.map(c=>c.querySelector('.hl-title').textContent);
+  assert.ok(titles[0].includes('Bears vs. Vikings'),'the league game reel sorts first by publish date');
+  const nflCards=cards.filter(c=>c.querySelector('.hl-src'));
+  assert.equal(nflCards.length,1,'exactly the Bears game reel wears the NFL badge');
+  assert.equal(nflCards[0].querySelector('.hl-src').textContent,'NFL','the badge reads NFL');
+  assert.ok(!titles.some(t=>t.includes('Chiefs')),'non-Bears league videos are gated out');
+  assert.ok(!titles.some(t=>t.includes('Top 10')),'non-highlight league videos are gated out');
+  assert.ok(nflCards[0].getAttribute('data-kind')==='highlight','the league reel classifies as footage');
+  d.querySelector('.hl-filters [data-filter="highlight"]').click();await settle();
+  const filtered=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(filtered.some(c=>c.querySelector('.hl-src')),'the league reel survives the highlights-only filter');
+  assert.match(d.querySelector('#hl-updated').textContent,/Bears channel \+ 1 game reel from the NFL channel/,'the freshness line names both sources');
+  assert.match(d.querySelector('#hl-pill').textContent,/live · 3 videos/,'the pill counts the merged feed');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
 test('last-game box score renders a final scorecard with the winner glow and the Bears chip',async()=>{
  const css=fs.readFileSync(path.join(__dirname,'../css/experience.css'),'utf8');
  assert.match(css,/\.bx-card::before\s*\{[^}]*background:\s*linear-gradient\(90deg,\s*var\(--orange-hot\)/s,'the scorecard carries the orange identity thread');

@@ -239,6 +239,20 @@
   white-space: nowrap;
   flex: none;
 }
+/* v1.110.0 — league-reel source badge: ice-steel chip that sits beside the
+   orange Highlight chip without competing with it. */
+.hl-src {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #bcd7f5;
+  border: 1px solid rgba(140, 180, 220, 0.45);
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex: none;
+}
 
 /* v1.32.0 — frost-fade entrance, staggered on first paint only.
    Filter/refresh re-renders carry no .cf-enter, so they stay instant. */
@@ -325,11 +339,21 @@
 .hl-now .hl-kind {
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
+.hl-now .hl-src {
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
 .hl-feature:hover .hl-now .hl-kind,
 .hl-feature:focus-within .hl-now .hl-kind {
   background: rgba(255, 90, 31, 0.18);
   color: #ffd9c7;
   box-shadow: 0 0 12px rgba(255, 90, 31, 0.35);
+}
+/* v1.110.0 — the league badge answers hover/focus with ice instead of fire. */
+.hl-feature:hover .hl-now .hl-src,
+.hl-feature:focus-within .hl-now .hl-src {
+  background: rgba(140, 180, 220, 0.16);
+  color: #e8f2ff;
+  box-shadow: 0 0 12px rgba(140, 180, 220, 0.3);
 }
 .hl-poster:focus-visible {
   outline: 2px solid var(--orange-hot);
@@ -347,6 +371,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hl-now::before,
   .hl-now .hl-kind,
+  .hl-now .hl-src,
   .hl-poster,
   .hl-poster .hl-play { transition: none; }
   .hl-now.hl-now-in { animation: none; }
