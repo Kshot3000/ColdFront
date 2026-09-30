@@ -430,7 +430,17 @@ main:focus { outline: none; }
   .season-strip .season-brand { display: none; } .season-strip > div + div { padding-left: 15px; } .season-strip > div:nth-child(2) { border-left: 0; padding-left: 0; }
   .roster-grid { grid-template-columns: repeat(2,1fr); } .city-strip { grid-template-columns: 1fr; }
   .city-tile { min-height: 170px; } .section-head { gap: 10px; flex-wrap: wrap; } .section-head .rule { display: none; }
-  .section-head .tag { display: none; } .wx-item + .wx-item { display: none; }
+  /* v1.119.0 — phones get a composed two-line section head. A blunt v1.12.0
+     rule hid the status tag under 760px, so phone readers lost the feed
+     state ("connecting", "tuning…", the week-clock's "practice" phase) and
+     heads like "Fresh off the wire" were left with the "view all" link
+     dangling alone on a wrapped second line. Now the h2 owns the first row
+     (flex: 1 1 100% also guarantees no mid-word squeeze when the tag wraps)
+     and the tag + link share a deliberate second row — tag left, the link's
+     margin-left:auto keeps it right. The yard-line rule still needs width,
+     so it stays hidden here. Desktop untouched. */
+  .section-head h2 { flex: 1 1 100%; }
+  .wx-item + .wx-item { display: none; }
   /* v1.79.0 — on phones the floating snow pill parked on readable content
      (it covered the responsible-gambling helpline number on odds.html and the
      matchup line on the NEXT UP card). The toggle now docks into the sticky
