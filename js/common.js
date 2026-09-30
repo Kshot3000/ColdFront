@@ -352,10 +352,14 @@ CF.thumbFallback = (img) => {
    the injury rail uses in news.js), football for game stories, clipboard for
    roster moves, the brand snowflake otherwise — and the tint is one of four
    whisper-quiet backgrounds hashed from the headline, so neighboring cards
-   read as distinct stories instead of the same missing image. */
+   read as distinct stories instead of the same missing image.
+   v1.122.0 — the injury branch catches recovery-shaped stories too: the live
+   wire ran a "Behind the recovery process that has Chicago Bears LT Ozzy
+   Trapilo on the doorstep of playing" card in the brand snowflake even
+   though it is plainly an injury story. Keep the two regexes mirrored. */
 CF.thumbGlyph = (n) => {
   const t = (((n.heading || n.title) || "") + " " + ((n.description || n.desc) || "")).toLowerCase();
-  if (/\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report)\b/i.test(t)) return "🩹";
+  if (/\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|recover(?:y|ies|ing|ed)?|report)\b/i.test(t)) return "🩹";
   if (/\b(game|win|wins|loss|beat|beats|recap|score|touchdown|field goal|overtime|playoff|playoffs|kickoff|sunday|monday|thursday)\b/.test(t)) return "🏈";
   if (/\b(trade|traded|sign|signed|signing|contract|extension|roster|draft|drafted|waive|waived|release|hire|hired|fired|coach|gm)\b/.test(t)) return "📋";
   return "❄";

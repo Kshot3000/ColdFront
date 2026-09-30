@@ -2,7 +2,10 @@
 "use strict";
 
 (function () {
-  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report)\b/i;
+  /* v1.122.0 — mirrors CF.thumbGlyph's injury branch in js/common.js (which
+     documents the pairing): recovery-shaped stories ("Behind the recovery
+     process…") belong in the injury rail with the bandage, not the snowflake. */
+  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|recover(?:y|ies|ing|ed)?|report)\b/i;
 
   // v1.36.0 — .cf-enter on first paint only; the 5-minute auto-refresh and
   // the manual refresh re-renders stay instant.
