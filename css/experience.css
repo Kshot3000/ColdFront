@@ -51,7 +51,14 @@ main:focus { outline: none; }
 .hero-note { display: flex; align-items: center; gap: 9px; color: #86a4bb; font-size: 11px; margin-top: 20px; letter-spacing: .05em; }
 .hero-note::before { content: ""; width: 6px; height: 6px; background: #88bddf; border-radius: 50%; box-shadow: 0 0 12px #88bddf; }
 .match-card { padding: 27px; background: linear-gradient(145deg,#182b40e8,#071323f5); border: 1px solid #aecfe82e; border-top: 3px solid #f56c30; box-shadow: 0 18px 80px #0007, inset 0 1px #ffffff09; }
-.match-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #a6bed1; font: 500 11px var(--body); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 22px; }
+/* v1.117.0 — mid-width hero QA (2026-09-30) caught the nowrap status pill
+   clipping mid-word ("FEED UNAVAILAB…") on the match card when the two-column
+   hero narrows it past ~300px (768–1100px viewports): the label wrapped but the
+   pill, white-space:nowrap, overflowed the card's hidden overflow. The kicker
+   row now wraps — pill drops to a composed second line, left-aligned under the
+   label — instead of being sliced by the card edge. Single-line desktop layout
+   is untouched. */
+.match-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; row-gap: 8px; color: #a6bed1; font: 500 11px var(--body); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 22px; }
 .match-card h3 { font-size: 17px; letter-spacing: .035em; line-height: 1.5; }
 .match-card .vs { margin: 24px 0 16px; grid-template-columns: 1fr 1.1fr 1fr; }
 .match-card .abbr { font-size: 49px; line-height: 1; }
