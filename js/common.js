@@ -1375,6 +1375,25 @@ CF.initScrollChrome = () => {
     bar.style.transform = "scaleX(" + p.toFixed(4) + ")";
     bar.classList.toggle("is-on", y > 24);
     top.classList.toggle("is-on", y > 600);
+    // v1.118.0 — ghost the back-to-top button when it parks over a section
+    // heading. The fixed 46px circle sits at the left edge, and at tablet/
+    // phone widths that is exactly where "Fresh off the wire"-style h2s
+    // start — the headline read as "ESH OFF THE WIRE" behind the button.
+    // Rect intersection (not elementFromPoint) catches even partial overlaps
+    // and never depends on paint order; it only dims while actually
+    // overlapping a headline.
+    if (top.classList.contains("is-on")) {
+      const r = top.getBoundingClientRect();
+      const heads = document.querySelectorAll(".section-head h2");
+      let overHead = false;
+      for (const h of heads) {
+        const hr = h.getBoundingClientRect();
+        if (r.left < hr.right && r.right > hr.left && r.top < hr.bottom && r.bottom > hr.top) { overHead = true; break; }
+      }
+      if (overHead !== top.classList.contains("is-dimmed")) top.classList.toggle("is-dimmed", overHead);
+    } else if (top.classList.contains("is-dimmed")) {
+      top.classList.remove("is-dimmed");
+    }
     // Compact the sticky header once the page moves: the chrome shrinks and
     // deepens so more content stays in view. Keep --cf-head-h (mobile nav
     // offset + anchor scroll-margin) honest when the state flips.
