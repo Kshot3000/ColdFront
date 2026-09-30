@@ -28,6 +28,18 @@ body { overflow-x: clip; }
 .snow-toggle:disabled { cursor: default; opacity: .75; }
 .motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
 .motion-paused .reveal { opacity: 1; transform: none; }
+/* v1.124.0 — entrance families must never strand content invisible: a
+   `backwards` fill frozen by .motion-paused during its delay window (or a
+   `both` fill on .whiteout-card) holds the opacity-0 from-frame forever,
+   so the whole homepage quick-nav grid or a card rail can vanish if the
+   fan pauses snow in the first second of load. Snap every entrance family
+   to its finished state the moment motion is paused; reduced-motion users
+   already get animation:none via media queries, but the snow toggle needs
+   the same guarantee. experience.css loads last, so these ties beat the
+   family rules on specificity and source order. */
+.motion-paused .grid.quick a,
+.motion-paused .cf-enter,
+.motion-paused .whiteout-card { opacity: 1; transform: none; filter: none; animation: none; }
 .skip-link { position: fixed; left: 16px; top: -70px; padding: 12px 18px; background: #fff; color: #071426; z-index: 200; border-radius: 8px; }
 .skip-link:focus { top: 12px; color: #071426; }
 main:focus { outline: none; }
