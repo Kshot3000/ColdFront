@@ -172,7 +172,28 @@
 .hl-card:focus-visible::before,
 .hl-card.is-active::before { opacity: 1; }
 .hl-card.is-active { border-color: #ff5a1f; box-shadow: 0 0 0 1px #ff5a1f, 0 10px 30px rgba(0, 0, 0, 0.5); }
-.hl-thumb { position: relative; aspect-ratio: 16 / 9; background: #040a14; overflow: hidden; }
+/* v1.132.0 — the thumb and body are <span>s, and without display:block the
+   16/9 aspect-ratio was ignored (thumbs painted at the image's own ratio),
+   the play badge's left:50% resolved against the inline box (badge hung off
+   the card's left edge), and the inline body sat outside the card's flow so
+   overflow:hidden clipped every title away. Both are block now. */
+.hl-thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: #040a14; overflow: hidden; }
+/* A dead YouTube thumb used to swap in an unstyled div — a lone glyph in the
+   corner of the frame. It now fills the 16:9 frame with a centered frost
+   glyph so it reads as designed art, matching the wire's ghost-tile language. */
+.hl-thumb .thumb-fallback {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px; line-height: 1; opacity: 0.9;
+  background:
+    radial-gradient(120% 90% at 50% 20%, rgba(255, 106, 31, 0.10) 0%, transparent 55%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+    #040a14;
+}
+/* The composed glyph carries the frame on its own — the play badge would sit
+   directly on top of it, so it retires in the fallback state. The card keeps
+   its hover/focus lift, identity thread, and title treatment. */
+.hl-thumb .thumb-fallback ~ .hl-mini-play { display: none; }
 .hl-thumb img {
   width: 100%; height: 100%; object-fit: cover; display: block;
   transform: scale(1.001);
@@ -237,7 +258,7 @@
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
 }
-.hl-body { padding: 12px 14px 14px; }
+.hl-body { display: block; padding: 12px 14px 14px; }
 .hl-title {
   margin: 0 0 8px;
   font-size: 14.5px;

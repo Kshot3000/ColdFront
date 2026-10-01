@@ -502,7 +502,7 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
  assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
  const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
  assert.ok(!/highlights\.js\?v=(?!1\.121\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
- assert.ok(!/highlights\.css\?v=(?!1\.121\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
+ assert.ok(!/highlights\.css\?v=(?!1\.132\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
  assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
  const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
   items.map(i=>'<entry><yt:videoId>'+i.id+'</yt:videoId><title>'+i.title+'</title><published>'+i.pub+'</published><media:thumbnail url="https://i.ytimg.com/vi/'+i.id+'/hqdefault.jpg"/></entry>').join('')+'</feed>';
@@ -3441,7 +3441,7 @@ test('v1.121.0: the featured highlights poster is never a black void',async()=>{
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
- assert.ok(html.includes('css/highlights.css?v=1.121.0'),'highlights.html busts the highlights.css cache');
+ assert.ok(html.includes('css/highlights.css?v=1.132.0'),'highlights.html busts the highlights.css cache');
  assert.ok(html.includes('js/highlights.js?v=1.121.0'),'highlights.html busts the highlights.js cache');
  assert.ok(!/highlights\.(css|js)\?v=1\.110\.0/.test(html),'highlights.html has no stale highlights cache keys');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on highlights.html');
@@ -3796,4 +3796,42 @@ test('v1.130.0: imageless wire tiles wear composed ghost-glyph art, not broken-i
   assert.ok(list,'an imageless news-list story renders a fallback tile');
   assert.ok(list.getAttribute('data-glyph'),'the list tile carries its glyph on data-glyph');
  }finally{n.close();}
+});
+
+test('v1.132.0: highlights video cards keep their 16/9 thumbs, centered play badge, and visible titles',async()=>{
+ // Fresh-eyes QA (2026-10-01) caught the highlights grid broken on the live
+ // page: .hl-thumb and .hl-body are <span>s with no display rule, so the
+ // 16/9 aspect-ratio was ignored (thumbs painted at the image's own ratio),
+ // the play badge's left:50% resolved against the inline box (the badge hung
+ // off the card's left edge, half-clipped), and the inline body fell outside
+ // the card's flow — overflow:hidden clipped every video title away. Both
+ // are display:block now, and a dead YouTube thumb gets a composed frost
+ // glyph filling the 16:9 frame instead of an unstyled div.
+ const css=fs.readFileSync(path.join(__dirname,'..','css','highlights.css'),'utf8');
+ const thumb=css.indexOf('.hl-thumb {');
+ assert.ok(thumb>-1,'highlights.css styles .hl-thumb');
+ assert.ok(/display:\s*block/.test(css.slice(thumb,thumb+220)),'.hl-thumb is block so aspect-ratio applies');
+ const body=css.indexOf('.hl-body {');
+ assert.ok(body>-1,'highlights.css styles .hl-body');
+ assert.ok(/display:\s*block/.test(css.slice(body,body+120)),'.hl-body is block so titles sit in the card flow');
+ const fb=css.indexOf('.hl-thumb .thumb-fallback');
+ assert.ok(fb>-1,'a dead thumb gets composed fallback art, not an unstyled div');
+ assert.ok(/inset:\s*0/.test(css.slice(fb,fb+400)),'the fallback fills the 16:9 frame');
+ assert.ok(/\.hl-thumb \.thumb-fallback ~ \.hl-mini-play\s*\{[^}]*display:\s*none/.test(css),'the play badge retires when the fallback glyph carries the frame');
+ const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
+ assert.ok(html.includes('css/highlights.css?v=1.132.0'),'highlights.html busts the highlights.css cache at v1.132.0');
+ assert.ok(!/highlights\.css\?v=1\.121\.0/.test(html),'highlights.html has no stale 1.121.0 highlights.css key');
+ const p=await page('highlights');try{
+  const d=p.w.document;
+  const card=d.querySelector('#hl-list .hl-card');
+  assert.ok(card,'the feed renders video cards');
+  // The body must sit after the thumb in normal flow (a previous regression
+  // had it clipped away by overflow:hidden); both are plain in-flow spans.
+  const thumbEl=card.querySelector('.hl-thumb'), bodyEl=card.querySelector('.hl-body');
+  assert.ok(thumbEl && bodyEl,'the card carries a thumb frame and a body');
+  assert.ok(thumbEl.compareDocumentPosition(bodyEl)&p.w.Node.DOCUMENT_POSITION_FOLLOWING,'the body follows the thumb in document order');
+  const title=card.querySelector('.hl-title');
+  assert.ok(title && title.textContent.trim().length>3,'the card carries a video title');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
 });
