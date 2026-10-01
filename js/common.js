@@ -1419,9 +1419,14 @@ CF.initScrollChrome = () => {
     // Rect intersection (not elementFromPoint) catches even partial overlaps
     // and never depends on paint order; it only dims while actually
     // overlapping a headline.
+    // v1.138.0 — the same ghost covers the prediction-market legend on
+    // odds.html. On phones the button parks on the legend's first line
+    // ("fill = implied chance the crowd is right…"), burying the caption.
+    // The legend wears .pm-legend so the check stays an explicit allowlist
+    // of read-critical text, never "any paragraph".
     if (top.classList.contains("is-on")) {
       const r = top.getBoundingClientRect();
-      const heads = document.querySelectorAll(".section-head h2");
+      const heads = document.querySelectorAll(".section-head h2, .pm-legend");
       let overHead = false;
       for (const h of heads) {
         const hr = h.getBoundingClientRect();
