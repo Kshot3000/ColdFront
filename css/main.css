@@ -771,6 +771,15 @@ body.nav-open .site-head {
     var(--glass-deep);
 }
 .card.pad-lg { padding: 28px; }
+/* v1.131.0 — the facility cards stop letting their CTAs drift: the row's cards
+   become flex columns and the trailing button eats the free space with
+   margin-top:auto, so "Go behind the scenes / Official camp information /
+   Plan your stadium visit" all sit on one baseline no matter how much copy
+   the card above carries. Scoped to .facility-cards so no other .card row
+   changes shape; align-self: flex-start keeps the button its natural width. */
+.facility-cards .card { display: flex; flex-direction: column; }
+.facility-cards .card > p:last-of-type { margin-bottom: 18px; }
+.facility-cards .card .btn { margin-top: auto; align-self: flex-start; }
 .card h3 { font-size: 16px; letter-spacing: 0.1em; margin-bottom: 12px; }
 .grid { display: grid; gap: 18px; }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
