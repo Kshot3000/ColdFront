@@ -4269,6 +4269,27 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   width: 3px;
   background: linear-gradient(180deg, #5C7A99, #E8541E);
 }
+/* v1.136.0 — the Participation Heat empty state stops double-framing: the
+   host is itself a chromed .practice-heat.card box, so the shared .empty
+   panel's own glass frame + hairline landed inside it as a box-in-a-box with
+   two stacked orange hairlines. In the empty state the host sheds its chrome
+   (border, background, shadow, padding, card hover-lift) and the single
+   .empty panel composes as the section body; the happy path (week strip) is
+   untouched. */
+.practice-heat.heat-empty {
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.practice-heat.heat-empty:hover {
+  transform: none;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+}
 .heat-head {
   display: flex;
   align-items: baseline;

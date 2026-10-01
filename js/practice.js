@@ -74,9 +74,14 @@
     const cells = buildHeatCells(data);
     if (!(data.participation?.length || data.rows?.length)) {
       if (pill) pill.textContent = "Awaiting confirmed updates";
+      // v1.136.0 — the host is itself a chromed .practice-heat.card box; tag it
+      // so CSS sheds the outer frame and the .empty panel composes as the
+      // section body instead of a box-in-a-box.
+      root.classList.add("heat-empty");
       root.innerHTML = CF.emptyHTML({ icon: "❄", title: "The practice week is taking shape", sub: "Confirmed participation updates will appear here. Follow the official Bears report for current availability." });
       return;
     }
+    root.classList.remove("heat-empty");
     const fromPart = Array.isArray(data.participation) && data.participation.length;
     if (pill) {
       pill.textContent = fromPart ? "participation" : "from tracker";
