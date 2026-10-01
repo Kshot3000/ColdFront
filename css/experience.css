@@ -476,6 +476,23 @@ main:focus { outline: none; }
      so it stays hidden here. Desktop untouched. */
   .section-head h2 { flex: 1 1 100%; }
   .wx-item + .wx-item { display: none; }
+  /* v1.133.0 — the phone weather strip stops truncating mid-word. Under 960px
+     the strip became a nowrap hidden-scroll row; the gauge was display:none'd
+     but its .wx-cfi wrapper kept width:100%, so phones showed "offline — last
+     rear" cut at the viewport edge and a swipe revealed a 300px+ empty ghost
+     zone (the dead gauge's box, plus the tiny spark pill adrift in it with
+     live data). Now ≤700px composes two rows: brand + the Cold Front Index
+     gauge share row one (dial scaled to fit, history spark rests on phones so
+     the row stays clean), and the conditions own row two with wrapping
+     allowed — everything readable, nothing swipeable-to-nowhere. The location
+     item stays hidden on phones per the existing rule; desktop untouched. */
+  .weather-strip .wrap { flex-wrap: wrap; overflow-x: visible; row-gap: 6px; }
+  .weather-strip .wx-brand { font-size: 10px; letter-spacing: 0.14em; gap: 6px; }
+  .weather-strip .wx-cfi { order: 2; width: auto; margin-left: auto; }
+  .weather-strip .wx-gauge { display: inline-flex; }
+  .weather-strip .cfi-dial { width: 72px; height: auto; }
+  .weather-strip .cfi-spark-wrap { display: none; }
+  .weather-strip #wx-now { order: 3; flex: 1 1 100%; white-space: normal; }
   /* v1.79.0 — on phones the floating snow pill parked on readable content
      (it covered the responsible-gambling helpline number on odds.html and the
      matchup line on the NEXT UP card). The toggle now docks into the sticky
