@@ -985,6 +985,27 @@ body.nav-open .site-head {
 .pill.ok { color: #b9e3c6; border-color: rgba(76, 175, 125, 0.5); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
+/* ============================================================
+   v1.141.0 — the news feed pill wraps on phones
+   .pill is globally white-space: nowrap, and the feed pill carries
+   the whole provenance string ("wide wire · <outlet> et al. · N
+   stories · <stamp>") — on a 390px viewport it bled past the
+   viewport edge and clipped mid-word, even though the badge row
+   wraps. On phones the feed pill alone relaxes into a two-line
+   status banner so the full source reads; desktop keeps the
+   single-line pill. Text-only, so reduced motion needs no
+   special-casing.
+   ============================================================ */
+@media (max-width: 700px) {
+  #feed-pill {
+    white-space: normal;
+    text-align: left;
+    line-height: 1.55;
+    max-width: 100%;
+    padding: 8px 14px;
+  }
+}
+
 .badge-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .src-note { font-size: 12px; color: var(--text-dim); margin-top: 10px; }
 
