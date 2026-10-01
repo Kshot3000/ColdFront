@@ -501,6 +501,9 @@ body.is-scrolled .brand .name { font-size: 16px; }
   border-color: rgba(200, 56, 3, 0.45);
   background: rgba(200, 56, 3, 0.08);
 }
+/* v1.134.0 — the drawer X chip carries a visible handle (@kshot9000); on
+   desktop the glyph-only chip is unchanged, so the label rests there. */
+.nav a.nav-x .nav-x-label { display: none; }
 .nav a.nav-x::after { display: none; }
 .nav a.nav-x:hover {
   background: rgba(200, 56, 3, 0.22);
@@ -4443,10 +4446,32 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
     box-shadow: inset 3px 0 0 var(--orange);
     color: #fff;
   }
+  /* v1.134.0 — the drawer X chip stops reading as an empty placeholder.
+     It was a full-width dashed box holding only a lone "𝕏" glyph (the dashed
+     hairline reads as a drop-zone). Now it wears the family's warm
+     orange-tinted solid hairline — the same chip language as the desktop
+     nav-x — and carries the visible handle, so it composes as an intentional
+     "follow the front" row: glyph + @kshot9000 centered with an 8px gap. */
   .nav.open a.nav-x {
+    display: flex;
+    align-items: center;
     justify-content: center;
-    border: 1px dashed rgba(255, 255, 255, 0.18);
-    margin-top: 4px;
+    gap: 8px;
+    border: 1px solid rgba(200, 56, 3, 0.45);
+    background: rgba(200, 56, 3, 0.10);
+    margin-top: 6px;
+    color: var(--orange-hot);
+  }
+  .nav.open a.nav-x .nav-x-label {
+    display: inline;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+  }
+  .nav.open a.nav-x:hover,
+  .nav.open a.nav-x:focus-visible {
+    background: rgba(200, 56, 3, 0.22);
+    color: var(--snow);
   }
 }
 @keyframes cf-nav-in {
