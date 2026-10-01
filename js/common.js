@@ -371,6 +371,7 @@ CF.thumbFallback = (img) => {
   if (!img || !img.parentNode) return;
   const d = document.createElement("div");
   d.className = "thumb-fallback" + (img.getAttribute("data-tint") ? " " + img.getAttribute("data-tint") : "");
+  d.setAttribute("data-glyph", img.getAttribute("data-glyph") || "❄");
   d.textContent = img.getAttribute("data-glyph") || "❄";
   img.replaceWith(d);
 };
@@ -410,6 +411,7 @@ CF.storyArtFallback = (img) => {
   const d = document.createElement("span");
   d.className = "story-art story-art-fallback " + (img.getAttribute("data-tint") || "");
   d.setAttribute("aria-hidden", "true");
+  d.setAttribute("data-glyph", img.getAttribute("data-glyph") || "❄");
   const g = document.createElement("span");
   g.className = "story-art-glyph";
   g.textContent = img.getAttribute("data-glyph") || "❄";

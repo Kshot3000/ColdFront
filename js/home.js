@@ -208,7 +208,7 @@
      shared photo. */
   function storyArt(item, img) {
     const glyph = CF.thumbGlyph(item), tint = CF.thumbTint(item);
-    if (!img) return '<span class="story-art story-art-fallback ' + tint + '" aria-hidden="true"><span class="story-art-glyph">' + glyph + '</span></span>';
+    if (!img) return '<span class="story-art story-art-fallback ' + tint + '" data-glyph="' + glyph + '" aria-hidden="true"><span class="story-art-glyph">' + glyph + '</span></span>';
     return '<span class="story-art"><img class="story-image" loading="lazy" src="' + CF.esc(img) + '" alt=""' +
       ' data-glyph="' + glyph + '" data-tint="' + tint + '" onerror="CF.storyArtFallback(this)"></span>';
   }

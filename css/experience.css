@@ -379,6 +379,20 @@ main:focus { outline: none; }
    v1.21.0 micro-interaction language of their photographic siblings. */
 .story-art-fallback { display: flex; align-items: center; justify-content: center; height: 164px;
   background: linear-gradient(160deg, rgba(13, 26, 43, .97), rgba(13, 26, 43, .6)), radial-gradient(circle at 50% 36%, rgba(140, 200, 240, .16), transparent 66%); }
+/* v1.130.0 — imageless wire tiles stop reading as broken images: a large
+   faint ghost of the same story glyph (from data-glyph) composes behind
+   the main glyph at the lower right, so the tile reads as designed
+   editorial art instead of a lone glyph floating in a dark void. The
+   ghost sits behind the tile background's own stacking level (z-index:-1
+   inside the tile's stacking context) so it never touches the glyph. */
+.story-art-fallback { position: relative; overflow: hidden; z-index: 0; }
+.story-art-fallback::before {
+  content: attr(data-glyph);
+  position: absolute; right: -16px; bottom: -36px; z-index: -1;
+  font-size: 150px; line-height: 1;
+  opacity: .10; filter: blur(2px);
+  pointer-events: none;
+}
 .story-art-fallback .story-art-glyph { font-size: 56px; line-height: 1; opacity: .94; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .55)); transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .story-card:hover .story-art-fallback .story-art-glyph, .story-card:focus-within .story-art-fallback .story-art-glyph { transform: scale(1.07); }
 .story-art-fallback.tf-t1 { background: linear-gradient(160deg, rgba(48, 23, 9, .97), rgba(48, 23, 9, .6)), radial-gradient(circle at 50% 36%, rgba(255, 122, 65, .18), transparent 66%); }

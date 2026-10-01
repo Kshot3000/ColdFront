@@ -27,7 +27,7 @@
   function thumbTint(n) { return CF.thumbTint(n); }
   function thumbHTML(n, img) {
     const glyph = thumbGlyph(n), tint = thumbTint(n);
-    if (!img) return '<div class="thumb-fallback ' + tint + '">' + glyph + "</div>";
+    if (!img) return '<div class="thumb-fallback ' + tint + '" data-glyph="' + glyph + '">' + glyph + "</div>";
     return '<img class="thumb" loading="lazy" src="' + CF.esc(img) + '" alt=""' +
       ' data-glyph="' + glyph + '" data-tint="' + tint + '" onerror="CF.thumbFallback(this)">';
   }
