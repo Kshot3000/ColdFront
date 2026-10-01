@@ -1006,6 +1006,27 @@ body.nav-open .site-head {
   }
 }
 
+/* ============================================================
+   v1.144.0 — the mobile feed banner reads as one sentence
+   The v1.141.0 ≤700px banner kept .pill's inline-flex layout, so
+   the provenance label and the freshness stamp wrapped as two
+   independent flex items — the stamp fractured mid-token
+   ("· 5D" on line one, "AGO" orphaned on line two) and stacked
+   on the right edge. On phones the banner now flows as one
+   sentence (display: block) and the stamp stays whole
+   (white-space: nowrap), so the age never breaks across lines.
+   Desktop keeps the single-line pill; #feed-pill lives on
+   news.html only, so no other page is touched.
+   ============================================================ */
+@media (max-width: 700px) {
+  #feed-pill {
+    display: block;
+  }
+  #feed-pill .fresh-stamp {
+    white-space: nowrap;
+  }
+}
+
 .badge-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .src-note { font-size: 12px; color: var(--text-dim); margin-top: 10px; }
 
