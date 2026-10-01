@@ -1724,8 +1724,8 @@ test('v1.79.0: snow toggle docks in the header on phones — never parks on cont
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/experience.css?v=1.133.0'),name+'.html carries the v1.120.0 experience.css cache key');
-  assert.ok(html.includes('js/snow.js?v=1.104.0'),name+'.html carries the v1.104.0 snow.js cache key');
-  assert.ok(!/experience\.css\?v=1\.(100|101|102|117|119|120|[0-7]|80|85|92|99)\.0"|snow\.js\?v=1\.(1[0-7]|18|79|100)\.0"/.test(html),name+'.html has no stale experience/snow cache key');
+  assert.ok(html.includes('js/snow.js?v=1.137.0'),name+'.html carries the v1.137.0 snow.js cache key');
+  assert.ok(!/experience\.css\?v=1\.(100|101|102|117|119|120|[0-7]|80|85|92|99)\.0"|snow\.js\?v=1\.(1[0-7]|18|79|100|104)\.0"/.test(html),name+'.html has no stale experience/snow cache key');
  }
 });
 
@@ -4002,4 +4002,54 @@ test('v1.136.0: the Participation Heat empty state is a single panel, not a box-
  }
  const practice=fs.readFileSync(path.join(__dirname,'..','practice.html'),'utf8');
  assert.ok(practice.includes('js/practice.js?v=1.136.0'),'practice.html busts the practice.js cache');
+});
+
+test('v1.137.0: the snow pill re-dodges when async content shifts the footer under it',async()=>{
+ // Fresh-eyes QA (2026-10-01) caught the desktop "Snow on" pill stranded on
+ // the footer "Tip the build · BTC" chip on injuries.html: the v1.104.0 dodge
+ // only re-ran on scroll/resize, but wire/snapshot content lands async — a
+ // late layout shift slid the footer under the parked pill with no scroll or
+ // resize event, burying the chip's Copy label. A ResizeObserver on <body>
+ // now re-runs the same geometry check whenever the page height changes.
+ // The pill is position:fixed, so the style.bottom writes can't loop the
+ // observer. Phones stay exempt (the toggle docks in the header there).
+ const snow=fs.readFileSync(path.join(__dirname,'..','js','snow.js'),'utf8');
+ assert.ok(snow.includes('v1.137.0'),'snow.js carries the v1.137.0 block');
+ assert.ok(/typeof ResizeObserver !== "undefined"/.test(snow),'the observer is feature-guarded (jsdom and old browsers skip it)');
+ assert.ok(/new ResizeObserver\(\(\) => dodgeFooter\(\)\)\.observe\(document\.body\)/.test(snow),'body resizes re-run the footer dodge');
+ // Behavioral: stub ResizeObserver, re-init snow, and prove a body resize
+ // re-runs the dodge — the pill lifts off the footer without any scroll.
+ const p=await page('odds');try{
+  assert.deepEqual(p.errors,[]);
+  const w=p.w;
+  w.document.querySelector('.snow-toggle').remove();
+  const seen={cb:null,target:null};
+  w.ResizeObserver=class{constructor(cb){seen.cb=cb;}observe(t){seen.target=t;}disconnect(){}};
+  w.eval(fs.readFileSync(path.join(__dirname,'..','js','snow.js'),'utf8'));
+  w.CF.initSnow();
+  assert.ok(seen.cb,'initSnow wires a ResizeObserver');
+  assert.equal(seen.target,w.document.body,'the observer watches <body> for layout shifts');
+  const tgl=w.document.querySelector('.snow-toggle'), foot=w.document.querySelector('.site-foot');
+  assert.ok(tgl&&foot,'the toggle and the footer exist after re-init');
+  // The footer slides under the parked pill (async content, no scroll event):
+  // pill bottom edge at 882, footer top at 700 — 182px of overlap.
+  tgl.getBoundingClientRect=()=>({top:836,bottom:882,left:0,right:0,width:0,height:46,x:0,y:836,toJSON(){}});
+  foot.getBoundingClientRect=()=>({top:700,bottom:1100,left:0,right:0,width:0,height:400,x:0,y:700,toJSON(){}});
+  seen.cb();
+  const lifted=parseFloat(tgl.style.bottom);
+  assert.ok(lifted>18,'a body resize lifts the pill (bottom:'+tgl.style.bottom+')');
+  assert.ok(Math.abs(lifted-(18+182+12))<1,'the lift equals overlap + 12px gap: '+tgl.style.bottom);
+  // The footer drifts back out of the parking zone: the pill re-parks.
+  foot.getBoundingClientRect=()=>({top:1200,bottom:1600,left:0,right:0,width:0,height:400,x:0,y:1200,toJSON(){}});
+  seen.cb();
+  assert.equal(tgl.style.bottom,'','the pill re-parks once the footer is out of view');
+ }finally{p.close();}
+ // Cache-bust pin: snow.js changed, so its key moved on every page.
+ for(const name of ['404','about','games','highlights','index','injuries','news','odds','practice','stats','team']){
+  const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
+  assert.ok(html.includes('js/snow.js?v=1.137.0'),name+'.html busts the snow.js cache');
+  assert.ok(!/snow\.js\?v=(?!1\.137\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale snow.js key');
+  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
+  assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
+ }
 });

@@ -69,6 +69,18 @@ CF.initSnow = () => {
   window.addEventListener("resize", dodgeFooter, { passive: true });
   dodgeFooter();
 
+  // v1.137.0 — scroll/resize alone can't keep the dodge fresh: the wire,
+  // snapshots, and box scores all land async, so late content can slide the
+  // footer under the parked pill (or away from a dodged one) with no scroll
+  // or resize event — stranding the pill on the "Tip the build · BTC" chip
+  // and burying the Copy label (caught on injuries.html, 2026-10-01). A
+  // ResizeObserver on <body> re-runs the same geometry check whenever the
+  // page height changes for any reason. The pill is position:fixed, so
+  // setting style.bottom never changes body height — the observer can't loop.
+  if (typeof ResizeObserver !== "undefined") {
+    new ResizeObserver(() => dodgeFooter()).observe(document.body);
+  }
+
   function resize() {
     width = window.innerWidth;
     height = window.innerHeight;
