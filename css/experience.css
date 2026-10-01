@@ -1419,3 +1419,24 @@ tr.ld-div.me .ld-div-abbr {
   .social-grid a, .social-grid a::before, .social-grid a .ico { transition: none; }
   .social-grid a:hover .ico, .social-grid a:focus-visible .ico { transform: none; }
 }
+
+/* ============================================================
+   v1.139.0 — the hero card's quiet state is a slim notice, not a
+   half-empty matchup
+   Fresh-eyes QA caught the index hero card leaving its frost-skeleton
+   blocks frozen in place when no matchup is on the schedule (quiet
+   schedule or unreachable feed): two dead gray "badge" rectangles sat
+   between the title and the meta line, reading as a broken placeholder.
+   loadMatchup() now tags the card .is-quiet in that state, and the
+   matchup rows — the vs duel, the venue line, and the countdown —
+   collapse entirely. The card becomes kicker + title + meta + footer
+   links: an intentional quiet panel. The happy path is untouched (the
+   class resets on every paint).
+   ============================================================ */
+.match-card.is-quiet .vs,
+.match-card.is-quiet #ng-countdown {
+  display: none;
+}
+.match-card.is-quiet #ng-meta {
+  margin-top: 18px;
+}

@@ -25,12 +25,17 @@
     clearInterval(countdown);
     const card = CF.$("#next-game");
     /* v1.37.0 — reset the hero card's Bears identity and result state on each paint. */
-    card.classList.remove("final", "bears-won");
+    /* v1.139.0 — the quiet state (no matchup) also resets each paint. */
+    card.classList.remove("final", "bears-won", "is-quiet");
     card.querySelectorAll(".side").forEach((s) => s.classList.remove("is-bears", "winner", "loser"));
     /* v1.62.0 — the frost-skeleton first paint announces via #ng-skel-status;
        remove it once the card paints real content (or the quiet state). */
     CF.$("#ng-skel-status")?.remove();
     if (!game) {
+      /* v1.139.0 — the matchup rows collapse in the quiet state: frozen
+         skeleton blocks (the away/home "badges") no longer linger where
+         no matchup exists. The card becomes a slim composed notice. */
+      card.classList.add("is-quiet");
       show("#ng-title", "Waiting for the next Bears matchup");
       show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");
       show("#ng-meta", "The official schedule is one click away in the game center.");
