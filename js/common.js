@@ -1146,13 +1146,15 @@ CF.renderWeatherStrip = (root) => {
   const el = root || CF.$("[data-cf-weather]");
   if (!el) return;
   el.innerHTML =
+    '<div class="wrap">' +
     '<span class="wx-brand"><span class="wx-icon" id="wx-icon" aria-hidden="true">⛈</span> Chicago Field Conditions</span>' +
     '<span class="wx-item" id="wx-now">warming up…</span>' +
     '<span class="wx-item"><span class="wx-dot"></span><b>Soldier Field · Chicago</b></span>' +
     '<span class="wx-cfi" id="wx-cfi">' +
       '<span class="wx-gauge" id="wx-gauge">reading the front…</span>' +
       '<span class="cfi-spark-wrap" id="cfi-spark" hidden></span>' +
-    "</span>";
+    "</span>" +
+    "</div>";
   const update = () => CF.loadWeather().then((wx) => {
     const now = CF.$("#wx-now", el);
     const gauge = CF.$("#wx-gauge", el);
