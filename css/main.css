@@ -803,6 +803,29 @@ body.nav-open .site-head {
 #injury-grid > * { min-width: 0; }
 
 /* ============================================================
+   v1.140.0 — the report column pins while the wire flows.
+   Fresh-eyes QA caught the injuries page running a ~1460px dead
+   zone under the report table on desktop: the wire rail is ~3x
+   the report column's height (2179px vs 719px), so scrolling
+   past the table left the left two-thirds of the viewport as
+   bare background while wire cards flowed on the right — half
+   the page read as missing. The report column (the official,
+   slow-changing league copy) now pins under the sticky header
+   while the live wire flows beside it; when the grid ends it
+   releases into the status-key callout exactly as before.
+   Gated to the two-column layout (min-width 861px mirrors the
+   860px collapse point): phones keep the stacked single column
+   with no sticky behavior. Reduced motion untouched — no
+   animation involved.
+   ============================================================ */
+@media (min-width: 861px) {
+  #injury-grid > .inj-main {
+    position: sticky;
+    top: calc(var(--cf-head-h, 64px) + 16px);
+  }
+}
+
+/* ============================================================
    v1.90.0 — the injury/wire rail stacks like a callout on phones,
    not a leftover sidebar edge. The desktop `.rail` wears a 3px
    orange left rule with a 14px left indent; when #news-grid /
