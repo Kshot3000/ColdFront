@@ -27,3 +27,21 @@ v1.8.0 stadium hero crops (derived from existing Wikimedia Soldier Field assets 
 - hero-soldier-gate-desk.webp (v1.98.0) ← art-directed landscape crop of soldier-field-dark.webp
   (dome sweep over the colonnade and gate 6; replaces the raw portrait as hero rotator layer 2)
 Layered fail-soft: primary night stadium → alt stadium → CSS gridiron + original football SVG silhouette.
+
+v1.145.0 field photography (the hero rotator, soldier photo bands, and soldier
+city tile now show the actual Soldier Field playing surface):
+- File:Veterans_Day_ceremonies_at_NFL_game_in_Chicago_131110-G-PL299-128.jpg
+  (public domain, U.S. Navy photo by Chief Petty Officer Alan Haraf)
+  → hero-field-gameday-desk.webp / hero-field-gameday-mobile.webp
+  (gameday field: yard lines, SOLDIER FIELD signage, flag ceremony)
+- File:Military_service_members_honored_during_Chicago_bears_game_(15807899215).jpg
+  (public domain, 416th Theater Engineer Command, U.S. Army Reserve)
+  → hero-field-huddle-desk.webp / hero-field-huddle-mobile.webp
+  (Bears huddle under the Soldier Field bowl)
+- File:Soldier_Field_on_June_26,_2020.jpg
+  (CC BY-SA 4.0, Moses8910, via Wikimedia Commons:
+   https://commons.wikimedia.org/wiki/File:Soldier_Field_on_June_26,_2020.jpg
+   license: https://creativecommons.org/licenses/by-sa/4.0)
+  → hero-field-skyline-desk.webp / hero-field-skyline-mobile.webp
+  (Soldier Field + Chicago skyline aerial; also backs the soldier city tile)
+Desk crops are 1600x928, mobile crops 900x1100 portrait, webp q80-82.

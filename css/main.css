@@ -2203,7 +2203,7 @@ input[type="date"]:focus {
 }
 .photo-band .art-mark.lg { width: 110px; height: 110px; }
 .photo-band.soldier .photo-band-bg {
-  background-image: url("../img/soldier-field-dark.webp");
+  background-image: url("../img/hero-field-gameday-desk.webp");
   background-position: center 40%;
 }
 .photo-band.river .photo-band-bg {
@@ -2323,7 +2323,7 @@ input[type="date"]:focus {
   .city-tile .city-tile-label strong { transition: none; }
 }
 .city-tile.t-river .city-tile-bg { background-image: url("../img/chicago-river-night.webp"); }
-.city-tile.t-soldier .city-tile-bg { background-image: url("../img/soldier-field.webp"); background-position: center 30%; }
+.city-tile.t-soldier .city-tile-bg { background-image: url("../img/hero-field-skyline-desk.webp"); background-position: center 30%; }
 .city-tile.t-winter .city-tile-bg { background-image: url("../img/chicago-winter-lakefront.webp"); }
 .city-tile.t-theatre .city-tile-bg { background-image: url("../img/chicago-night-alt.webp"); }
 .city-tile.t-skyline .city-tile-bg { background-image: url("../img/chicago-skyline-night.webp"); }
@@ -2934,10 +2934,10 @@ body:not(.prefers-reduced-motion) #snow {
 /* Responsive photo swaps — smaller webps on narrow viewports */
 @media (max-width: 700px) {
   .photo-band.soldier .photo-band-bg {
-    background-image: url("../img/soldier-field-dark-sm.webp");
+    background-image: url("../img/hero-field-gameday-mobile.webp");
   }
   .city-tile.t-soldier .city-tile-bg {
-    background-image: url("../img/soldier-field-sm.webp");
+    background-image: url("../img/hero-field-skyline-mobile.webp");
   }
   .city-tile.t-skyline .city-tile-bg {
     background-image: url("../img/chicago-skyline-night-sm.webp");
@@ -4954,3 +4954,16 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 @media (prefers-reduced-motion: reduce) {
   #odds-refresh .cf-spin { animation: none; }
 }
+
+/* ============================================================
+   v1.145.0 — the backgrounds show the actual field
+   The hero rotator, the soldier photo bands, and the soldier city tile
+   used stadium-exterior shots. They now use real Soldier Field field
+   photography: the gameday field (yard lines + SOLDIER FIELD signage),
+   the Bears huddle under the bowl, and the stadium + Chicago skyline
+   aerial — so the field and the city share the background rotation.
+   Desk keeps 1600x928 landscape crops; phones get 900x1100 portrait
+   crops that suit the tall mobile hero. Photo credits live on
+   about.html; the hero CSS fallback and lakefront atmosphere stay
+   Chicago-night.
+   ============================================================ */

@@ -20,13 +20,13 @@
   <meta name="twitter:description" content="THE COLD FRONT — the all-in-one Chicago Bears fan hub. Live news, injury report, betting odds, game stats & schedule, roster, practice intel. Independent. Unofficial. Built for Da Bears.">
   <meta name="twitter:image" content="https://kshot3000.github.io/ColdFront/img/og-image.png">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
-  <link rel="preload" as="image" href="img/hero-soldier-desk.webp" type="image/webp" fetchpriority="high" imagesrcset="img/hero-soldier-mobile.webp 900w, img/hero-soldier-desk.webp 1600w" imagesizes="100vw">
+  <link rel="preload" as="image" href="img/hero-field-gameday-desk.webp" type="image/webp" fetchpriority="high" imagesrcset="img/hero-field-gameday-mobile.webp 900w, img/hero-field-gameday-desk.webp 1600w" imagesizes="100vw">
   <link rel="dns-prefetch" href="https://site.api.espn.com">
   <link rel="dns-prefetch" href="https://news.google.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=1.144.0">
+  <link rel="stylesheet" href="css/main.css?v=1.145.0">
   <link rel="stylesheet" href="css/experience.css?v=1.142.0">
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3316742664595468"
        crossorigin="anonymous"></script>
@@ -84,21 +84,22 @@
           <circle cx="100" cy="60" r="4" fill="#E8541E" opacity="0.75"/>
         </svg>
       </div>
+      <!-- v1.145.0 — the hero rotator now shows the actual field: layer 0 is
+           the gameday field (yard lines + SOLDIER FIELD signage), layer 1 the
+           Bears huddle under the bowl, layer 2 the stadium + Chicago skyline
+           aerial. Desk keeps the 1600x928 landscape crops; mobile keeps the
+           900x1100 portrait crops that suit the tall mobile hero. -->
       <picture class="hero-layer is-active" data-hero-layer="0">
-        <source media="(max-width: 700px)" srcset="img/hero-soldier-mobile.webp" type="image/webp">
-        <img class="hero-photo-img" src="img/hero-soldier-desk.webp" alt="" width="1600" height="928" fetchpriority="high" decoding="async">
+        <source media="(max-width: 700px)" srcset="img/hero-field-gameday-mobile.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/hero-field-gameday-desk.webp" alt="" width="1600" height="928" fetchpriority="high" decoding="async">
       </picture>
       <picture class="hero-layer" data-hero-layer="1">
-        <source media="(max-width: 700px)" srcset="img/hero-soldier-alt-mobile.webp" type="image/webp">
-        <img class="hero-photo-img" src="img/hero-soldier-alt-desk.webp" alt="" width="1600" height="928" loading="lazy" decoding="async">
+        <source media="(max-width: 700px)" srcset="img/hero-field-huddle-mobile.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/hero-field-huddle-desk.webp" alt="" width="1600" height="928" loading="lazy" decoding="async">
       </picture>
-      <!-- v1.98.0 — layer 2 is an art-directed landscape "gate" crop (dome sweep
-           over the colonnade and gate 6), not the raw 1400x1867 portrait: the
-           portrait crossfaded into a thin CSS-cropped slice every ~14s. Mobile
-           keeps the portrait source — it suits the tall mobile hero. -->
       <picture class="hero-layer" data-hero-layer="2">
-        <source media="(max-width: 700px)" srcset="img/soldier-field-dark-sm.webp" type="image/webp">
-        <img class="hero-photo-img" src="img/hero-soldier-gate-desk.webp" alt="" width="1600" height="928" loading="lazy" decoding="async">
+        <source media="(max-width: 700px)" srcset="img/hero-field-skyline-mobile.webp" type="image/webp">
+        <img class="hero-photo-img" src="img/hero-field-skyline-desk.webp" alt="" width="1600" height="928" loading="lazy" decoding="async">
       </picture>
     </div>
     <div class="wrap">
