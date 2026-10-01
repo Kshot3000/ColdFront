@@ -101,8 +101,7 @@
         '<div class="empty"><div class="big">🎲</div>No league-wire line right now' +
         (nextGame ? " (next game: " + CF.esc(gameName) + ")" : "") + ".<br>" +
         'The Polymarket board below usually still works, and the full-board box takes any <a href="https://the-odds-api.com" target="_blank" rel="noopener">The Odds API</a> key.' +
-        ' <a class="btn small" style="display:inline-flex;margin-top:12px" href="https://sportsbook.draftkings.com/sportsbook/nfl" target="_blank" rel="noopener">Sportsbooks ↗</a></div>';
-    }
+        '<div class="empty-cta"><a class="btn small" href="https://sportsbook.draftkings.com/sportsbook/nfl" target="_blank" rel="noopener">Sportsbooks ↗</a></div></div>';    }
   }
 
   /* Best-price finder: which book has the friendliest number for the Bears
