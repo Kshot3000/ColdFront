@@ -1176,6 +1176,19 @@ body.nav-open .site-head {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
 }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+/* v1.129.0 — empty states inside scrolling tables: table.tbl carries a
+   560px min-width, so a centered .empty panel in a colspan cell would
+   center inside the 560px scroll canvas and get sliced at the phone
+   viewport (practice.html's "Tracker is empty" read "TRACKER IS EMP" at
+   390px). On narrow screens the panel sizes to the visible scrollport and
+   hugs its left edge instead. */
+@media (max-width: 640px) {
+  .tbl-wrap .tbl td > .empty {
+    width: calc(100vw - 64px);
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
 .tbl th {
   font-family: var(--display);
   font-size: 11px;
