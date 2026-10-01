@@ -475,6 +475,19 @@ main:focus { outline: none; }
      margin-left:auto keeps it right. The yard-line rule still needs width,
      so it stays hidden here. Desktop untouched. */
   .section-head h2 { flex: 1 1 100%; }
+  /* v1.142.0 — phone section-head CTAs stop stranding right on their own row.
+     v1.119.0 composed the two-line head (h2 on row one; tag + link share row
+     two with the link's margin-left:auto keeping it right), but long status
+     tags ("Schedule snapshot · Game-day weather · 1s ago") fill row two
+     alone, so the link wraps to a third row where margin-left:auto still
+     pins it to the right edge — an orphaned button floating over empty
+     space, spotted on mobile index. On phones every section-head anchor now
+     takes its own full row instead: .btn CTAs center their labels (a
+     full-width thumb target, matching the 40px min-height touch rule) and
+     plain "view all" links left-align in reading order. Uniform across all
+     twelve section heads; desktop untouched. */
+  .section-head a { margin-left: 0; flex: 1 1 100%; }
+  .section-head a.btn { justify-content: center; }
   .wx-item + .wx-item { display: none; }
   /* v1.133.0 — the phone weather strip stops truncating mid-word. Under 960px
      the strip became a nowrap hidden-scroll row; the gauge was display:none'd
