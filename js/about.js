@@ -167,6 +167,7 @@
         '. Nightly workflow (see README) refreshes <code>data/snapshots/</code>; run <code>node scripts/refresh-snapshots.mjs</code> locally anytime.' +
         "</div>";
     } catch (e) {
+      el.classList.add('snap-empty');
       el.innerHTML = '<div class="snap-meta dim">Snapshot META unavailable on this network.</div>';
     }
   }

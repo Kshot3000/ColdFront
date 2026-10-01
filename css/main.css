@@ -4003,6 +4003,28 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 }
 .snap-meta b { color: var(--snow); }
 
+/* ============================================================
+   v1.135.0 — the dead META panel stops reading as a broken card
+   ============================================================ */
+/* When data/snapshots/META.json is unreachable (offline), the about-page
+   #snap-meta host holds only the one-line dim notice — but it still wears
+   the tall .card.pad-lg box, which read as a broken/empty panel. about.js
+   tags the host with .snap-empty in that state; the card tightens into a
+   slim one-line notice strip. The happy path (full snapshot paragraph)
+   keeps its composed padding. */
+#snap-meta.snap-empty { padding: 12px 18px; }
+#snap-meta.snap-empty .snap-meta.dim {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#snap-meta.snap-empty .snap-meta.dim::before {
+  content: "\25CC";
+  color: var(--orange-hot, #E8541E);
+  font-size: 13px;
+  line-height: 1;
+}
+
 
 /* ============================================================
    v1.11.0 — injury movement · film room · kickoff wx · desk/heat polish
