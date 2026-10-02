@@ -5053,3 +5053,33 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    split is sized by its fr tracks either way.
    ============================================================ */
 .north-layout > * { min-width: 0; }
+
+/* ============================================================
+   v1.155.0 — footer links become thumb targets on phones.
+   Fresh-eyes QA measured every footer list link on a 390px phone
+   at 20px tall on a 26px pitch (site list + Bears socials, all
+   eleven pages): inline text boxes a thumb has to thread between
+   neighbours 6px away — "Stats" is a 30×20px target. That is the
+   one navigation surface the phone treatment never reached: the
+   same small-screen block already gives .btn a 40px minimum.
+   Where the footer stacks (≤800px, the .foot-grid collapse
+   point), the list links now compose as 40px rows — flex-centred,
+   the v1.24.0 underline-grow running the row's full width along
+   its bottom edge like a ruled line igniting, the global
+   :focus-visible ring gaining a 6px radius to match the row.
+   Flex collapses the markup spaces inside the social links, so
+   column-gap restores the separation (.38em stands in for the
+   space between icon, name and handle). Desktop keeps the
+   compact inline list, byte for byte.
+   ============================================================ */
+@media (max-width: 800px) {
+  .site-foot .foot-grid ul { gap: 0; }
+  .site-foot .foot-grid ul a {
+    display: flex;
+    align-items: center;
+    column-gap: 0.38em;
+    min-height: 40px;
+    padding-bottom: 0;
+    border-radius: 6px;
+  }
+}
