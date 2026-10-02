@@ -806,6 +806,20 @@ body.nav-open .site-head {
    table keeps its own horizontal scroll. Desktop two-column layout untouched. */
 #injury-grid > * { min-width: 0; }
 
+/* v1.169.0 — the news grid gets the same guard v1.123.0 gave the injury
+   grid. #news-grid never carried the min-width reset, and its items are
+   grid containers themselves (.news-list is display:grid): the loading
+   panel's max-content (~337px — the .empty-sub copy at its 42ch cap,
+   plus padding) became the single collapsed track's floor, so on
+   phones under ~376px the wire list and the injury rail stuck out past
+   the right edge and the page scrolled sideways while the wire tuned
+   in (rendered at 320px: document 349px wide in a 320px viewport;
+   #news-list 337px in a 281px wrap, #injury-news pushed to right=349).
+   Zeroing the items' minimum keeps the track at the column width at
+   every size; the desktop 2fr/1fr split is untouched (both columns
+   there are far wider than either item's min-content). */
+#news-grid > * { min-width: 0; }
+
 /* ============================================================
    v1.140.0 — the report column pins while the wire flows.
    Fresh-eyes QA caught the injuries page running a ~1460px dead
