@@ -710,7 +710,11 @@ main:focus { outline: none; }
 .photo-band .photo-band-art .art-mark + .art-mark { margin-left: -30px; }
 @media (max-width: 960px) {
   .photo-band .photo-band-inner { padding: 24px 18px; min-height: 0; }
-  .photo-band .photo-band-art { padding: 8px 0; margin-right: 0; }
+  /* v1.146.0 — phones: when the art cluster wraps below the copy it was
+     huddling left-aligned with dead space to its right, reading as an
+     afterthought. Center the emblem on its own row so it lands as an
+     intentional badge under the copy. */
+  .photo-band .photo-band-art { padding: 8px 0; margin-left: auto; margin-right: auto; }
   .photo-band .photo-band-art .art-mark:first-child { transform: translateY(-6px) rotate(-4deg); }
   .photo-band .photo-band-art .art-mark:last-child { transform: translateY(7px) rotate(5deg); }
   .photo-band .photo-band-art .art-mark + .art-mark { margin-left: -20px; }
