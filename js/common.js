@@ -52,31 +52,38 @@ CF.CONFIG = {
     },
   ],
 
-  // Your other projects (linked from About).
+  // Your other projects (linked from About) — website links, per Kyle
+  // 2026-10-02: NightDream, GridIronUI, Night Messenger, Quantus, Pearl.
   projects: [
     {
-      name: "NightDream.io",
+      name: "NightDream",
       icon: "☾",
       desc: "Cardano by day, Midnight by night — live CNT markets, a 554-token registry and a privacy-chain watchlist. Zero ads, zero server-side state.",
-      repo: "nightdream.io",
+      url: "https://nightdream.xyz",
     },
     {
-      name: "EUTXO.DEX",
-      icon: "⬡",
-      desc: "A non-custodial DEX for the Ergo chain. Real sigma-rust signing in WASM, real constant-product math, virtual pools until the on-chain contract ships.",
-      repo: "eutxo-dex",
+      name: "GridIronUI",
+      icon: "🏈",
+      desc: "The sports-betting knowledge hub — odds explainers, line movement, and Polymarket-vs-Kalshi market comparisons, all in one place.",
+      url: "https://gridironui.xyz",
     },
     {
-      name: "Cardano SPO Tracker",
-      icon: "₳",
-      desc: "Blue-and-black staking dashboard: on-device epoch clock, per-epoch ADA rewards, live network snapshot, fully offline-capable. One HTML file.",
-      repo: "Epoch-Tracker",
+      name: "Night Messenger",
+      icon: "✉",
+      desc: "Free private DMs on Midnight with selective disclosure — your words, your space. A calmer messaging preview for web and Android.",
+      url: "https://kshot3000.github.io/Night-Messenger-/",
     },
     {
-      name: "SigmaSwap",
-      icon: "◈",
-      desc: "Work in progress — the next swap experience on the Sigma network. Fee curves first; everything else after. Watch the X for the launch.",
-      url: "https://x.com/kshot9000",
+      name: "Quantus Builder",
+      icon: "◆",
+      desc: "Apps and tools for Quantus, the post-quantum proof-of-work chain — wallets, explorers, and the full builder fleet, all open source.",
+      url: "https://kshot3000.github.io/Quantus-Muse-Builder/",
+    },
+    {
+      name: "Pearl Builder",
+      icon: "⚪",
+      desc: "50+ apps for Pearl, the proof-of-useful-work L1 — wallets, mining tools, marketplaces, and explorers, built around the clock.",
+      url: "https://kshot3000.github.io/Pearl-Muse-24-7-Ai-builder/",
     },
   ],
 
