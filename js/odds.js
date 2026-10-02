@@ -318,7 +318,7 @@
       });
       box.innerHTML =
         '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><thead><tr>' +
-        "<th>Book</th><th class=\"num\">Spread</th><th class=\"num\">O/U</th><th class=\"num\">ML home/away</th><th>Updated</th>" +
+        "<th scope=\"col\">Book</th><th scope=\"col\" class=\"num\">Spread</th><th scope=\"col\" class=\"num\">O/U</th><th scope=\"col\" class=\"num\">ML home/away</th><th scope=\"col\">Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
         '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
         " · source: The Odds API (your key) · usage depends on your plan · orange = best Bears price</p>";
