@@ -346,6 +346,16 @@ main:focus { outline: none; }
 .season-strip b { display: block; color: #edf4fa; font: 600 26px var(--display); font-variant-numeric: tabular-nums; }
 .season-strip span { display: block; color: #95adbf; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
 .season-brand b { font-size: 14px; letter-spacing: .1em; }
+/* v1.151.0 — the floating snow pill (fixed, bottom-right, desktop only) parked
+   on the season strip's last tile: at 1440px it covered the tail of the
+   "Season differential · total" label, so the hero's bottom line read
+   truncated on first paint. The strip reserves pill-width clearance on the
+   right wherever the pill floats; the rule line stays full-width and the
+   grid keeps its rhythm. Phones dock the toggle into the header, so no
+   clearance is needed under 760px. */
+@media (min-width: 761px) {
+  .season-strip { padding-right: 172px; }
+}
 .north-layout { display: grid; grid-template-columns: 1.25fr 1fr; gap: 24px; align-items: start; }
 .north-layout .card { background: #0d1d2edd; }
 .section-head h2 { font-size: clamp(23px,3vw,32px); letter-spacing: .02em; }
