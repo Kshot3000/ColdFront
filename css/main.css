@@ -186,7 +186,15 @@ body {
   opacity: 0.76;
 }
 
-main, header.site-head, footer.site-foot, .weather-strip { position: relative; z-index: 2; }
+/* v1.172.0 — header.site-head deliberately NOT in this layering rule:
+   as an element+class selector it out-specifies .site-head's own
+   rule, so its position: relative silently overrode the header's
+   position: sticky (and its z-index: 50) — the header has scrolled
+   away with the page since v1.0.0 while the compaction, the
+   --cf-head-h offsets and the scroll-margins all assumed it sticks.
+   The header now keeps its own sticky + z-index: 50; it paints
+   above this layer either way. */
+main, footer.site-foot, .weather-strip { position: relative; z-index: 2; }
 
 a { color: var(--ice); text-decoration: none; transition: color 0.15s ease; }
 a:hover { color: var(--snow); }
@@ -3046,6 +3054,26 @@ body:not(.prefers-reduced-motion) #snow {
 #gn-section,
 #wire-list,
 #report-table {
+  scroll-margin-top: calc(var(--cf-head-h, 72px) + 12px);
+}
+
+/* v1.172.0 — the scroll-margin set is complete. Every remaining
+   in-page jump target takes the same sticky-header offset: the
+   hero's own "Catch the latest" link (#latest), the season log
+   (#log-table) and the box-score panel (#boxscore) the log's
+   chips scroll to, the Highlights feature box (#hl-feature),
+   the About data-sources anchor the Stats notes deep-link to,
+   and #main (the skip link's target, id stamped by common.js).
+   Until now these landed at the very top of the viewport —
+   harmless while the header scrolled away, tucked under it
+   the moment the header sticks again (see the layering note
+   at the top of this sheet). */
+#latest,
+#log-table,
+#boxscore,
+#hl-feature,
+#data-sources,
+#main {
   scroll-margin-top: calc(var(--cf-head-h, 72px) + 12px);
 }
 
