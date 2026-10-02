@@ -5167,3 +5167,26 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 @media (max-width: 800px) {
   .prl-chip { min-height: 40px; }
 }
+
+/* ============================================================
+   v1.161.0 — the form controls become thumb targets on phones.
+   A rendered sweep found every button, link and chip on the
+   site at the 40px phone minimum (v1.155.0–v1.160.0) except
+   the text fields a fan actually types into: the Games day
+   picker measured 144×36px, wedged in its own row between
+   the 40px "←" and "Today" buttons it steps through, and
+   the API-key fields measured 37px — the Odds board's key
+   and both of About's provider keys — each beside a Save /
+   "Load full board" button standing taller in the same
+   .key-box row. At ≤800px both now compose min-height: 40px,
+   so each control row reads as one matched set and a thumb
+   lands on the field as confidently as on its button. The
+   roster search and position filter already land exactly
+   40px and stay untouched, the prediction wells are large
+   type by design, and desktop is byte-identical — the
+   fields keep their compact 36/37px beside the 44px buttons
+   they were laid out with.
+   ============================================================ */
+@media (max-width: 800px) {
+  .key-box input, input[type="date"] { min-height: 40px; }
+}
