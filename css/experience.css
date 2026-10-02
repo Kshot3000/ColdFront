@@ -1511,3 +1511,22 @@ tr.ld-div.me .ld-div-abbr {
    keeping its padding, soft shadow and hover lift. See the
    v1.159.0 block in main.css for the full accounting.
    ============================================================ */
+
+/* ============================================================
+   v1.160.0 — "Make your call" meets its sibling's height.
+   The hero match card's footer pairs two controls side by
+   side: the "Matchup & schedule ↗" link, which v1.157.0
+   lifted to a 40px target in this same phone block, and the
+   "Make your call" toggle beside it — a <button> still
+   sitting at 35px (9px padding around the label) because
+   .text-button never joined any minimum. At ≤760px the
+   toggle now composes as a 40px inline-flex row, centred
+   like its sibling, so the pair reads as one matched set
+   and a thumb lands on either with the same confidence.
+   Desktop keeps the compact text button, byte for byte.
+   The footer tip chip gets the same treatment in main.css
+   — see the v1.160.0 block there.
+   ============================================================ */
+@media (max-width: 760px) {
+  .match-footer .text-button { display: inline-flex; align-items: center; min-height: 40px; }
+}

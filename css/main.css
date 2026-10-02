@@ -5147,3 +5147,23 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    --orange-hot itself is untouched, so orange-hot TEXT on
    navy (where bright is what passes) keeps its contrast.
    ============================================================ */
+
+/* ============================================================
+   v1.160.0 — the tip chip becomes a thumb target on phones.
+   A rendered 390px sweep of every page found exactly one
+   <button> still under the site's own 40px phone minimum:
+   the footer "Tip the build · BTC" chip — the one button all
+   eleven pages share — measured 295×32px (8px vertical
+   padding around a 12px label), while .btn has carried a
+   40px minimum since the small-screen block was young and
+   the footer links beside it took their 40px rows in
+   v1.155.0. Where the footer stacks (≤800px, the .foot-grid
+   collapse point) the chip now composes 40px tall, its pill
+   shape, glow and copy-to-clipboard behaviour untouched.
+   Desktop keeps the compact 32px chip, byte for byte. The
+   hero card's "Make your call" toggle gets the same minimum
+   in experience.css — see the v1.160.0 block there.
+   ============================================================ */
+@media (max-width: 800px) {
+  .prl-chip { min-height: 40px; }
+}
