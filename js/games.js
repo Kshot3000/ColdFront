@@ -177,7 +177,7 @@
       '<td class="num log-score">' + CF.esc(scoreTxt) + "</td>" +
       '<td><span class="st ' + cls + '">' + CF.esc(played ? (result || g.result) : (g.result || "UPCOMING")) + "</span></td>" +
       '<td class="dim">' + CF.esc(g.tv || "") + "</td>" +
-      "<td>" + (played ? '<a href="#boxscore" class="boxlink" data-boxgame="' + g.id + '">box ↗</a>' : "") + "</td>" +
+      "<td>" + (played ? '<a href="#boxscore" class="boxlink" data-boxgame="' + g.id + '" aria-label="Box score: Bears ' + (g.home ? "vs " : "at ") + CF.esc(g.opp) + '">Box ↗</a>' : "") + "</td>" +
       "</tr>";
   }
 

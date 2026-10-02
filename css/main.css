@@ -5190,3 +5190,43 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 @media (max-width: 800px) {
   .key-box input, input[type="date"] { min-height: 40px; }
 }
+
+/* ============================================================
+   v1.163.0 — the season log's box-score link becomes a chip.
+   Every other control on the site took the pill treatment or
+   the 40px phone minimum long ago, but the one link a fan
+   taps after every game — the season log's "box ↗" — had no
+   CSS rule of its own at all: a bare inline link in dim ice,
+   38×18px on desktop, and on a 390px phone the narrow cell
+   wrapped it mid-word into a 23×39px two-line fragment
+   ("box" over "↗") with no accessible name beyond that
+   fragment. It now composes as a chip in the .st pill family
+   — inline-flex, hairline border, 999px radius, nowrap — so
+   the word never wraps; hover warms the border to the orange
+   glow with a faint orange wash, and at ≤800px it stands the
+   site's 40px phone minimum. Its label names the destination
+   ("Box score: Bears vs <opponent>", stamped in games.js);
+   the day-card "Box score ↓" link sits in prose flow and
+   keeps the plain link treatment by design.
+   ============================================================ */
+#log-table .boxlink {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  white-space: nowrap; color: var(--ice);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+#log-table .boxlink:hover {
+  color: var(--snow); border-color: var(--orange-glow);
+  background: rgba(255, 90, 31, 0.08);
+}
+/* The chip's wider column would otherwise steal width from
+   the date cell in the auto layout and wrap the kickoff onto
+   a third line, growing every phone row ~82px -> ~124px
+   (measured). The table already scrolls sideways inside its
+   wrap, so the date keeps its one line and the wrap absorbs
+   the extra width instead. */
+#log-table td:first-child { white-space: nowrap; }
+@media (max-width: 800px) {
+  #log-table .boxlink { min-height: 40px; padding: 0 12px; }
+}
