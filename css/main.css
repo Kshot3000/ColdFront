@@ -5278,6 +5278,33 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance; }
 
 /* ============================================================
+   v1.171.0 — body copy stops stranding its last word (the
+   prose half of v1.165.0's headline balance). A rendered
+   390px sweep measured the ragged edge everywhere a fan
+   reads a full sentence: the footer note on all eleven
+   pages ended 39px / 339px (0.11 — "device." alone on the
+   last line), the Games source note 0.25, the Stats intro
+   0.18, and Practice's facility cards stranded a bare
+   period on its own line — the closing "." sat outside
+   the bold address, so it wrapped solo at ~4px.
+   text-wrap: pretty on paragraphs evens the final lines
+   out (same sweep, shipped CSS: footer note 0.11 -> 0.20,
+   source note 0.25 -> 0.47, Stats intro 0.18 -> 0.31)
+   without changing any line count or box height — every
+   measured paragraph keeps its exact rendered height.
+   The stranded periods themselves move inside their
+   runs — Practice's two facility addresses carry the
+   "." inside the <b>, About's photo-credit and contact
+   sentences inside their links — so a lone "." can
+   never wrap again even where pretty is unsupported.
+   Unsupported browsers ignore the declaration outright;
+   headings keep v1.165.0's balance (the .band-line <p>
+   still balances: its class rule outranks this element
+   rule), and no layout box changes size.
+   ============================================================ */
+p { text-wrap: pretty; }
+
+/* ============================================================
    v1.167.0 — the "Get the app" install chip (PWA)
    ------------------------------------------------------------
    Kyle asked for a downloadable mobile app linked from the site.
