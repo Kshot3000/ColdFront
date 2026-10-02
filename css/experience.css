@@ -1025,6 +1025,14 @@ main:focus { outline: none; }
   .duel-mid { min-width: 52px; padding: 0 2px; }
   .duel-name { font-size: 11px; }
 }
+/* v1.147.0 — the duel names wrap instead of ellipsizing on narrow phones:
+   at 320-360px the boxes leave the name ~70px, so "Chicago Bears" rendered
+   as "Chica…" (pixel-verified on 320px) — the home team's own name reading
+   broken. Wrapping keeps both names fully legible; 390px+ is untouched
+   (the name still fits its single line there, also pixel-verified). */
+@media (max-width: 380px) {
+  .duel-name > span:last-child { white-space: normal; }
+}
 @media (prefers-reduced-motion: reduce) {
   .duel.cf-enter .duel-side, .duel.cf-enter .duel-mid { animation: none; }
 }
