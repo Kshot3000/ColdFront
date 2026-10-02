@@ -5029,3 +5029,27 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    about.html; the hero CSS fallback and lakefront atmosphere stay
    Chicago-night.
    ============================================================ */
+
+/* ============================================================
+   v1.153.0 — the rivals track is phone-width from first layout.
+   Fresh-eyes QA at 320px caught the "Keep your rivals close" single
+   column laying out 354px wide before the section ever scrolled
+   into view: mini-game cards ran to x=367 with the score column
+   ("35 – 14 · Final") past the viewport edge, amputated by body's
+   overflow-x: clip, then snapped back to 294px once the section
+   became relevant. Bisect pinned it to the standings card — as a
+   grid item its automatic minimum is its min-content, and the
+   .tbl-wrap inside carries the site-wide offscreen-placeholder
+   rule (content-visibility: auto; contain-intrinsic-size: auto
+   320px): while the section sits skipped, that 320px placeholder
+   IS the wrap's min-content, so the 1fr track (really
+   minmax(auto, 1fr)) inflated to 320 + 34px of card padding and
+   dragged the matchup cards wide with it. The feed's error state
+   inflates the same way, so the fix cannot ride on live data.
+   Zeroing the items' minimum (the v1.123.0 #injury-grid pattern)
+   keeps the track at the column width in every state — first
+   layout, error, and live — the standings table keeps its designed
+   horizontal scroll inside .tbl-wrap, and the desktop two-column
+   split is sized by its fr tracks either way.
+   ============================================================ */
+.north-layout > * { min-width: 0; }
