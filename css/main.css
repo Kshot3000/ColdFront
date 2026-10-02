@@ -190,7 +190,7 @@ img { max-width: 100%; display: block; }
 .hidden { display: none !important; }
 
 /* ---------- Typography ---------- */
-h1, h2, h3, h4, .display {
+h1, h2, h3, h4, .display, .band-line {
   font-family: var(--display);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1169,7 +1169,7 @@ body.nav-open .site-head {
   border-left: 3px solid var(--orange);
   padding-left: 14px;
 }
-.rail h3 { font-size: 14px; }
+.rail h2, .rail h3 { font-size: 14px; }
 
 /* ============================================================
    v1.36.0 — wire story-card glow-up.
@@ -2026,7 +2026,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   gap: 26px;
 }
 @media (max-width: 800px) { .foot-grid { grid-template-columns: 1fr; } }
-.site-foot h4 {
+.site-foot h3 {
   font-size: 12px;
   letter-spacing: 0.18em;
   color: var(--ice);
@@ -2046,8 +2046,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
   background: linear-gradient(90deg, transparent 0%, rgba(232, 84, 30, 0.06) 20%, rgba(232, 84, 30, 0.85) 50%, rgba(232, 84, 30, 0.06) 80%, transparent 100%);
   box-shadow: 0 1px 16px rgba(232, 84, 30, 0.35);
 }
-.site-foot h4 { display: flex; align-items: center; gap: 8px; }
-.site-foot h4::before {
+.site-foot h3 { display: flex; align-items: center; gap: 8px; }
+.site-foot h3::before {
   content: "";
   flex: none;
   width: 3px;
@@ -2221,7 +2221,7 @@ input[type="date"]:focus {
   flex: 1 1 280px;
   max-width: 560px;
 }
-.photo-band .photo-band-copy h3 {
+.photo-band .photo-band-copy .band-line {
   font-size: clamp(22px, 3vw, 30px);
   margin-bottom: 8px;
   text-shadow: 0 2px 20px rgba(0,0,0,0.6), 0 0 40px rgba(255,90,31,0.2);
@@ -3311,7 +3311,7 @@ body:not(.prefers-reduced-motion) #snow {
 .photo-band {
   border-color: rgba(92, 122, 153, 0.28);
 }
-.photo-band .photo-band-copy h3 {
+.photo-band .photo-band-copy .band-line {
   letter-spacing: 0.02em;
 }
 
@@ -3467,7 +3467,7 @@ body:not(.prefers-reduced-motion) #snow {
   min-height: 236px;
   gap: 24px;
 }
-.photo-band .photo-band-copy h3 {
+.photo-band .photo-band-copy .band-line {
   font-size: clamp(22px, 3.1vw, 32px);
   line-height: 1.12;
   letter-spacing: 0.02em;
@@ -5099,3 +5099,31 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    stay in the muted ice family — quieter than body copy, just
    no longer below the legibility floor.
    ============================================================ */
+
+/* ============================================================
+   v1.158.0 — the heading outline tells the truth.
+   A rendered sweep of every page found the document outline
+   starting with a slogan: the photo-band headline was an <h3>
+   sitting BEFORE each page's <h1> on eight pages (and after it,
+   still skipping a level, on two more), the hero matchup title
+   was an <h3> under the home <h1>, the Games "Sunday desk" card
+   title and Practice's facility names were <h3>s with no <h2>
+   above them, the News injury rail shouted <h3> before the
+   section's <h2>, and every footer labelled its columns <h4>
+   straight after <h2>s. A screen-reader fan stepping through
+   headings heard a tagline first and a ladder with rungs missing
+   everywhere. The slogans are decoration, so they are now
+   <p class="band-line"> (the .photo-band-copy h3 rules were
+   retargeted to .band-line, which also joins the display-font
+   group); the real heads take their true levels — #ng-title,
+   the desk title and the facility names are <h2>, the News rail
+   head is <h2>, the footer columns are <h3> — and the rules
+   below hold every pixel in place: .card h2.card-h mirrors the
+   .card h3 metrics the desk/facility titles were laid out with,
+   and the band-line guards beat the .photo-band-copy p rule
+   (frost colour, 52ch measure) that a demoted <p> would
+   otherwise inherit. Every page's outline is now one <h1> first
+   and no skipped rungs, verified in the rendered DOM.
+   ============================================================ */
+.card h2.card-h { font-size: 16px; letter-spacing: 0.1em; margin-bottom: 12px; }
+.photo-band .photo-band-copy .band-line { color: var(--snow); max-width: none; }

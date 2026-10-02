@@ -71,7 +71,7 @@ main:focus { outline: none; }
    label — instead of being sliced by the card edge. Single-line desktop layout
    is untouched. */
 .match-kicker { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; row-gap: 8px; color: #a6bed1; font: 500 11px var(--body); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 22px; }
-.match-card h3 { font-size: 17px; letter-spacing: .035em; line-height: 1.5; }
+.match-card h2 { font-size: 17px; letter-spacing: .035em; line-height: 1.5; }
 /* v1.120.0 — the hero matchup finally becomes the duel it was always meant to
    be. The .vs block carried grid-template-columns but no display (lost in the
    v1.12.0 port), so the teams stacked vertically with the venue floating in
@@ -162,7 +162,7 @@ main:focus { outline: none; }
    block-for-block with no layout shift. Skeletons are aria-hidden in markup;
    the sr-only #ng-skel-status announces the load and is removed on first
    paint; reduced motion gets the global static frost wash (no shimmer). */
-.match-card h3 .skel { max-width: 430px; }
+.match-card h2 .skel { max-width: 430px; }
 .match-card .skel-match { width: 88px; min-height: 49px; margin: 0 auto; border-radius: 10px; }
 .match-card .mid .skel { margin-left: auto; margin-right: auto; max-width: 200px; }
 .match-card .game-meta .skel { flex: 0 1 auto; min-width: 62%; }
