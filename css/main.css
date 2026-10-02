@@ -1279,6 +1279,19 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
     max-width: 100%;
     box-sizing: border-box;
   }
+  /* v1.149.0 — the season log's plain-text empty state sat in the table's
+     560px scroll canvas, so a phone read "…no snapshot saved on this" with
+     the ESPN fallback link stranded off-screen past the right edge. The
+     .log-empty span sizes to the visible scrollport and wraps whole, like
+     the v1.129.0 .empty panels above. Desktop and data rows untouched. */
+  #log-table .log-empty {
+    display: inline-block;
+    vertical-align: top;
+    width: calc(100vw - 64px);
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+  }
 }
 .tbl th {
   font-family: var(--display);

@@ -147,7 +147,7 @@
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
-      body.innerHTML = '<tr><td colspan="7" class="dim">Season log unreachable — no snapshot saved on this device yet. <a href="https://www.espn.com/nfl/schedule/" target="_blank" rel="noopener">ESPN NFL schedule ↗</a></td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="dim"><span class="log-empty">Season log unreachable — no snapshot saved on this device yet. <a href="https://www.espn.com/nfl/schedule/" target="_blank" rel="noopener">ESPN NFL schedule ↗</a></span></td></tr>';
     }
   }
 
