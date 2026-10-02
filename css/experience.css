@@ -1475,3 +1475,28 @@ tr.ld-div.me .ld-div-abbr {
 .match-card.is-quiet #ng-meta {
   margin-top: 18px;
 }
+
+/* ============================================================
+   v1.157.0 — standalone links become thumb targets on phones
+   Buttons got a 40px phone minimum long ago and the footer
+   links got theirs in v1.155.0, but the standalone links a fan
+   actually taps mid-page never did — a fresh 390px probe
+   measured them all: section-head links ("Odds board →",
+   "All Bears stories ↗") at 17–19px tall, the hero match
+   card's "Matchup & schedule ↗" at 17px beside its ~40px
+   "Make your call" sibling, the wire ticker's headlines at
+   27px inside their 44px track, every roster card's
+   "Player profile ↗" at 15px, and the injury report's
+   profile link as an 11×18px bare "↗" glyph. At <=760px (the
+   same phone block where section-head links take their own
+   full row) each now composes as a 40px target. Prose links
+   inside sentences stay inline and untouched, and the
+   desktop layout is byte-identical.
+   ============================================================ */
+@media (max-width: 760px) {
+  .section-head a:not(.btn) { display: inline-flex; align-items: center; min-height: 40px; }
+  .match-footer a { display: inline-flex; align-items: center; min-height: 40px; }
+  .wt-item { align-items: center; min-height: 40px; }
+  .player-info .player-link { display: inline-flex; align-items: center; min-height: 40px; }
+  .profile-link { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; vertical-align: middle; }
+}

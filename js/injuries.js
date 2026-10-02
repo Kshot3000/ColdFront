@@ -63,7 +63,7 @@
     const designation = row.injury || "—";
     const full = row.comment && row.comment !== designation ? row.comment : null;
     return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) +
-      (row.url ? ' <a href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile">↗</a>' : "") +
+      (row.url ? ' <a class="profile-link" href="' + CF.esc(CF.safeURL(row.url)) + '" target="_blank" rel="noopener" title="Profile" aria-label="Player profile: ' + CF.esc(row.name) + '">↗</a>' : "") +
       "</td>" +
       "<td>" + CF.esc(row.pos || "—") + "</td>" +
       "<td" + (full ? ' title="' + CF.esc(full) + '"' : "") + ">" + CF.esc(designation) + "</td>" +
