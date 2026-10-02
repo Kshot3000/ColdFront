@@ -5230,3 +5230,23 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 @media (max-width: 800px) {
   #log-table .boxlink { min-height: 40px; padding: 0 12px; }
 }
+
+/* ============================================================
+   v1.165.0 — headlines balance their lines instead of leaving
+   a lone word dangling. A rendered 390px sweep found the
+   phone wrap ragged exactly where a fan reads first: the
+   hero matchup title wrapped 265px / 62px ("Bears" alone on
+   the last line, 24% of the first line's width) and the home
+   story headlines ended on lines 24–45% as wide as the lines
+   above them (spreads of 167–241px inside a ~310px column).
+   text-wrap: balance on the display-heading family and the
+   news wire's headline links evens the lines out — the same
+   sweep with balance measures 175px / 152px (0.87) for the
+   matchup title and headline spreads of 22–91px. One-line
+   headings are untouched (balance only redistributes lines
+   that already wrap), browsers without support ignore the
+   declaration outright, and no layout box changes size —
+   the text inside the headline simply stops stranding its
+   last word.
+   ============================================================ */
+h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance; }
