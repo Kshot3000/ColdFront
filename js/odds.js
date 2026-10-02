@@ -317,7 +317,7 @@
           '<td class="dim">'+CF.esc(r.b.last_update ? CF.fmtTime(r.b.last_update) : "—")+'</td></tr>';
       });
       box.innerHTML =
-        '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><thead><tr>' +
+        '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><caption class="sr-only">Odds by sportsbook</caption><thead><tr>' +
         "<th scope=\"col\">Book</th><th scope=\"col\" class=\"num\">Spread</th><th scope=\"col\" class=\"num\">O/U</th><th scope=\"col\" class=\"num\">ML home/away</th><th scope=\"col\">Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
         '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
