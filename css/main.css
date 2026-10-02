@@ -1833,6 +1833,33 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width
 .proj-card p { font-size: 13px; color: var(--text); flex: 1; }
 .proj-card .go { font-family: var(--display); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange-hot); }
 
+/* ============================================================
+   v1.152.0 — narrow phones stop clipping the About page.
+   Fresh-eyes QA at 320px caught about.html overflowing sideways
+   (scrollWidth 341 on a 320 viewport): project cards ran off the
+   right edge with their GitHub links and body copy cut mid-word,
+   and two section-head tags bled past the edge. Two min-content
+   traps: (1) a 1fr grid track is really minmax(auto, 1fr), and the
+   card's unbreakable .go URL ("github.com/kshot3000/<repo> ↗" at
+   0.14em tracking ≈ 293px + 36px card padding) set a ~330px floor
+   the 294px phone column could never meet — min-width: 0 lets the
+   card shrink to the column and overflow-wrap lets the URL break
+   cleanly instead of clipping; (2) .section-head .tag/.pill are
+   white-space: nowrap, so a long status line ("crypto donations ·
+   same wallets as the other sites") cannot wrap inside its own
+   pill. Under 380px the pill now wraps as a two-line banner — the
+   v1.144.0 feed-pill treatment, generalized to section heads (the
+   injuries report pill, reclassed to .pill by JS, was spilling
+   the same way at 320px). Tags that fit stay single-line; desktop
+   untouched.
+   ============================================================ */
+.proj-card { min-width: 0; }
+.proj-card .go { overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .section-head .tag,
+  .section-head .pill { white-space: normal; max-width: 100%; }
+}
+
 .social-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
 
 /* ============================================================
