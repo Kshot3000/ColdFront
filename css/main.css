@@ -82,7 +82,14 @@ body {
   overflow: hidden;
 }
 
-/* Soft aurora / frost haze */
+/* Soft aurora / frost haze — v1.170.0: no live filter blur. A blur()
+   filter on a viewport-sized fixed layer forces the GPU to re-filter
+   the whole layer as the page scrolls; on phone GPUs that is the
+   flicker/tearing Kyle reported ("background bugs out while moving
+   up and down"). The radial gradients already feather to transparent,
+   so the softness is baked into the stops and the layer composites
+   as a plain texture. The slow transform drift stays — transforms
+   are compositor-cheap once no filter is attached. */
 .cf-atmosphere .cf-aurora {
   position: absolute;
   inset: -20% -10%;
@@ -91,7 +98,6 @@ body {
     radial-gradient(ellipse 44% 34% at 82% 48%, rgba(255, 90, 31, 0.18), transparent 58%),
     radial-gradient(ellipse 55% 42% at 48% 82%, rgba(92, 122, 153, 0.14), transparent 62%),
     radial-gradient(ellipse 34% 26% at 55% 14%, rgba(209, 58, 2, 0.12), transparent 70%);
-  filter: blur(44px);
   animation: auroraDrift 28s ease-in-out infinite alternate;
   opacity: 0.88;
 }
@@ -110,19 +116,23 @@ body {
     repeating-linear-gradient(
       -28deg,
       transparent 0 42px,
-      rgba(255, 90, 31, 0.045) 42px 45px,
+      rgba(255, 90, 31, 0.06) 42px 45px,
       transparent 45px 88px,
-      rgba(159, 184, 204, 0.032) 88px 91px
+      rgba(159, 184, 204, 0.045) 88px 91px
     ),
     repeating-linear-gradient(
       -32deg,
       transparent 0 110px,
-      rgba(255, 90, 31, 0.02) 110px 112px
+      rgba(255, 90, 31, 0.03) 110px 112px
     );
   animation: bandSlide 48s linear infinite;
   opacity: 0.85;
-  mix-blend-mode: screen;
-  will-change: background-position;
+  /* v1.170.0: no mix-blend-mode and no will-change here. A blended
+     fixed layer cannot take the cheap scroll path — the browser
+     re-blends it against the page on every scroll frame, which is
+     the other half of the phone background flicker. Over this site's
+     near-black backdrop the screen blend was doing almost nothing
+     the alphas below don't do on their own. */
 }
 
 @keyframes bandSlide {
@@ -137,7 +147,8 @@ body {
   opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
-  mix-blend-mode: overlay;
+  /* v1.170.0: blend removed with the bands' — same scroll-repaint cost
+     for a 3.5%-opacity grain nobody could see blend. */
 }
 
 /* Original geometric Chicago skyline + stadium silhouette (not a trademark) */
@@ -2729,7 +2740,7 @@ main > section,
     background-attachment: scroll; /* fixed BG is expensive on mobile GPUs */
     font-size: 14.5px;
   }
-  .cf-atmosphere .cf-aurora { filter: blur(28px); opacity: 0.7; }
+  .cf-atmosphere .cf-aurora { opacity: 0.7; }
   .cf-atmosphere .cf-bands { opacity: 0.55; }
   .cf-atmosphere .cf-skyline { height: min(28vh, 220px); opacity: 0.4; }
   .hero-photo {
@@ -3666,7 +3677,8 @@ body.cf-gameday #snow {
 }
 body.cf-gameday .cf-atmosphere .cf-aurora {
   opacity: 1;
-  filter: blur(40px) saturate(1.15);
+  /* v1.170.0: was filter: blur(40px) saturate(1.15) — the gameday
+     variant of the scroll-flicker filter; dropped with the base rule. */
 }
 body.cf-gameday .site-head {
   box-shadow: 0 1px 0 rgba(255,90,31,0.35), 0 12px 40px rgba(209,58,2,0.18);
@@ -5364,4 +5376,34 @@ h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance;
 @media (min-width: 961px) and (max-width: 1250px) {
   .site-head .wrap:has(.app-chip:not([hidden])) { flex-wrap: wrap; }
   .site-head:has(.app-chip:not([hidden])) .app-chip { order: 99; margin-left: auto; }
+}
+
+/* ============================================================
+   v1.170.0 — the background stops bugging out on scroll
+   ------------------------------------------------------------
+   Kyle (2026-10-02, on his phone): "sometimes the background image
+   bugs out while moving up and down the site." The background is
+   the fixed .cf-atmosphere stack (winter-lakefront photo under
+   aurora / bands / noise / skyline / vignette), and three of its
+   ingredients are the textbook phone-GPU scroll killers, all
+   removed above: a live blur(44px) filter on the oversized aurora
+   layer (blur(28px) on small screens, blur(40px) on gameday),
+   mix-blend-mode on the bands and the noise, and a will-change
+   holding the bands' paint layer alive. A filtered or blended
+   fixed layer cannot ride the compositor's cheap scroll path —
+   the phone repaints and re-blends the full viewport mid-scroll,
+   which reads as the background flickering, tearing or shifting
+   while the content scrolls fine. The look is preserved by baking
+   the softness into the gradient stops and nudging the band
+   alphas up to cover the lost screen blend. Two phone-specific
+   reinforcements here: the body gradient's fixed attachment (the
+   same repaint trap, previously only escaped at <=560px) now
+   scrolls at every phone/tablet width, and the bands' 48s
+   background-position crawl — a full-layer repaint every frame —
+   rests on phones; the aurora's compositor-only drift keeps the
+   sky alive. Desktop keeps its slow band slide, blend-free.
+   ============================================================ */
+@media (max-width: 960px) {
+  body { background-attachment: scroll; }
+  .cf-atmosphere .cf-bands { animation: none; }
 }
