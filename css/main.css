@@ -5250,3 +5250,56 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    last word.
    ============================================================ */
 h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance; }
+
+/* ============================================================
+   v1.167.0 — the "Get the app" install chip (PWA)
+   ------------------------------------------------------------
+   Kyle asked for a downloadable mobile app linked from the site.
+   The chip (injected by common.js beside the BTC tip chip in the
+   footer of every page) is the link: hidden until the device can
+   actually install — Chrome's beforeinstallprompt, or iOS Safari
+   where the chip teaches Share → Add to Home Screen — and never
+   rendered inside the installed app itself. Styled as the tip
+   chip's twin (same pill, border and hover glow) in steel blue,
+   so the pair reads as one footer control family. The status
+   span carries the verb / hint; in hint mode it widens to fit
+   the iOS instructions without wrapping the pill open.
+   ============================================================ */
+.app-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  background: rgba(39, 125, 255, 0.10);
+  border: 1px solid rgba(92, 122, 153, 0.55);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease-out), border-color 0.2s var(--ease-out), color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.app-chip[hidden] { display: none; }
+.app-chip:hover {
+  background: rgba(39, 125, 255, 0.22);
+  border-color: var(--ice);
+  color: var(--snow);
+  box-shadow: 0 0 20px rgba(39, 125, 255, 0.30), inset 0 1px 0 rgba(180, 210, 255, 0.18);
+  transform: translateY(-1px);
+}
+.app-chip:active { transform: translateY(0); }
+.app-gem { font-size: 11px; line-height: 1; }
+.app-chip .app-label { white-space: nowrap; }
+.app-chip .app-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.app-chip:hover .app-status { color: var(--ice); }
+.app-chip.hinting .app-status { color: var(--ice); white-space: nowrap; }
+@media (max-width: 800px) {
+  /* The site's 40px thumb-target rule applies to the new chip too. */
+  .app-chip { min-height: 40px; }
+}

@@ -1821,6 +1821,7 @@ CF.initChrome = () => {
 
   if (CF.initHeroRotator) CF.initHeroRotator();
   if (CF.initReveal) CF.initReveal();
+  if (CF.initAppInstall) CF.initAppInstall();
 };
 
 
@@ -1961,6 +1962,77 @@ CF.countUp = (el, parts, sep) => {
     else el.textContent = finalText;
   };
   window.requestAnimationFrame(frame);
+};
+
+/* ---------- v1.167.0 — installable app (PWA) ----------
+   Kyle (2026-10-02): "make a downloadable mobile app for this site we
+   could link on the website for mobile users." The site ships a web app
+   manifest + service worker (see manifest.webmanifest / sw.js), and the
+   footer gains a "Get the app" chip next to the BTC tip chip: it fires
+   Chrome's real install prompt where the browser offers one, teaches
+   the two iOS taps where it doesn't, and never appears inside the
+   installed app itself. */
+// Capture the install prompt at parse time — Chrome can fire
+// beforeinstallprompt before DOMContentLoaded, and it fires once.
+CF._installPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  CF._installPrompt = e;
+  if (CF._onInstallPrompt) CF._onInstallPrompt();
+});
+window.addEventListener("appinstalled", () => {
+  CF._installPrompt = null;
+  CF.$$("[data-cf-install]").forEach((b) => { b.hidden = true; });
+});
+
+CF.initAppInstall = () => {
+  // Service worker — progressive enhancement, secure contexts only.
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    });
+  }
+  const standalone =
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+    window.navigator.standalone === true;
+  if (standalone) return;
+  const tipChip = CF.$("[data-cf-copy=\"btc\"]");
+  if (!tipChip || !tipChip.parentNode) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "app-chip";
+  btn.setAttribute("data-cf-install", "");
+  btn.setAttribute("aria-label", "Install The Cold Front app on this device");
+  btn.innerHTML =
+    '<span class="app-gem" aria-hidden="true">📲</span>' +
+    '<span class="app-label">Get the app</span>' +
+    '<span class="app-status" role="status">Install</span>';
+  btn.hidden = true;
+  tipChip.parentNode.insertBefore(btn, tipChip.nextSibling);
+  const status = btn.querySelector(".app-status");
+  const ua = window.navigator.userAgent || "";
+  const isIOS =
+    /iphone|ipad|ipod/i.test(ua) ||
+    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+  const show = () => { btn.hidden = false; };
+  CF._onInstallPrompt = show;
+  if (CF._installPrompt || isIOS) show();
+  btn.addEventListener("click", async () => {
+    if (CF._installPrompt) {
+      const promptEvent = CF._installPrompt;
+      CF._installPrompt = null;
+      promptEvent.prompt();
+      try {
+        const choice = await promptEvent.userChoice;
+        if (choice && choice.outcome === "accepted") btn.hidden = true;
+      } catch (err) { /* prompt dismissed — chip stays for next time */ }
+      return;
+    }
+    // No native prompt (iOS Safari, or a browser that hasn't offered
+    // one): teach the manual route instead of dead-ending the tap.
+    if (status) status.textContent = isIOS ? "Share ⤴ → Add to Home Screen" : "Menu → Install app";
+    btn.classList.add("hinting");
+  });
 };
 
 document.addEventListener("DOMContentLoaded", CF.initChrome);
