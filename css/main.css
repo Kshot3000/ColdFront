@@ -5255,15 +5255,15 @@ h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance;
    v1.167.0 — the "Get the app" install chip (PWA)
    ------------------------------------------------------------
    Kyle asked for a downloadable mobile app linked from the site.
-   The chip (injected by common.js beside the BTC tip chip in the
-   footer of every page) is the link: hidden until the device can
-   actually install — Chrome's beforeinstallprompt, or iOS Safari
-   where the chip teaches Share → Add to Home Screen — and never
-   rendered inside the installed app itself. Styled as the tip
-   chip's twin (same pill, border and hover glow) in steel blue,
-   so the pair reads as one footer control family. The status
-   span carries the verb / hint; in hint mode it widens to fit
-   the iOS instructions without wrapping the pill open.
+   The chip (injected by common.js into the sticky header — moved
+   there from the footer in v1.168.0) is the link: hidden until the
+   device can actually install — Chrome's beforeinstallprompt, or
+   iOS Safari where the chip teaches Share → Add to Home Screen —
+   and never rendered inside the installed app itself. Styled as
+   the tip chip's twin (same pill, border and hover glow) in steel
+   blue, so the two read as one control family. The status span
+   carries the verb / hint; in hint mode it widens to fit the iOS
+   instructions without wrapping the pill open.
    ============================================================ */
 .app-chip {
   display: inline-flex;
@@ -5302,4 +5302,52 @@ h1, h2, h3, h4, .display, .band-line, .news-item .headline { text-wrap: balance;
 @media (max-width: 800px) {
   /* The site's 40px thumb-target rule applies to the new chip too. */
   .app-chip { min-height: 40px; }
+}
+
+/* ============================================================
+   v1.168.0 — the app chip moves to the top of the page
+   ------------------------------------------------------------
+   Kyle (2026-10-02, an hour after v1.167.0): "move the get the app
+   to the top of the pages." The footer put the install link one
+   full scroll away from the fans it was for; the sticky header is
+   the top of every page and stays in reach. The chip mounts as
+   the header row's last item on desktop (right of the nav, after
+   the X link). At and under the 960px nav breakpoint the header
+   row wraps and the chip takes its own full-width row inside the
+   header — a proper app bar: centered, 40px tall, one thumb tap.
+   A hidden chip (device can't install, or already running as the
+   app) leaves no trace: [hidden] keeps it display:none, so the
+   header is exactly its old height until an install is on offer.
+   The tighter row-gap only applies while a visible chip is in
+   the row (:has), so the chip-free header never changes.
+   ============================================================ */
+.site-head .app-chip { flex: none; }
+@media (max-width: 960px) {
+  .site-head .wrap { flex-wrap: wrap; }
+  .site-head .wrap:has(.app-chip:not([hidden])) { row-gap: 8px; }
+  .site-head .app-chip {
+    order: 99;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+/* While an install is on offer the header row makes room for the
+   chip (all :has-gated, so a hidden chip changes nothing): wide
+   desktops tighten the nav padding and step the wordmark down a
+   size to keep brand + nav + chip on one row, and the status verb
+   yields until 1500px (the label already says it). Between the
+   nav breakpoint and 1250px the chip instead takes its own
+   right-aligned row rather than crushing the wordmark. */
+@media (min-width: 961px) {
+  .site-head:has(.app-chip:not([hidden])) .wrap { gap: 12px; }
+  .site-head:has(.app-chip:not([hidden])) .nav a { padding-left: 8px; padding-right: 8px; }
+  .site-head:has(.app-chip:not([hidden])) .brand .name { font-size: 16px; letter-spacing: 0.06em; }
+}
+@media (min-width: 961px) and (max-width: 1499px) {
+  .site-head:has(.app-chip:not([hidden])) .app-chip .app-status { display: none; }
+  .site-head:has(.app-chip:not([hidden])) .app-chip.hinting .app-status { display: inline; }
+}
+@media (min-width: 961px) and (max-width: 1250px) {
+  .site-head .wrap:has(.app-chip:not([hidden])) { flex-wrap: wrap; }
+  .site-head:has(.app-chip:not([hidden])) .app-chip { order: 99; margin-left: auto; }
 }

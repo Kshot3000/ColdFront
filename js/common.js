@@ -1967,11 +1967,12 @@ CF.countUp = (el, parts, sep) => {
 /* ---------- v1.167.0 — installable app (PWA) ----------
    Kyle (2026-10-02): "make a downloadable mobile app for this site we
    could link on the website for mobile users." The site ships a web app
-   manifest + service worker (see manifest.webmanifest / sw.js), and the
-   footer gains a "Get the app" chip next to the BTC tip chip: it fires
+   manifest + service worker (see manifest.webmanifest / sw.js), and a
+   "Get the app" chip links the install from the page itself: it fires
    Chrome's real install prompt where the browser offers one, teaches
    the two iOS taps where it doesn't, and never appears inside the
-   installed app itself. */
+   installed app itself. v1.168.0 (Kyle, same day): the chip lives at
+   the TOP of every page — in the sticky header — not the footer. */
 // Capture the install prompt at parse time — Chrome can fire
 // beforeinstallprompt before DOMContentLoaded, and it fires once.
 CF._installPrompt = null;
@@ -1996,8 +1997,10 @@ CF.initAppInstall = () => {
     (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
     window.navigator.standalone === true;
   if (standalone) return;
-  const tipChip = CF.$("[data-cf-copy=\"btc\"]");
-  if (!tipChip || !tipChip.parentNode) return;
+  // v1.168.0 — the chip mounts at the top of the page: last item in the
+  // sticky header's flex row (its own full-width row on small screens).
+  const headWrap = CF.$(".site-head .wrap");
+  if (!headWrap) return;
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "app-chip";
@@ -2008,13 +2011,18 @@ CF.initAppInstall = () => {
     '<span class="app-label">Get the app</span>' +
     '<span class="app-status" role="status">Install</span>';
   btn.hidden = true;
-  tipChip.parentNode.insertBefore(btn, tipChip.nextSibling);
+  headWrap.appendChild(btn);
   const status = btn.querySelector(".app-status");
   const ua = window.navigator.userAgent || "";
   const isIOS =
     /iphone|ipad|ipod/i.test(ua) ||
     (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
-  const show = () => { btn.hidden = false; };
+  const show = () => {
+    btn.hidden = false;
+    // The header just grew — let the site's own chrome handlers
+    // re-measure --cf-head-h so the mobile nav panel still aligns.
+    window.dispatchEvent(new Event("resize"));
+  };
   CF._onInstallPrompt = show;
   if (CF._installPrompt || isIOS) show();
   btn.addEventListener("click", async () => {
