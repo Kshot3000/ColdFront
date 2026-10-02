@@ -4916,6 +4916,24 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 .ref-text { display: flex; flex-direction: column; gap: 2px; }
 .ref-text strong { font-size: 15px; color: #fff; }
 .ref-text small { font-size: 12px; color: rgba(159, 184, 204, 0.75); }
+/* v1.148.0 — the age gate wears its own badge. Same family voice as
+   .ref-badge (10px, tracked, hairline pill) but warm-tinted, because the 18+
+   is a legal cue worth a glance: inline-block + nowrap so it always wraps as
+   one unit instead of stranding "· 18+" at a line start on phones. */
+.ref-age {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: rgba(255, 170, 120, 0.92);
+  border: 1px solid rgba(209, 58, 2, 0.45);
+  background: rgba(209, 58, 2, 0.10);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
 @media (prefers-reduced-motion: reduce) {
   .ref-card, .ref-card::before { transition: none; }
   .ref-card:hover, .ref-card:focus-within { transform: none; }

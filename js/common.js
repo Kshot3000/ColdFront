@@ -1657,8 +1657,16 @@ CF.initReferrals = () => {
     t.className = "ref-text";
     const cta = document.createElement("strong");
     cta.textContent = meta.cta + " \u2197";
+    // v1.148.0 — the age floor is a badge, not a sentence fragment. The old
+    // "\u00b7 18+" tail stranded at the start of a wrapped line on phones
+    // ("· 18+" alone, reading as punctuation debris); the 18+ is a legal cue,
+    // so it wears its own pill and wraps whole.
     const sub = document.createElement("small");
-    sub.textContent = meta.blurb + " \u00b7 18+";
+    sub.append(document.createTextNode(meta.blurb + " "));
+    const age = document.createElement("span");
+    age.className = "ref-age";
+    age.textContent = "18+";
+    sub.append(age);
     t.append(cta, sub);
     a.append(badge, t);
     el.appendChild(a);
