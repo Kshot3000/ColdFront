@@ -5,6 +5,10 @@
    ============================================================ */
 
 :root {
+  /* v1.150.0 — dark native scrollbars & form controls to match the theme.
+     Without this, Chromium renders light native scrollbars (page, phone
+     table-overflow wraps) that clash with the dark UI. */
+  color-scheme: dark;
   --navy: #060d18;
   --navy-2: #0a1524;
   --navy-3: #12233a;
