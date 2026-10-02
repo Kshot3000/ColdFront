@@ -1059,12 +1059,12 @@ body.nav-open .site-head {
   box-shadow: 0 10px 26px rgba(0, 4, 12, 0.45), 0 0 22px rgba(209, 58, 2, 0.22);
 }
 .btn.primary {
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-hot) 100%);
+  background: linear-gradient(135deg, var(--orange) 0%, #cc3600 100%);
   border-color: transparent;
   box-shadow: 0 6px 26px rgba(209, 58, 2, 0.55), 0 0 18px rgba(255, 90, 31, 0.25);
 }
 .btn.primary:hover {
-  background: linear-gradient(135deg, var(--orange-hot) 0%, #ff7340 100%);
+  background: linear-gradient(135deg, #d63800 0%, var(--orange) 100%);
   border-color: transparent;
   box-shadow: 0 10px 34px rgba(255, 90, 31, 0.65), 0 0 28px rgba(255, 90, 31, 0.35);
 }
@@ -5127,3 +5127,23 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
    ============================================================ */
 .card h2.card-h { font-size: 16px; letter-spacing: 0.1em; margin-bottom: 12px; }
 .photo-band .photo-band-copy .band-line { color: var(--snow); max-width: none; }
+
+/* ============================================================
+   v1.159.0 — the primary button's words clear AA contrast.
+   A rendered contrast sweep found the one text surface every
+   fan uses failing the 4.5:1 small-text line: .btn.primary set
+   snow-white 13px labels on a gradient running to
+   var(--orange-hot) (#ff5a1f, 2.98:1), and hover brightened
+   further to #ff7340 (2.58:1) — so "Enter game center",
+   "Load full board", "Save my pick" and the 404's way home
+   were hardest to read exactly where the button glowed
+   brightest. v1.156.0 held the tiny disclosure labels to this
+   floor; the main call to action deserves it too. The gradient
+   now runs var(--orange) (#d13a02, 4.64:1) to #cc3600
+   (4.89:1), and hover reverses through #d63800 (4.53:1) —
+   every stop clears 4.5:1 against the snow label, verified by
+   compositing each stop (and the midpoint blend). The button
+   stays unmistakably Bears orange with the same glow shadow;
+   --orange-hot itself is untouched, so orange-hot TEXT on
+   navy (where bright is what passes) keeps its contrast.
+   ============================================================ */

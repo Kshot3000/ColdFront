@@ -58,8 +58,8 @@ main:focus { outline: none; }
 .hero .sub { font-size: 16px; max-width: 440px; line-height: 1.75; color: #c7d5e1; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .btn { min-height: 44px; }
-.hero-actions .primary { background: #ef571c; box-shadow: 0 6px 30px #ee551a27; border-color: #ef571c; padding: 13px 22px; }
-.hero-actions .primary:hover { background: #ff723b; transform: translateY(-2px); }
+.hero-actions .primary { background: linear-gradient(135deg, var(--orange) 0%, #cc3600 100%); box-shadow: 0 6px 30px #ee551a27; border-color: transparent; padding: 13px 22px; }
+.hero-actions .primary:hover { background: linear-gradient(135deg, #d63800 0%, var(--orange) 100%); transform: translateY(-2px); }
 .hero-note { display: flex; align-items: center; gap: 9px; color: #86a4bb; font-size: 11px; margin-top: 20px; letter-spacing: .05em; }
 .hero-note::before { content: ""; width: 6px; height: 6px; background: #88bddf; border-radius: 50%; box-shadow: 0 0 12px #88bddf; }
 .match-card { padding: 27px; background: linear-gradient(145deg,#182b40e8,#071323f5); border: 1px solid #aecfe82e; border-top: 3px solid #f56c30; box-shadow: 0 18px 80px #0007, inset 0 1px #ffffff09; }
@@ -1500,3 +1500,14 @@ tr.ld-div.me .ld-div-abbr {
   .player-info .player-link { display: inline-flex; align-items: center; min-height: 40px; }
   .profile-link { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; vertical-align: middle; }
 }
+
+/* ============================================================
+   v1.159.0 — the hero's primary CTA joins the AA fix.
+   The hero override painted "Enter game center" solid
+   #ef571c (snow label at 3.31:1) and hovered to #ff723b
+   (2.59:1) — brighter and less legible at once. It now uses
+   the same deepened gradient family as .btn.primary in
+   main.css (every stop >= 4.53:1 against the snow label),
+   keeping its padding, soft shadow and hover lift. See the
+   v1.159.0 block in main.css for the full accounting.
+   ============================================================ */
