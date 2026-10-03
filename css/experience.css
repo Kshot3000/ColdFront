@@ -1561,3 +1561,19 @@ tr.ld-div.me .ld-div-abbr {
 @media (max-width: 760px) {
   .match-footer .text-button { display: inline-flex; align-items: center; min-height: 40px; }
 }
+
+/* ============================================================
+   v1.185.0 — the home story cards join the read-state cue
+   (the News-wire half lives in main.css). A story card a
+   fan has already opened recedes: its headline settles
+   from snow into the same dim ice, so the Fresh-off-the-
+   wire row can be scanned for what is actually new on a
+   return visit. Hover and keyboard focus re-warm a read
+   card's headline to orange-hot, outranking the recede;
+   nothing else about the card changes — the art, the
+   source line and the timestamp keep their tones, and
+   :visited can only restyle colour in any case.
+   ============================================================ */
+.story-card:visited .story-copy h3 { color: var(--text-dim); }
+.story-card:visited:hover .story-copy h3,
+.story-card:visited:focus-within .story-copy h3 { color: var(--orange-hot); }

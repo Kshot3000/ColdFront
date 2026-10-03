@@ -5696,3 +5696,32 @@ p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
   box-shadow: 0 3px 14px rgba(209, 58, 2, 0.5);
 }
 .nav a:active { background: rgba(92, 122, 153, 0.3); color: var(--snow); }
+
+/* ============================================================
+   v1.185.0 — stories a fan has already read recede
+   No :visited rule existed anywhere, so every story link
+   painted the same snow whether the fan had opened it an
+   hour ago or never: the News wire holds days of headlines
+   at once and stories repeat across visits, so a returning
+   fan had to re-read every headline to find the ones they
+   had not seen. Read headlines now settle into the site's
+   dim ice — var(--text-dim), the tone the meta row beneath
+   them already reads in, measured at 7.46:1 on this ground
+   in v1.180.0 — while unopened stories keep their snow.
+   Browsers only let :visited restyle colour, which is all
+   a read-state cue needs. The hover and focus warmth
+   outranks the recede, so a read story under the pointer
+   or the tab key flames orange-hot exactly like a fresh
+   one. Structural links keep their own grammar — nav,
+   buttons, chips and the rolling ticker are untouched;
+   this is a scan-list cue for the story lists a fan works
+   through (News headlines here, the home story cards in
+   experience.css). A rendered Chromium probe confirmed
+   both rules paint: after following the two "read" links,
+   snow-toned pixels fell 17,547 -> 8,824 and dim-ice pixels
+   rose 24,642 -> 33,263 while the fresh links stayed snow.
+   ============================================================ */
+.news-item .headline:visited { color: var(--text-dim); }
+.news-item:hover .headline:visited,
+.news-item:focus-within .headline:visited,
+.news-item .headline:visited:hover { color: var(--orange-hot); }
