@@ -566,7 +566,7 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
  const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
  assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
  const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
- assert.ok(!/highlights\.js\?v=(?!1\.121\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.js\?v=(?!1\.175\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
  assert.ok(!/highlights\.css\?v=(?!1\.132\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
  assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
  const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
@@ -581,6 +581,7 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
   {id:'nfl3',title:'Top 10 plays of Week 2',pub:'2026-09-28T21:00:00Z'}
  ];
  const p=await page('highlights',{fetch:async(u)=>{
+  if(u.pathname.endsWith('data/snapshots/highlights.json'))return{ok:true,json:async()=>({fetched:'2026-09-29T00:00:00Z',items:[]}),text:async()=>'{}'};
   if(u.hostname==='www.youtube.com'&&u.pathname==='/feeds/videos.xml'){
    if(u.searchParams.get('channel_id')==='UCDVYQ4Zhbm3S2dlz7P1GBDg')return{ok:true,text:async()=>atom(nfl)};
    return{ok:true,text:async()=>atom(bears)};
@@ -601,8 +602,46 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
   d.querySelector('.hl-filters [data-filter="highlight"]').click();await settle();
   const filtered=[...d.querySelectorAll('#hl-list .hl-card')];
   assert.ok(filtered.some(c=>c.querySelector('.hl-src')),'the league reel survives the highlights-only filter');
-  assert.match(d.querySelector('#hl-updated').textContent,/Bears channel \+ 1 game reel from the NFL channel/,'the freshness line names both sources');
+  assert.match(d.querySelector('#hl-updated').textContent,/Fresh from the Bears channel — 1 game highlight reel leading the board/,'the freshness line names the channel and the leading reel');
   assert.match(d.querySelector('#hl-pill').textContent,/live · 3 videos/,'the pill counts the merged feed');
+  assert.deepEqual(p.errors,[]);
+ }finally{p.close();}
+});
+test('v1.175.0: the game-reel shelf leads the highlights board and opens the featured player',async()=>{
+ // Kyle's report: the page showed channel videos but no game highlights —
+ // both channels' RSS windows rotate the per-game reels out within days
+ // under Shorts and pressers. The shelf (data/snapshots/highlights.json,
+ // built by scripts/refresh-highlights.py from the full video lists)
+ // carries verified reels; the page merges them in, reels first.
+ const shelf=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/snapshots/highlights.json'),'utf8'));
+ assert.ok(Array.isArray(shelf.items)&&shelf.items.length>=3,'the shelf carries a bench of game reels');
+ const ids=new Set();let prev=null;
+ for(const it of shelf.items){
+  assert.ok(it.videoId&&it.title&&it.published,'every shelf reel carries an id, a title, and a verified publish date');
+  assert.ok(!ids.has(it.videoId),'shelf reels are unique');ids.add(it.videoId);
+  assert.ok(it.src==='nfl'||it.src==='bears','shelf reels come from the two official channels');
+  assert.ok(/\bhighlights?\b/i.test(it.title),'shelf titles are highlight reels');
+  if(prev!==null)assert.ok(Date.parse(it.published)<=prev,'the shelf is newest-first');
+  prev=Date.parse(it.published);
+ }
+ const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
+ assert.ok(hjs.includes('snapshotGet("highlights")'),'the page loads the reel shelf');
+ const emptyAtom='<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"></feed>';
+ const shelfStub={fetched:'2026-10-01T00:00:00Z',items:[
+  {videoId:'shelfOld',title:'Bears vs. Lions | Game Highlights',published:'2026-09-20T00:00:00Z',src:'nfl'},
+  {videoId:'shelfNew',title:'Chicago Bears Highlights vs. Eagles',published:'2026-09-29T00:00:00Z',src:'bears'}
+ ]};
+ const p=await page('highlights',{fetch:async(u)=>{
+  if(u.pathname.endsWith('data/snapshots/highlights.json'))return{ok:true,json:async()=>shelfStub,text:async()=>JSON.stringify(shelfStub)};
+  if(u.hostname==='www.youtube.com')return{ok:true,text:async()=>emptyAtom};
+ }});
+ try{
+  const d=p.w.document;
+  const cards=[...d.querySelectorAll('#hl-list .hl-card')];
+  assert.equal(cards.length,2,'only the shelf renders when the feeds are down');
+  assert.equal(cards[0].querySelector('.hl-title').textContent,'Chicago Bears Highlights vs. Eagles','the newest reel leads the board');
+  assert.match(d.querySelector('#hl-feature .hl-now h2').textContent,/Eagles/,'the featured player opens on the newest game reel');
+  assert.match(d.querySelector('#hl-updated').textContent,/saved game reels/,'the freshness line credits the shelf honestly');
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
 });
@@ -3514,7 +3553,7 @@ test('v1.121.0: the featured highlights poster is never a black void',async()=>{
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
  assert.ok(html.includes('css/highlights.css?v=1.132.0'),'highlights.html busts the highlights.css cache');
- assert.ok(html.includes('js/highlights.js?v=1.121.0'),'highlights.html busts the highlights.js cache');
+ assert.ok(html.includes('js/highlights.js?v=1.175.0'),'highlights.html busts the highlights.js cache');
  assert.ok(!/highlights\.(css|js)\?v=1\.110\.0/.test(html),'highlights.html has no stale highlights cache keys');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on highlights.html');
 });

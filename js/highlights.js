@@ -18,6 +18,13 @@
    highlight reels merge into the feed (the team channel rarely posts full
    game reels), each wearing an NFL source badge; when both live feeds are
    unreachable the snapshot fallback now says how old it is.
+   v1.175.0: the game-reel shelf — a curated snapshot (data/snapshots/
+   highlights.json, built by scripts/refresh-highlights.py from both
+   channels' full video lists) merges into the feed, because the RSS
+   windows rotate the per-game reels out within days under a flood of
+   Shorts and pressers, leaving the page leading with press conferences.
+   Game reels now lead the board and the featured player opens on the
+   newest reel whenever one exists.
    ============================================================ */
 "use strict";
 
@@ -93,6 +100,18 @@
     return NFL_BEARS_RE.test(v.title) && NFL_HL_RE.test(v.title);
   }
 
+  // v1.175.0 — what counts as a GAME reel (an actual game's highlight cut,
+  // as opposed to mic'd-up features and single-play clips): the shelf marks
+  // its items outright, league items pass the reel gate, and a Bears-channel
+  // title needs "highlights" plus a game context (a matchup or a win).
+  var GAME_CTX_RE = /\b(vs\.?|win over)\b/i;
+  function isGameReel(v) {
+    if (!v) return false;
+    if (v.reel) return true;
+    if (v.src === "nfl") return nflReel(v);
+    return NFL_HL_RE.test(v.title) && GAME_CTX_RE.test(v.title);
+  }
+
   // One feed fetch that degrades to an empty list — the merge below treats a
   // dead feed as "no items from this source" rather than failing the page.
   async function feedItems(url, src, gate) {
@@ -103,29 +122,65 @@
     } catch (e) { return []; }
   }
 
-  // Merge the two feeds: de-dupe on videoId, newest first, capped.
-  function mergeFeeds(a, b) {
+  // v1.175.0 — the game-reel shelf shipped with the site. Degrades to an
+  // empty list like a dead feed; the merge treats it as one more source.
+  async function reelItems() {
+    try {
+      var snap = CF.snapshotGet ? await CF.snapshotGet("highlights") : null;
+      var list = snap && (snap.items || snap);
+      if (!Array.isArray(list)) return { items: [], fetched: null };
+      var items = [];
+      list.forEach(function (it) {
+        if (!it || !it.videoId || !it.title) return;
+        items.push({
+          videoId: it.videoId,
+          title: it.title,
+          published: it.published || null,
+          thumb: "https://i.ytimg.com/vi/" + it.videoId + "/hqdefault.jpg",
+          link: "https://www.youtube.com/watch?v=" + it.videoId,
+          src: it.src || "bears",
+          reel: true
+        });
+      });
+      return { items: items, fetched: (snap && snap.fetched) || null };
+    } catch (e) { return { items: [], fetched: null }; }
+  }
+
+  // Merge every source: de-dupe on videoId (a later copy can upgrade an
+  // item to reel status), then game reels first — newest first inside
+  // each class — capped. v1.175.0: reels lead, so the featured player and
+  // the top of the grid are game footage, not the newest presser.
+  function mergeAll(lists) {
     var seen = {}, out = [];
-    a.concat(b).forEach(function (v) {
-      if (!v || !v.videoId || seen[v.videoId]) return;
-      seen[v.videoId] = true;
-      out.push(v);
+    lists.forEach(function (list) {
+      (list || []).forEach(function (v) {
+        if (!v || !v.videoId) return;
+        var prev = seen[v.videoId];
+        if (prev) { if (isGameReel(v)) prev.reel = true; return; }
+        if (isGameReel(v)) v.reel = true;
+        seen[v.videoId] = v;
+        out.push(v);
+      });
     });
     out.sort(function (x, y) {
+      var rx = x.reel ? 1 : 0, ry = y.reel ? 1 : 0;
+      if (rx !== ry) return ry - rx;
       return (Date.parse(y.published) || 0) - (Date.parse(x.published) || 0);
     });
     return out.slice(0, MAX_ITEMS);
   }
 
   async function getVideos() {
-    // 1) Live channel RSS through the raced chain, both feeds in parallel:
-    // the Bears channel plus the NFL league channel's Bears game reels.
-    var feeds = await Promise.all([
+    // 1) Live channel RSS through the raced chain (Bears + the NFL
+    // league channel's Bears reels) plus the game-reel shelf, in parallel.
+    var results = await Promise.all([
       feedItems(RSS_URL, "bears", null),
-      feedItems(NFL_RSS_URL, "nfl", nflReel)
+      feedItems(NFL_RSS_URL, "nfl", nflReel),
+      reelItems()
     ]);
-    var merged = mergeFeeds(feeds[0], feeds[1]);
-    if (merged.length) return { items: merged, live: true, fetched: null };
+    var live = results[0].length > 0 || results[1].length > 0;
+    var merged = mergeAll([results[2].items, results[0], results[1]]);
+    if (merged.length) return { items: merged, live: live, fetched: results[2].fetched };
     // 2) Last-good snapshot shipped with the site.
     try {
       var snap = CF.snapshotGet ? await CF.snapshotGet("yt") : null;
@@ -308,13 +363,18 @@
     setPill(r.live, r.items.length);
     var upd = CF.$("#hl-updated");
     if (upd) {
+      var reelCount = r.items.filter(isGameReel).length;
       if (r.live) {
-        // v1.110.0 — name the sources honestly: the league reels only show up
-        // when the NFL feed actually contributed one.
-        var nflCount = r.items.filter(function (v) { return v.src === "nfl"; }).length;
-        upd.textContent = nflCount
-          ? "Fresh from the Bears channel + " + nflCount + " game reel" + (nflCount === 1 ? "" : "s") + " from the NFL channel"
+        // v1.175.0 — name what's leading: game reels sit on top of the
+        // board whenever the shelf or the league feed provided any.
+        upd.textContent = reelCount
+          ? "Fresh from the Bears channel — " + reelCount + " game highlight reel" + (reelCount === 1 ? "" : "s") + " leading the board"
           : "Fresh from the Bears channel";
+      } else if (reelCount) {
+        // v1.175.0 — the shelf carried the page while the feeds are down;
+        // its stamp says when the reels were last refreshed.
+        var shelfAge = r.fetched ? CF.timeAgo(r.fetched) : "";
+        upd.textContent = "Live feeds unreachable — showing saved game reels" + (shelfAge ? " (shelf refreshed " + shelfAge + ")" : "") + ".";
       } else {
         // v1.110.0 — the snapshot now carries its age, so fans can tell how
         // stale the fallback is instead of guessing.
