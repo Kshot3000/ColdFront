@@ -406,10 +406,38 @@
     });
   }
 
+  /* ---------- v1.178.0 — the refresh button admits when it's working ----------
+     The last refresh button with no busy state: a click re-fetched
+     both channel feeds with no sign of life on the button itself, so
+     a slow feed read as a dead button and a second click doubled the
+     work. Clicks and the first load now funnel through refreshHl in
+     the v1.95.0 odds / v1.177.0 injury-wire form: the button
+     disables, flips to a spinning "Checking…" (aria-busy
+     announced), overlapping refreshes stand down, and the label
+     always restores. (No auto-beat on this page — highlights stay
+     manual, as before.) */
+  var hlBusy = false;
+  function setHlBusy(busy) {
+    hlBusy = busy;
+    var btn = CF.$("#hl-refresh");
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.setAttribute("aria-busy", String(busy));
+    btn.innerHTML = busy
+      ? '<span class="cf-spin" aria-hidden="true">↻</span> Checking…'
+      : "↻ Refresh now";
+  }
+  async function refreshHl() {
+    if (hlBusy) return;
+    setHlBusy(true);
+    try { await load(); } catch (e) { /* load paints its own empty state */ }
+    finally { setHlBusy(false); }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     bindFilters();
     var btn = CF.$("#hl-refresh");
-    if (btn) btn.addEventListener("click", load);
-    load();
+    if (btn) btn.addEventListener("click", refreshHl);
+    refreshHl();
   });
 })();

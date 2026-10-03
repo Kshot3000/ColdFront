@@ -5551,3 +5551,21 @@ p { text-wrap: pretty; }
 @media (prefers-reduced-motion: reduce) {
   #wire-refresh .cf-spin { animation: none; }
 }
+
+/* ============================================================
+   v1.178.0 — the last two refresh buttons spin while busy
+   js/news.js refreshWire and js/highlights.js refreshHl flip
+   #refresh and #hl-refresh to a spinning "Checking…" label
+   while their feeds are in flight, completing the v1.95.0 /
+   v1.177.0 busy family: the same cfBusySpin keyframes turn
+   their lone ↻ glyphs, and reduced motion gets the honest
+   static label instead. The odds and wire rules above are
+   byte-untouched.
+   ============================================================ */
+#refresh .cf-spin, #hl-refresh .cf-spin {
+  display: inline-block;
+  animation: cfBusySpin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  #refresh .cf-spin, #hl-refresh .cf-spin { animation: none; }
+}

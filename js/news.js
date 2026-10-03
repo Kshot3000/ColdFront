@@ -237,17 +237,42 @@
     }
   }
 
+  /* ---------- v1.178.0 — the refresh button admits when it's working ----------
+     News and Highlights were the last refresh buttons with no busy
+     state: a click fired both wires with no sign of life on the
+     button itself, so a slow feed read as a dead button and a second
+     click doubled the work. Manual clicks, the first load and the
+     5-minute auto-beats now all funnel through refreshWire in the
+     v1.95.0 odds / v1.177.0 injury-wire form: the button disables,
+     flips to a spinning "Checking…" (aria-busy announced),
+     overlapping refreshes stand down, and the label always
+     restores — the wide wire joins the same flight, so the button
+     stays busy until both wires settle. */
+  let wireBusy = false;
+  function setWireBusy(busy) {
+    wireBusy = busy;
+    const btn = CF.$("#refresh");
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.setAttribute("aria-busy", String(busy));
+    btn.innerHTML = busy
+      ? '<span class="cf-spin" aria-hidden="true">↻</span> Checking…'
+      : "↻ Refresh now";
+  }
+  function refreshWire(manual) {
+    if (wireBusy) return;
+    if (manual) CF.toast("Refreshing the wire…");
+    setWireBusy(true);
+    Promise.allSettled([load(), loadGoogle()]).finally(() => setWireBusy(false));
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    load();
-    loadGoogle();
-    CF.$("#refresh").addEventListener("click", () => {
-      CF.toast("Refreshing the wire…");
-      load();
-      loadGoogle();
-    });
+    refreshWire(false);
+    CF.$("#refresh").addEventListener("click", () => refreshWire(true));
     // Auto-refresh every 5 min while the tab is open (CF.refresh in common.js
-    // already handles hidden-tab skip + catch-up on return).
-    CF.refresh.register(load, 5 * 60e3, { name: "wire" });
-    CF.refresh.register(loadGoogle, 5 * 60e3, { name: "wide wire" });
+    // already handles hidden-tab skip + catch-up on return); both beats
+    // funnel through the same busy guard, so a beat that lands
+    // mid-refresh stands down.
+    CF.refresh.register(() => refreshWire(false), 5 * 60e3, { name: "wire" });
   });
 })();
