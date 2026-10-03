@@ -5462,3 +5462,76 @@ p { text-wrap: pretty; }
   body { background-attachment: scroll; }
   .cf-atmosphere .cf-bands { animation: none; }
 }
+
+/* ============================================================
+   v1.176.0 — the site prints like a gameday handout
+   ------------------------------------------------------------
+   There was no print stylesheet anywhere (@media print = 0), and
+   a print-emulated Chromium probe showed what that meant for the
+   pages a fan actually prints — the roster, the season log, the
+   injury report: body text computed rgb(208,220,232) and headings
+   rgb(247,250,252), near-white inks that browsers lay on white
+   paper once the navy background is dropped (the default), so the
+   sheet came out effectively blank. Wide tables kept their
+   screen behaviour too — .tbl-wrap overflow:auto around a 560px
+   min-width table — so right-hand columns were clipped off the
+   page instead of flowing onto it.
+   This block inverts the theme for paper only: white ground,
+   dark slate text, the Bears orange kept as the one accent (in a
+   darker, paper-legible burn), grey hairlines instead of glows.
+   Screen chrome that means nothing on paper — sticky header/nav,
+   the wire marquee, snow, atmosphere, hero photography, ad slots,
+   buttons, forms, filters, skeleton shimmer — is removed; the
+   footer disclaimer + credit stay. Tables unwrap so every column
+   prints, header rows repeat on each page, and rows/cards never
+   split across a break. Reveal-on-scroll elements are forced
+   visible, since un-revealed below-fold sections would otherwise
+   print at opacity 0. Screen rendering is untouched: every rule
+   below lives inside @media print.
+   ============================================================ */
+@page { margin: 13mm 12mm; }
+
+@media print {
+  :root { color-scheme: light; }
+  *, *::before, *::after {
+    background: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color: #1c2a38 !important;
+    border-color: #b7c2cd !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  html, body { background: #fff !important; }
+  body { font-size: 11pt; line-height: 1.5; min-height: 0; overflow-x: visible; position: static; }
+  .wrap { width: 100% !important; max-width: none !important; }
+  h1, h2, h3, h4, .display, .band-line { color: #081827 !important; }
+  a { color: #8a2b00 !important; text-decoration: none; }
+  .dim, .src-note, .meta, .foot-note, .foot-credit { color: #4a5a6a !important; }
+  .orange, a:hover { color: #8a2b00 !important; }
+  /* Chrome and decoration that cannot mean anything on paper. */
+  .cf-atmosphere, #snow, .site-head, .wire-ticker, .ad-slot,
+  .hero-photo, .photo-band, .city-strip, .hero-actions,
+  .btn, button, form, input, select, textarea,
+  .filter-bar, .roster-controls, .key-box, .skel, .skel-card,
+  .favorite-button, .countdown, .site-foot ul, .prl-chip,
+  .hl-play, .hl-mini-play, video, iframe, [data-cf-install] {
+    display: none !important;
+  }
+  /* Scroll-reveal states must not hide below-fold content. */
+  .reveal, .cf-reveal { opacity: 1 !important; transform: none !important; }
+  /* Tables print whole: unwrap the scroller, drop the screen
+     min-width, repeat the header row on every page, and never
+     split a row across a break. */
+  .tbl-wrap { overflow: visible !important; border: 0 !important; }
+  table.tbl { min-width: 0 !important; width: 100% !important; font-size: 10pt; }
+  .tbl thead { display: table-header-group; }
+  .tbl tr { break-inside: avoid; }
+  .tbl th { border-bottom: 2px solid #5a6b7a !important; }
+  .tbl tr.result-l td { opacity: 1 !important; }
+  .card, .story-card, .mini-game, .odds-card, .poly-card { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .site-foot { border-top: 1px solid #5a6b7a !important; margin-top: 18pt; padding-top: 10pt; }
+  img { max-width: 100% !important; }
+}
