@@ -566,8 +566,8 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
  const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
  assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
  const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
- assert.ok(!/highlights\.js\?v=(?!1\.178\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
- assert.ok(!/highlights\.css\?v=(?!1\.132\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
+ assert.ok(!/highlights\.js\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.css\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
  assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
  const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
   items.map(i=>'<entry><yt:videoId>'+i.id+'</yt:videoId><title>'+i.title+'</title><published>'+i.pub+'</published><media:thumbnail url="https://i.ytimg.com/vi/'+i.id+'/hqdefault.jpg"/></entry>').join('')+'</feed>';
@@ -3552,8 +3552,8 @@ test('v1.121.0: the featured highlights poster is never a black void',async()=>{
   assert.deepEqual(p.errors,[]);
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
- assert.ok(html.includes('css/highlights.css?v=1.132.0'),'highlights.html busts the highlights.css cache');
- assert.ok(html.includes('js/highlights.js?v=1.178.0'),'highlights.html busts the highlights.js cache');
+ assert.ok(html.includes('css/highlights.css?v=1.181.0'),'highlights.html busts the highlights.css cache');
+ assert.ok(html.includes('js/highlights.js?v=1.181.0'),'highlights.html busts the highlights.js cache');
  assert.ok(!/highlights\.(css|js)\?v=1\.110\.0/.test(html),'highlights.html has no stale highlights cache keys');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on highlights.html');
 });
@@ -3967,7 +3967,7 @@ test('v1.132.0: highlights video cards keep their 16/9 thumbs, centered play bad
  assert.ok(/inset:\s*0/.test(css.slice(fb,fb+400)),'the fallback fills the 16:9 frame');
  assert.ok(/\.hl-thumb \.thumb-fallback ~ \.hl-mini-play\s*\{[^}]*display:\s*none/.test(css),'the play badge retires when the fallback glyph carries the frame');
  const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
- assert.ok(html.includes('css/highlights.css?v=1.132.0'),'highlights.html busts the highlights.css cache at v1.132.0');
+ assert.ok(html.includes('css/highlights.css?v=1.181.0'),'highlights.html busts the highlights.css cache at v1.181.0');
  assert.ok(!/highlights\.css\?v=1\.121\.0/.test(html),'highlights.html has no stale 1.121.0 highlights.css key');
  const p=await page('highlights');try{
   const d=p.w.document;
@@ -5913,7 +5913,7 @@ test('v1.178.0: the last two refresh buttons admit when they are working — New
   assert.ok(!/main\.css\?v=(?!1\.180\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
  }
  assert.ok(newsHtml.includes('js/news.js?v=1.178.0'), 'news.html pins news.js 1.178.0');
- assert.ok(hlHtml.includes('js/highlights.js?v=1.178.0'), 'highlights.html pins highlights.js 1.178.0');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.181.0'), 'highlights.html pins highlights.js 1.181.0');
  const injHtml = fs.readFileSync(path.join(__dirname, '../injuries.html'), 'utf8');
  assert.ok(injHtml.includes('js/injuries.js?v=1.177.0'), 'injuries.html keeps injuries.js 1.177.0');
  // Footer branding untouched by this release.
@@ -6010,4 +6010,65 @@ test('v1.180.0: field hints speak in the site\u2019s own ice \u2014 placeholder 
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
+});
+
+test('v1.181.0: the now-playing highlights card says so — a badge and aria-current, not just a border', async () => {
+ // The playing card was marked only by .is-active (a 1px orange
+ // border): a probe measured aria-current null on every card and no
+ // "Now playing" text anywhere in the grid, before and after a swap,
+ // so the state was a colour a scanning fan could miss and a
+ // screen-reader fan could not perceive at all. The active card now
+ // carries the site's third current-state spelling (nav: "page",
+ // week clock: "step", this grid: "true"/"false") plus a solid
+ // badge in its meta row; featureVideo moves all three together.
+ const hjs = fs.readFileSync(path.join(__dirname, '../js/highlights.js'), 'utf8');
+ assert.ok(hjs.includes('aria-current="\' + (active ? "true" : "false")'), 'cardHTML stamps aria-current from the active flag');
+ assert.ok(hjs.includes('class="hl-playing">Now playing</span>'), 'cardHTML renders the badge on the active card');
+ assert.ok(hjs.includes('c.setAttribute("aria-current", on ? "true" : "false")'), 'featureVideo keeps aria-current in sync on swap');
+ assert.ok(hjs.includes('badge.className = "hl-playing"'), 'featureVideo creates the badge on the newly active card');
+ assert.ok(hjs.includes('badge.parentNode.removeChild(badge)'), 'featureVideo retires the badge from the old card');
+ const css = fs.readFileSync(path.join(__dirname, '../css/highlights.css'), 'utf8');
+ assert.ok(/\.hl-playing\s*\{[^}]*color:\s*#fff[^}]*background:\s*var\(--orange\)/s.test(css), 'the badge is the solid chip: white on the deep brand orange');
+ assert.ok(/\.hl-meta\s*\{[^}]*flex-wrap:\s*wrap/s.test(css), 'the meta row wraps so the badge folds instead of clipping on narrow cards');
+ // Behavioral: exactly one card is current and badged on first
+ // paint; a click moves class, attribute and badge together; a
+ // filter re-render (fresh cardHTML) keeps the state.
+ const p = await page('highlights'); try {
+  const d = p.w.document;
+  let cards = [...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(cards.length >= 2, 'the feed renders video cards');
+  assert.equal(cards.filter(c => c.getAttribute('aria-current') === 'true').length, 1, 'exactly one card is current on first paint');
+  assert.equal(cards.filter(c => c.querySelector('.hl-playing')).length, 1, 'exactly one card wears the badge on first paint');
+  assert.ok(cards.every(c => c.classList.contains('is-active') === (c.getAttribute('aria-current') === 'true')), 'class and aria-current agree on every card');
+  assert.ok(cards.every(c => c.classList.contains('is-active') === Boolean(c.querySelector('.hl-playing'))), 'class and badge agree on every card');
+  assert.equal(cards.find(c => c.classList.contains('is-active')).querySelector('.hl-playing').textContent, 'Now playing', 'the badge names the state');
+  const second = cards.find(c => !c.classList.contains('is-active'));
+  const secondVid = second.getAttribute('data-vid');
+  second.click(); await settle();
+  cards = [...d.querySelectorAll('#hl-list .hl-card')];
+  const now = cards.find(c => c.getAttribute('data-vid') === secondVid);
+  assert.ok(now.classList.contains('is-active'), 'the clicked card takes the active border');
+  assert.equal(now.getAttribute('aria-current'), 'true', 'the clicked card takes aria-current');
+  assert.equal(now.querySelector('.hl-playing').textContent, 'Now playing', 'the clicked card takes the badge');
+  assert.equal(cards.filter(c => c.getAttribute('aria-current') === 'true').length, 1, 'still exactly one current card after the swap');
+  assert.equal(cards.filter(c => c.querySelector('.hl-playing')).length, 1, 'still exactly one badge after the swap');
+  d.querySelector('.hl-filters [data-filter="highlight"]').click(); await settle();
+  const filtered = [...d.querySelectorAll('#hl-list .hl-card')];
+  assert.ok(filtered.length >= 1, 'the highlights-only filter still renders footage');
+  assert.ok(filtered.every(c => c.getAttribute('aria-current') === (c.classList.contains('is-active') ? 'true' : 'false')), 'filter re-renders restamp aria-current from the active flag');
+  assert.ok(filtered.every(c => Boolean(c.querySelector('.hl-playing')) === c.classList.contains('is-active')), 'filter re-renders keep badge and class together');
+  assert.deepEqual(p.errors, []);
+ } finally { p.close(); }
+ // highlights.js and highlights.css changed, so their keys move to
+ // 1.181.0 on highlights.html; main.css and common.js are untouched.
+ const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.181.0'), 'highlights.html pins highlights.js 1.181.0');
+ assert.ok(hlHtml.includes('css/highlights.css?v=1.181.0'), 'highlights.html pins highlights.css 1.181.0');
+ assert.ok(!/highlights\.js\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.css\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.css key');
+ assert.ok(hlHtml.includes('css/main.css?v=1.180.0'), 'highlights.html keeps main.css 1.180.0');
+ assert.ok(hlHtml.includes('js/common.js?v=1.179.0'), 'highlights.html keeps common.js 1.179.0');
+ // Footer branding untouched by this release.
+ assert.ok(hlHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on highlights.html');
+ assert.ok(hlHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on highlights.html');
 });

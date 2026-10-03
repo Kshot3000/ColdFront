@@ -25,6 +25,14 @@
    Shorts and pressers, leaving the page leading with press conferences.
    Game reels now lead the board and the featured player opens on the
    newest reel whenever one exists.
+   v1.181.0: the now-playing card says so — it was marked only by the
+   .is-active border, so a fan scanning the grid had to spot a 1px
+   orange edge, and a screen-reader fan heard nothing at all (a probe
+   measured aria-current null on every card, before and after a
+   swap). The active card now carries aria-current="true" (the rest
+   "false", the week-clock's spelling) and a solid "Now playing"
+   badge in its meta row; featureVideo keeps class, attribute and
+   badge in sync on every swap.
    ============================================================ */
 "use strict";
 
@@ -222,14 +230,18 @@
     // v1.110.0 — league reels wear an NFL source badge so fans know where the
     // game footage comes from; Bears-channel videos need no badge.
     var srcBadge = v.src === "nfl" ? '<span class="hl-src">NFL</span>' : "";
+    // v1.181.0 — the playing card names itself in its meta row, so the
+    // state is text (readable, announced) and not only a border colour.
+    var playingBadge = active ? '<span class="hl-playing">Now playing</span>' : "";
     return '<button type="button" class="hl-card' + (active ? " is-active" : "") + (enter ? " cf-enter" : "") + '" data-vid="' + esc(v.videoId) + '" data-kind="' + kind + '"' +
+      ' aria-current="' + (active ? "true" : "false") + '"' +
       (enter ? ' style="--hi:' + Math.min(idx, 11) + '"' : "") + '>' +
       '<span class="hl-thumb"><img loading="lazy" src="' + esc(CF.safeURL(v.thumb)) + '" alt="" ' +
       'onerror="CF.hlThumbFail(this)">' +
       '<span class="hl-mini-play" aria-hidden="true"></span></span>' +
       '<span class="hl-body"><span class="hl-title">' + esc(v.title) + "</span>" +
       '<span class="hl-meta dim"><span>' + esc(CF.timeAgo(v.published)) + "</span>" +
-      (kind === "highlight" ? '<span class="hl-kind">Highlight</span>' : "") + srcBadge +
+      (kind === "highlight" ? '<span class="hl-kind">Highlight</span>' : "") + srcBadge + playingBadge +
       "</span></span></button>";
   }
 
@@ -263,8 +275,24 @@
       (kind === "highlight" ? ' · <span class="hl-kind">Highlight</span>' : "") + srcMeta(v) + "</span>" +
       '<a class="btn small" href="' + esc(CF.safeURL(v.link)) + '" target="_blank" rel="noopener">YouTube ↗</a></div>';
     nowIn(box);
+    // v1.181.0 — keep the grid honest on every swap: the class, the
+    // aria-current attribute and the visible Now playing badge all
+    // move together, so no surface is left claiming the old video.
     Array.prototype.forEach.call(document.querySelectorAll(".hl-card"), function (c) {
-      c.classList.toggle("is-active", c.getAttribute("data-vid") === v.videoId);
+      var on = c.getAttribute("data-vid") === v.videoId;
+      c.classList.toggle("is-active", on);
+      c.setAttribute("aria-current", on ? "true" : "false");
+      var meta = c.querySelector(".hl-meta");
+      if (!meta) return;
+      var badge = meta.querySelector(".hl-playing");
+      if (on && !badge) {
+        badge = document.createElement("span");
+        badge.className = "hl-playing";
+        badge.textContent = "Now playing";
+        meta.appendChild(badge);
+      } else if (!on && badge) {
+        badge.parentNode.removeChild(badge);
+      }
     });
   }
 

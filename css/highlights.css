@@ -1,6 +1,6 @@
 /* THE COLD FRONT — game highlights page
    (v1.13.0 feature frame; v1.15.0 poly bars; v1.32.0 video-card glow-up;
-    v1.57.0 feature-frame glow-up) */
+    v1.57.0 feature-frame glow-up; v1.181.0 now-playing badge) */
 
 /* Featured player: cinematic 16:9 frame with frost border + orange glow. */
 .hl-feature {
@@ -273,6 +273,10 @@
 .hl-card:hover .hl-title,
 .hl-card:focus-visible .hl-title { color: var(--snow); }
 .hl-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; }
+/* v1.181.0 — the meta row wraps (tighter row gap) so the added
+   Now playing badge folds under the chips on narrow cards instead
+   of clipping against the card's overflow edge. */
+.hl-meta { flex-wrap: wrap; row-gap: 6px; }
 .hl-kind {
   font-size: 10.5px;
   font-weight: 700;
@@ -298,6 +302,26 @@
   padding: 2px 7px;
   white-space: nowrap;
   flex: none;
+}
+/* v1.181.0 — the now-playing badge: the one solid chip in the meta row.
+   The outline chips describe the video (Highlight, NFL); this one
+   states the player, in white on the deep brand orange (the
+   ::selection pairing, 4.7:1) with a warm glow, so the card loaded
+   in the big frame reads at a glance — and because it is real text
+   in the button, a screen reader announces it too. */
+.hl-playing {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--orange);
+  border: 1px solid var(--orange);
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  flex: none;
+  box-shadow: 0 0 12px rgba(209, 58, 2, 0.45);
 }
 
 /* v1.32.0 — frost-fade entrance, staggered on first paint only.
