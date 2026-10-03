@@ -4518,6 +4518,22 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 .cf-progress.is-on { opacity: 1; }
 
 /* Back-to-top — bottom-left (snow control keeps bottom-right) */
+/* v1.183.0 — the hidden button leaves the tab order too. At rest the
+   button was opacity 0 with pointer-events: none, but visibility
+   stayed visible — so it kept tabIndex 0, a rendered Chromium probe
+   at the top of the page could focus() it, and a keyboard fan
+   tabbing through the page landed on a control no eye could see
+   (its :focus-visible ring renders at opacity 0 with the button).
+   v1.125.0 already hid the parked-over-footer state with
+   visibility: hidden for exactly this reason ("visibility keeps
+   it out of the keyboard tab order"), and the base rule's
+   transition has listed visibility all along — the base hidden
+   state just never set it. It does now, and .is-on restores
+   visibility: visible so the existing 0.25s fade still plays
+   (visibility flips first when appearing, last when hiding).
+   The parked rule (.is-on.is-parked, higher specificity) still
+   wins while parked. Mouse and touch are untouched:
+   pointer-events was already none at rest, auto when on. */
 .cf-top {
   position: fixed;
   left: max(18px, env(safe-area-inset-left));
@@ -4539,6 +4555,7 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45), 0 0 18px rgba(209, 58, 2, 0.18);
   opacity: 0;
+  visibility: hidden;
   transform: translateY(14px) scale(0.92);
   pointer-events: none;
   transition: opacity 0.25s ease, transform 0.25s var(--ease-out),
@@ -4558,6 +4575,7 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
 }
 .cf-top.is-on {
   opacity: 1;
+  visibility: visible;
   transform: none;
   pointer-events: auto;
 }
