@@ -1477,6 +1477,37 @@ tr.ld-div.me .ld-div-abbr {
 }
 
 /* ============================================================
+   v1.174.0 — the glyph-only profile links are real targets
+   at every width. Exactly two links on the site are a bare
+   "↗" glyph: the injury report's .profile-link and the roster
+   table's player link. A rendered sweep measured both at
+   11.3×18px — the injury one only on desktop (the v1.157.0
+   phone block already gives it 40px at <=760px), the roster
+   one everywhere, because it never carried the class at all:
+   team.js stamped it bare while injuries.js stamped
+   class="profile-link". 11px wide is under the WCAG 2.5.8 AA
+   floor of 24×24 even for a mouse, and it is the only route
+   to a player's profile from either table. The base rule now
+   composes the glyph as a 24×24 inline-flex target at every
+   width (the <=760px block below still raises it to the
+   site's 40px phone minimum), with a faint orange wash on
+   hover in the chip family; the glyph, its ice color and its
+   aria-labels are unchanged, and team.js joins the class so
+   both tables share the one treatment.
+   ============================================================ */
+.profile-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: 6px;
+  vertical-align: middle;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.profile-link:hover { background: rgba(255, 90, 31, 0.14); color: var(--snow); }
+
+/* ============================================================
    v1.157.0 — standalone links become thumb targets on phones
    Buttons got a 40px phone minimum long ago and the footer
    links got theirs in v1.155.0, but the standalone links a fan
