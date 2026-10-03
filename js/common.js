@@ -1680,12 +1680,63 @@ CF.initReferrals = () => {
   });
 };
 
+/* ---------- v1.179.0 — wide tables become keyboard-scrollable regions ----------
+   table.tbl carries a 560px min-width inside .tbl-wrap's overflow-x:auto,
+   so on a phone the right-hand columns (Status, Pct, the box-score link)
+   sit off-screen. Touch fans swipe; a keyboard fan had no way across —
+   most of these tables contain nothing focusable, so the scroll
+   container itself was unreachable (the scrollable-region-focusable
+   failure). While a wrap actually overflows it now becomes a named
+   region: tabindex 0, role "region", and an aria-label taken from the
+   table's own caption (v1.164.0 gave every table one). When it fits —
+   a desktop window, or the roster's card view hiding its table wrap —
+   the attributes come off again, so the tab order is never taxed for
+   a scroll that doesn't exist. Page scripts build some wraps after
+   first paint (stats leaders, the box score, the full board) and
+   re-render table bodies on the refresh beat, so a MutationObserver
+   plus a resize pass keep the state honest. */
+CF.initScrollableTables = () => {
+  const sync = (el) => {
+    if (!el.isConnected) return;
+    const over = el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1;
+    if (over) {
+      if (el.dataset.cfScrollRegion) return;
+      const cap = el.querySelector("table caption");
+      const name = (cap && cap.textContent.trim()) || "Scrollable table";
+      el.dataset.cfScrollRegion = "1";
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      el.setAttribute("aria-label", name);
+    } else if (el.dataset.cfScrollRegion) {
+      delete el.dataset.cfScrollRegion;
+      el.removeAttribute("tabindex");
+      el.removeAttribute("role");
+      el.removeAttribute("aria-label");
+    }
+  };
+  const syncAll = () => CF.$$(".tbl-wrap").forEach(sync);
+  CF.syncScrollableTables = syncAll;
+  syncAll();
+  let queued = false;
+  const queue = () => {
+    if (queued) return;
+    queued = true;
+    Promise.resolve().then(() => { queued = false; syncAll(); });
+  };
+  window.addEventListener("resize", queue);
+  if (window.MutationObserver && document.body) {
+    const mo = new MutationObserver(queue);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
+  }
+};
+
 CF.initChrome = () => {
   CF.injectAtmosphere();
   CF.ensureSkipLink();
   CF.initScrollChrome();
   CF.initAds();
   CF.initReferrals();
+  CF.initScrollableTables();
 
   const wxEl = CF.$("[data-cf-weather]");
   if (wxEl) {

@@ -5464,6 +5464,25 @@ p { text-wrap: pretty; }
 }
 
 /* ============================================================
+   v1.179.0 — a scrollable table region shows its focus
+   When a .tbl-wrap overflows on a narrow screen it becomes a
+   keyboard-scrollable region (see CF.initScrollableTables in
+   common.js): tabindex 0, role "region", named by its table's
+   caption. The generic :focus-visible ring rounds at 8px, but
+   the wrap's own corners are var(--radius) — the ring now
+   follows the table's corners in the family orange, so a fan
+   tabbing to the injury report or the season log sees exactly
+   which table will scroll. Wraps that fit carry no tabindex
+   and never take focus, so desktop rendering is untouched.
+   ============================================================ */
+.tbl-wrap:focus-visible {
+  outline: 2px solid var(--orange-hot);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(209, 58, 2, 0.28);
+  border-radius: var(--radius);
+}
+
+/* ============================================================
    v1.176.0 — the site prints like a gameday handout
    ------------------------------------------------------------
    There was no print stylesheet anywhere (@media print = 0), and
