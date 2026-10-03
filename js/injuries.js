@@ -256,12 +256,40 @@
     box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">No injury headlines are available from the connected feeds right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';
   }
 
+  /* ---------- v1.177.0 — the wire's refresh button says what it does ----------
+     It was the last control on the site whose entire name, visible and
+     accessible, was the bare "↻" glyph (37×44px, no aria-label, no title):
+     every sibling refresh spells itself out ("↻ Refresh" on Odds,
+     "↻ Refresh now" on News and Highlights), and the Odds button has
+     admitted when it's working since v1.95.0. The button now carries
+     its label in the markup, and manual clicks, the first load and the
+     5-minute auto-beat all funnel through refreshWire: the button
+     disables, flips to a spinning "Checking…" (aria-busy announced),
+     and an overlapping refresh stands down until the wire settles. */
+  let wireBusy = false;
+  function setWireBusy(busy) {
+    wireBusy = busy;
+    const btn = CF.$("#wire-refresh");
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.setAttribute("aria-busy", String(busy));
+    btn.innerHTML = busy
+      ? '<span class="cf-spin" aria-hidden="true">↻</span> Checking…'
+      : "↻ Refresh";
+  }
+  async function refreshWire() {
+    if (wireBusy) return;
+    setWireBusy(true);
+    try { await loadWire(); } catch (e) { /* loadWire paints its own empty state */ }
+    finally { setWireBusy(false); }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     loadReport();
-    loadWire();
-    CF.$("#wire-refresh").addEventListener("click", () => { CF.toast("Refreshing the wire…"); loadWire(); });
+    refreshWire();
+    CF.$("#wire-refresh").addEventListener("click", () => { if (wireBusy) return; CF.toast("Refreshing the wire…"); refreshWire(); });
     // Keep both sides moving for as long as the tab is open (CF.refresh in common.js):
-    CF.refresh.register(loadWire, 5 * 60e3);              // live injury wire: 5 min
+    CF.refresh.register(refreshWire, 5 * 60e3);          // live injury wire: 5 min
     CF.refresh.register(loadReport, 5 * 60e3, { name: "report" }); // local report (repo JSON): 5 min
   });
 })();

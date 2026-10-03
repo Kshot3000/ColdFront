@@ -5535,3 +5535,19 @@ p { text-wrap: pretty; }
   .site-foot { border-top: 1px solid #5a6b7a !important; margin-top: 18pt; padding-top: 10pt; }
   img { max-width: 100% !important; }
 }
+
+/* ============================================================
+   v1.177.0 — the injury wire's refresh button spins while busy
+   js/injuries.js refreshWire now flips #wire-refresh to a
+   spinning "Checking…" label while the wire is in flight, in
+   the v1.95.0 odds form: the same cfBusySpin keyframes turn its
+   lone ↻ glyph, and reduced motion gets the honest static
+   label instead.
+   ============================================================ */
+#wire-refresh .cf-spin {
+  display: inline-block;
+  animation: cfBusySpin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  #wire-refresh .cf-spin { animation: none; }
+}
