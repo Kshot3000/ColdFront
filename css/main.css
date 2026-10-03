@@ -5588,3 +5588,28 @@ p { text-wrap: pretty; }
 @media (prefers-reduced-motion: reduce) {
   #refresh .cf-spin, #hl-refresh .cf-spin { animation: none; }
 }
+
+/* ============================================================
+   v1.180.0 — field hints speak in the site's own ice
+   No ::placeholder rule existed anywhere, so every field
+   hint fell back to the browser's default grey — measured
+   in Chromium at rgb(117,117,117) on the fields' near-black
+   ground: 4.20:1, under the 4.5:1 AA line, a neutral grey
+   that belongs to no part of the orange/ice palette, and in
+   Firefox — whose UA stylesheet additionally fades
+   placeholders to 54% opacity — an effective ~2:1, so the
+   roster search's only instruction ("try a name or jersey
+   number") all but vanished. The hints now take the site's
+   own dim-ice tone, var(--text-dim): 7.46:1 on the same
+   ground, the colour .dim copy already reads in, with
+   opacity pinned to 1 so no engine fades it back down.
+   Typed text stays var(--snow), so a hint still never
+   reads as a value already entered. One rule covers all
+   four hinted fields: the roster search (Team), the Odds
+   API key (Odds), and the API-Sports / TheSportsDB keys
+   (About).
+   ============================================================ */
+input::placeholder {
+  color: var(--text-dim);
+  opacity: 1;
+}
