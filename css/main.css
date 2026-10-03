@@ -5613,3 +5613,29 @@ input::placeholder {
   color: var(--text-dim);
   opacity: 1;
 }
+
+/* ============================================================
+   v1.182.0 — prose links wear an underline, not just a tint
+   Links inside paragraphs were identifiable by colour alone:
+   the global link tone var(--ice) #a8c0d4 sits 1.35:1 from the
+   body text #d0dce8 it flows with (and 1.38:1 from the .dim
+   #8fa3b8 of the notes and explainers it usually lives in) —
+   far under the 3:1 a colour-only cue needs — and the global
+   rule strips every underline, so a rendered sweep found
+   text-decoration-line: none on every prose link: "Google ad
+   settings" (About), "The Odds API" (Odds), the data-source
+   names (About) all read as plain words until hovered.
+   Paragraph links now carry a persistent underline in the
+   family's warm tint at a 3px offset (the .wt-item treatment),
+   deepening to full orange-hot on hover / keyboard focus.
+   Structural links keep their own grammar — nav, footer lists
+   (underline-grow), cards, buttons and chips are not <p> links
+   — and print drops the underline with the screen colours.
+   ============================================================ */
+p a {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 90, 31, 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
