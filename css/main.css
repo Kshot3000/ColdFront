@@ -5657,3 +5657,42 @@ p a {
   text-underline-offset: 3px;
 }
 p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
+
+/* ============================================================
+   v1.184.0 — a tap answers back in the site's own orange
+   Two touch gaps a rendered probe measured against the live
+   stylesheets. (1) Every tappable element computed the user
+   agent's default tap highlight, rgba(0, 0, 0, 0.18) — a
+   muddy black blink on the navy ground that belongs to no
+   part of the orange/ice identity; the flash a phone fan sees
+   on every nav tap, card tap and button press was the
+   browser's, not the site's. It now flashes the family's
+   orange at press depth. (2) A forced :active on the Odds
+   refresh button computed styles identical to its rest state
+   — across all three stylesheets the only :active rules were
+   two chips settling their hover lift — so a press gave the
+   fan no answer of the site's own. The button family gains
+   the missing third state: the hover lift settles back to
+   the ground, the steel deepens, the orange border holds,
+   the glow shallows; the primary button presses into a
+   deeper burn of its own gradient. Disabled buttons are
+   excluded twice over (the v1.92.0 pseudo-class + attribute
+   convention), so a dead button still never pretends. Nav
+   links press with a deeper wash of their hover steel. No
+   transitions change: .btn already animates transform,
+   background, border and shadow on the family's 0.18s ease,
+   so the press plays in the site's own motion language.
+   ============================================================ */
+* { -webkit-tap-highlight-color: rgba(255, 90, 31, 0.16); }
+.btn:active:not(:disabled):not([disabled]) {
+  transform: translateY(0);
+  background: rgba(92, 122, 153, 0.42);
+  border-color: rgba(255, 90, 31, 0.65);
+  box-shadow: 0 3px 12px rgba(0, 4, 12, 0.4);
+}
+.btn.primary:active:not(:disabled):not([disabled]) {
+  transform: translateY(0);
+  background: linear-gradient(135deg, #a82c00 0%, #cc3600 100%);
+  box-shadow: 0 3px 14px rgba(209, 58, 2, 0.5);
+}
+.nav a:active { background: rgba(92, 122, 153, 0.3); color: var(--snow); }

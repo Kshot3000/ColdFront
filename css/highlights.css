@@ -448,3 +448,13 @@
   .hl-poster:hover .hl-play,
   .hl-poster:focus-visible .hl-play { transform: translate(-50%, -50%); }
 }
+
+/* v1.184.0 — the filter chips answer a press, in step with the
+   site-wide pressed states in main.css: an unselected chip
+   deepens with the button family's steel so the tap reads in
+   the instant before the filter lands, and the selected chip
+   presses one step deeper into its own orange wash instead of
+   borrowing the steel. The chip's 0.15s background/border
+   transition already carries the change. */
+.chip:active { background: rgba(92, 122, 153, 0.32); border-color: rgba(226, 236, 246, 0.45); }
+.chip[aria-pressed="true"]:active { background: rgba(255, 90, 31, 0.28); }
