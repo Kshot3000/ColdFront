@@ -3974,12 +3974,30 @@ html.cf-js .photo-band.cf-reveal:not(.is-in) .photo-band-bg {
   flex-wrap: wrap;
   margin-bottom: 2px;
 }
+/* v1.189.0 — the small orange kicker labels take the text
+   orange. The desk / film / heat / injury-movement kickers
+   (.desk-title .k, .desk-kicker .k, .film-kicker .k,
+   .heat-head .k, .inj-move-head .k) and the practice heat
+   map's 9px .heat-today tag were the last small text set in
+   var(--orange) #d13a02 — the deep fill orange. Measured
+   against the surfaces they sit on it tops out at 4.00:1 on
+   the page ground #060d18 and falls to 3.77 / 3.52 / 3.25:1
+   on the #0a1524 / card-solid #0e1c30 / #12233a card tones,
+   under the 4.5:1 AA line for their 9–11px type (a rendered
+   sweep flagged the pair at 4.0:1). They now read in
+   var(--orange-hot) #ff5a1f, the orange the site already
+   reserves for small text (.eyebrow, .orange, .wt-src, the
+   move-chip.up .k): 6.24 / 5.88 / 5.49 / 5.07:1 on the same
+   four grounds, every one clear. The deep orange stays
+   exactly where it belongs — fills, borders, gradients and
+   the ::selection ground, where white on #d13a02 is 4.64:1
+   (v1.159.0) — only these foreground labels move. */
 .desk-title .k {
   font-family: var(--display);
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--orange, #E8541E);
+  color: var(--orange-hot, #ff5a1f);
 }
 .desk-title .s { font-size: 12px; color: var(--text-dim); }
 .matchup-preview.sunday-desk {
@@ -4138,7 +4156,7 @@ html.cf-js .photo-band.cf-reveal:not(.is-in) .photo-band-bg {
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--orange, #E8541E);
+  color: var(--orange-hot, #ff5a1f);
 }
 .heat-note { margin: 12px 0 0; font-size: 12.5px; }
 .heat-inline {
@@ -4223,7 +4241,7 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--orange, #E8541E);
+  color: var(--orange-hot, #ff5a1f);
 }
 .inj-move-chips {
   display: flex;
@@ -4283,7 +4301,7 @@ tr.is-today-row td { background: rgba(232,84,30,0.07); }
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--orange, #E8541E);
+  color: var(--orange-hot, #ff5a1f);
 }
 .film-match {
   margin-top: 4px;
