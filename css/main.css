@@ -5725,3 +5725,38 @@ p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
 .news-item:hover .headline:visited,
 .news-item:focus-within .headline:visited,
 .news-item .headline:visited:hover { color: var(--orange-hot); }
+
+/* ============================================================
+   v1.186.0 — forced-colors fans keep their cues. There was no
+   @media (forced-colors) rule anywhere (a grep measured 0),
+   and a Chromium probe under forced-colors emulation showed
+   what that costs a Windows High Contrast fan: the injury
+   wire's .st status pills are background tints with no border
+   at all, so the tint is stripped to the canvas and Out /
+   Questionable / Doubtful / Day-to-day collapse into bare
+   words with no pill shape to scan by; the text fields
+   (.key-box, .roster-controls, the date input) suppress the
+   outline on :focus for a border-and-shadow ring, and both
+   halves of that ring are forced away, leaving focus on a
+   field invisible; and the Highlights filter chip marks its
+   pressed state with an orange border and wash that force to
+   the same system tones as an unpressed chip. One block
+   restores each cue in the mode's own grammar — system
+   colours only, nothing outside the media query changes:
+   the pills gain a 1px currentColor border (the text colour
+   the mode assigns them), a focused field takes a 2px
+   Highlight outline, and a pressed chip takes the same
+   Highlight outline as a standing selection mark. The
+   surfaces that already survive the mode stay untouched:
+   .pill and .hl-playing carry borders, the week clock's
+   active phase carries its NOW chip, and the nav's active
+   link keeps its underline bar.
+   ============================================================ */
+@media (forced-colors: active) {
+  .st { border: 1px solid currentColor; }
+  .key-box input:focus,
+  .roster-controls input:focus,
+  .roster-controls select:focus,
+  input[type="date"]:focus { outline: 2px solid Highlight; outline-offset: 2px; }
+  .chip[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: 2px; }
+}
