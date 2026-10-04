@@ -458,3 +458,15 @@
    transition already carries the change. */
 .chip:active { background: rgba(92, 122, 153, 0.32); border-color: rgba(226, 236, 246, 0.45); }
 .chip[aria-pressed="true"]:active { background: rgba(255, 90, 31, 0.28); }
+
+/* v1.187.0 — reduced-transparency fans get solid cards (the
+   shared-token half lives in main.css). The highlight card
+   hard-codes its own 0.72-alpha navy under a blur(14px);
+   under the preference it takes the solid panel navy and
+   drops the blur, and the thumbnail's mini play badge —
+   0.62 alpha over moving video art — firms up to 0.92 so
+   the control reads as a control, not a smudge. */
+@media (prefers-reduced-transparency: reduce) {
+  .hl-card { background: #0a1524; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .hl-thumb .hl-mini-play { background: rgba(4, 10, 20, 0.92); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

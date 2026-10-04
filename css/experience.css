@@ -1577,3 +1577,17 @@ tr.ld-div.me .ld-div-abbr {
 .story-card:visited .story-copy h3 { color: var(--text-dim); }
 .story-card:visited:hover .story-copy h3,
 .story-card:visited:focus-within .story-copy h3 { color: var(--orange-hot); }
+
+/* ============================================================
+   v1.187.0 — reduced-transparency fans get solid panels
+   (the token half lives in main.css: --glass and --card
+   resolve solid under the preference, which already makes
+   the box-score card opaque). What remains here is the
+   blur: the box-score card's backdrop blur and the snow
+   toggle's go inert, so nothing on the page smears the
+   content behind a panel a fan asked to be solid.
+   ============================================================ */
+@media (prefers-reduced-transparency: reduce) {
+  .bx-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .snow-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

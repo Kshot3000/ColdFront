@@ -5760,3 +5760,37 @@ p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
   input[type="date"]:focus { outline: 2px solid Highlight; outline-offset: 2px; }
   .chip[aria-pressed="true"] { outline: 2px solid Highlight; outline-offset: 2px; }
 }
+
+/* ============================================================
+   v1.187.0 — reduced-transparency fans get solid panels.
+   The site's glass is load-bearing: the sticky header, the
+   weather strip, the cards and the drawer all sit on
+   translucent navy (the --glass token computes 0.68 alpha)
+   over photography, atmosphere gradients and falling snow,
+   softened by backdrop blur. A fan who turns on Reduce
+   Transparency (macOS / iOS / Windows accessibility) is
+   asking for exactly the opposite, and no
+   prefers-reduced-transparency rule existed anywhere — a
+   rendered probe under the emulated preference showed the
+   tokens, the header's blur(20px) and the weather strip's
+   blur(12px) all unchanged. One block solidifies the mode:
+   the shared tokens resolve to their solid twins (so every
+   card, panel and the experience.css box-score card that
+   paints var(--glass) / var(--card) goes opaque at once),
+   and the surfaces that hard-code their own translucency
+   trade it for the same solid navy and drop the blur.
+   Nothing outside the media query changes.
+   ============================================================ */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --card: var(--card-solid);
+    --glass: #0a1524;
+    --glass-deep: #040a14;
+  }
+  .site-head { background: #02060e; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .weather-strip { background: #0a1524; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .section-head .tag { background: #08101c; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav-backdrop { background: rgba(2, 6, 14, 0.88); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
