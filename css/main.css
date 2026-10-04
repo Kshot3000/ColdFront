@@ -5858,3 +5858,22 @@ p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
   -webkit-mask-image: none;
   mask-image: none;
 }
+
+/* ============================================================
+   v1.191.0 — the kickoff banner's dismiss becomes a thumb
+   target on phones. A rendered 390px sweep on a gameday —
+   the only state in which the banner exists — measured its
+   × button at 30×30px: the one standalone button on the
+   site still under the 40px phone minimum every other
+   control took in v1.155.0–v1.163.0. The earlier sweeps
+   never saw it because the banner renders only inside the
+   kickoff / gameday window, from common.js, on every page.
+   Where the footer stacks (≤800px, the site's thumb-target
+   breakpoint) the × now composes 40×40, its hairline border,
+   8px radius and hover warmth untouched; the banner's BOARD
+   and ODDS .btn actions already stand at the minimum, and
+   desktop keeps the compact 30px chip, byte for byte.
+   ============================================================ */
+@media (max-width: 800px) {
+  .cf-kickoff-dismiss { width: 40px; height: 40px; }
+}
