@@ -1225,6 +1225,45 @@ CF._syncGamedaySnow = () => {
   CF._snow.setIntensity(n);
 };
 
+/* v1.190.0 — the tab itself keeps score. While the Bears are
+   live — and after a final played today — the browser tab
+   title carries the score, so a fan with the game on TV and
+   the site parked in another tab can read the game off the
+   tab strip, the way ESPN and Google do. Pages that resolve
+   the Bears game (the home hero, the games board) call this
+   on every paint and refresh beat with the normalized game
+   shape (CF.API.gameFromEvent). Anything else — pre-game, a
+   final from another day, no game, a placeholder score —
+   restores the page's own title, captured on first use, so
+   a stale snapshot can never bill an old final as today's. */
+CF._baseTitle = null;
+CF._liveTitleOn = false;
+CF.syncLiveTitle = (game) => {
+  if (CF._baseTitle === null) CF._baseTitle = document.title;
+  const num = (v) => (v == null || v === "" ? NaN : Number(v));
+  let title = null;
+  if (game && (game.state === "in" || game.state === "post")) {
+    const ha = game.home && game.home.abbr, aa = game.away && game.away.abbr;
+    const hs = num(game.home && game.home.score), as = num(game.away && game.away.score);
+    if ((ha === "CHI" || aa === "CHI") && ha && aa && Number.isFinite(hs) && Number.isFinite(as)) {
+      const line = aa + " " + as + " @ " + ha + " " + hs;
+      if (game.state === "in") {
+        const clock = game.display && !/^(live|scheduled)$/i.test(game.display) ? " · " + game.display : "";
+        title = "🔴 LIVE · " + line + clock + " — The Cold Front";
+      } else {
+        const d = new Date(game.date), now = new Date();
+        const today = !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+        if (today) {
+          const bears = ha === "CHI" ? hs : as, opp = ha === "CHI" ? as : hs;
+          title = (bears > opp ? "BEARS WIN · Final · " : "Final · ") + line + " — The Cold Front";
+        }
+      }
+    }
+  }
+  if (title) { document.title = title; CF._liveTitleOn = true; }
+  else if (CF._liveTitleOn) { document.title = CF._baseTitle; CF._liveTitleOn = false; }
+};
+
 /* Shared status pill class for injury rows (Out / Questionable / IR / …). */
 CF.injStatusCls = (s) => {
   const x = (s || "").toLowerCase();

@@ -41,6 +41,7 @@
       show("#ng-meta", "The official schedule is one click away in the game center.");
       show("#ng-countdown", "");
       CF.$("#prediction-toggle").disabled = true;
+      CF.syncLiveTitle(null);
       return;
     }
     if (CF.paintKickoffBanner) CF.paintKickoffBanner({ id: game.id, date: game.date,
@@ -125,6 +126,9 @@
     };
     if (game.state === "pre" && game.timeValid && CF.kickoffTime(game.date)) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
     else show("#ng-countdown", game.state === "in" ? game.display : "");
+    /* v1.190.0 — the tab keeps score while the Bears are live
+       (and after today's final); every refresh beat re-syncs it. */
+    CF.syncLiveTitle(game);
   }
 
   function renderSeason(result) {

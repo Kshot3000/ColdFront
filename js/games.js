@@ -36,6 +36,7 @@
       CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, CF.dataEpoch(r));
       if (!events.length) {
         box.innerHTML = '<div class="empty"><div class="big">🌫</div>No NFL games scheduled for this date.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
+        CF.syncLiveTitle(null);
         return;
       }
       // Bears game first.
@@ -44,6 +45,11 @@
       events.sort((a, b) => (isBears(b) ? 1 : 0) - (isBears(a) ? 1 : 0));
       box.innerHTML = events.map((e) => eventCard(e, isBears(e))).join("");
       box.setAttribute("aria-busy", "false");
+      /* v1.190.0 — the tab keeps score off today's board only:
+         the Bears event the fan is looking at, never a final
+         exhumed by browsing another date. */
+      const bearsEvent = events.find((e) => isBears(e));
+      CF.syncLiveTitle(selectedDay === isoDate(0) && bearsEvent ? CF.API.gameFromEvent(bearsEvent) : null);
       // The board keeps refreshing on the shared CF.refresh job below (30 s),
       // so scheduled → live → final transitions pick themselves up.
     } catch (e) {
