@@ -1694,27 +1694,54 @@ CF.initReferrals = () => {
    a scroll that doesn't exist. Page scripts build some wraps after
    first paint (stats leaders, the box score, the full board) and
    re-render table bodies on the refresh beat, so a MutationObserver
-   plus a resize pass keep the state honest. */
+   plus a resize pass keep the state honest. v1.188.0 adds the edge
+   fade state (the paint classes the stylesheet masks from) and an
+   IntersectionObserver re-sync: a below-fold wrap is
+   content-visibility-skipped and measures as if it fits, so the
+   state is re-measured as the wrap nears the viewport and the
+   measurement is real. A sync that catches a wrap mid-skip
+   defers entirely (checkVisibility with contentVisibilityAuto)
+   rather than stripping state on a lying measurement; a truly
+   hidden wrap (the roster's card view) still sheds its state. */
 CF.initScrollableTables = () => {
+  const paint = (el) => {
+    const over = el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1;
+    const max = el.scrollWidth - el.clientWidth;
+    el.classList.toggle("cf-scroll-x", over);
+    el.classList.toggle("cf-scrolled", over && el.scrollLeft > 2);
+    el.classList.toggle("cf-at-end", over && el.scrollLeft > 2 && max - el.scrollLeft <= 2);
+  };
   const sync = (el) => {
     if (!el.isConnected) return;
+    if (el.checkVisibility && el.checkVisibility() && !el.checkVisibility({ contentVisibilityAuto: true })) return;
     const over = el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1;
     if (over) {
-      if (el.dataset.cfScrollRegion) return;
-      const cap = el.querySelector("table caption");
-      const name = (cap && cap.textContent.trim()) || "Scrollable table";
-      el.dataset.cfScrollRegion = "1";
-      el.setAttribute("tabindex", "0");
-      el.setAttribute("role", "region");
-      el.setAttribute("aria-label", name);
+      if (!el.dataset.cfScrollRegion) {
+        const cap = el.querySelector("table caption");
+        const name = (cap && cap.textContent.trim()) || "Scrollable table";
+        el.dataset.cfScrollRegion = "1";
+        el.setAttribute("tabindex", "0");
+        el.setAttribute("role", "region");
+        el.setAttribute("aria-label", name);
+      }
     } else if (el.dataset.cfScrollRegion) {
       delete el.dataset.cfScrollRegion;
       el.removeAttribute("tabindex");
       el.removeAttribute("role");
       el.removeAttribute("aria-label");
     }
+    paint(el);
   };
-  const syncAll = () => CF.$$(".tbl-wrap").forEach(sync);
+  let io = null;
+  if (window.IntersectionObserver) {
+    io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => { if (en.isIntersecting) sync(en.target); });
+    }, { rootMargin: "240px 0px" });
+  }
+  const syncAll = () => CF.$$(".tbl-wrap").forEach((el) => {
+    sync(el);
+    if (io) io.observe(el);
+  });
   CF.syncScrollableTables = syncAll;
   syncAll();
   let queued = false;
@@ -1724,6 +1751,10 @@ CF.initScrollableTables = () => {
     Promise.resolve().then(() => { queued = false; syncAll(); });
   };
   window.addEventListener("resize", queue);
+  document.addEventListener("scroll", (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains("tbl-wrap")) paint(t);
+  }, { capture: true, passive: true });
   if (window.MutationObserver && document.body) {
     const mo = new MutationObserver(queue);
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });

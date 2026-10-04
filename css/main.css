@@ -5562,6 +5562,7 @@ p { text-wrap: pretty; }
      min-width, repeat the header row on every page, and never
      split a row across a break. */
   .tbl-wrap { overflow: visible !important; border: 0 !important; }
+  .tbl-wrap.cf-scroll-x { -webkit-mask-image: none !important; mask-image: none !important; }
   table.tbl { min-width: 0 !important; width: 100% !important; font-size: 10pt; }
   .tbl thead { display: table-header-group; }
   .tbl tr { break-inside: avoid; }
@@ -5793,4 +5794,49 @@ p a:hover, p a:focus-visible { text-decoration-color: var(--orange-hot); }
   .nav-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .nav { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .nav-backdrop { background: rgba(2, 6, 14, 0.88); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+/* ============================================================
+   v1.188.0 — wide tables confess they scroll sideways.
+   On a phone the site's wide tables overflow their wrap and
+   simply clip at its border: a rendered 390px probe measured
+   the season log at 680px of table in a 343px wrap and the
+   standings at 560px in 343px, with nothing to tell the fan
+   that Result, TV and the box-score link wait off the right
+   edge (v1.179.0 made the wraps keyboard-scrollable regions;
+   this gives eyes the cue touch and keys already had).
+   The v1.179.0 enhancer now also paints edge state onto each
+   wrap — .cf-scroll-x while it overflows, .cf-scrolled once
+   it has moved, .cf-at-end at the far end — and the masks
+   below fade the table's own content out at exactly the
+   edge with more table beyond it: the right edge at rest,
+   both edges mid-scroll, the left edge at the end, and no
+   fade at all on a table that fits. A background scroll-
+   shadow stack was tried first and rejected on rendered
+   pixels: the wrap's glass is translucent over photography,
+   so no cover colour can match its perceived surface — the
+   covers painted permanent dark bands at both edges
+   (measured −7.7 and −9.3 luminance where a cover sat,
+   ≈0 where a shadow should have shown). The mask needs no
+   colour match because it fades the content itself.
+   Keyboard focus lifts the fade so the v1.179.0 focus ring
+   and the columns under it read whole, and print strips it
+   (the v1.176.0 sheet unwraps the tables; a faded column
+   must never reach paper).
+   ============================================================ */
+.tbl-wrap.cf-scroll-x {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+.tbl-wrap.cf-scroll-x.cf-scrolled {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+}
+.tbl-wrap.cf-scroll-x.cf-at-end {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px);
+  mask-image: linear-gradient(90deg, transparent, #000 28px);
+}
+.tbl-wrap.cf-scroll-x:focus-visible {
+  -webkit-mask-image: none;
+  mask-image: none;
 }
