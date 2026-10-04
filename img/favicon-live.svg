@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <!-- v1.192.0 — the LIVE twin of favicon.svg: the same paw on the same
+       navy tile, plus one broadcast-red badge dot in the top-right
+       corner (white ring so it reads on any tab-strip theme). common.js
+       swaps link[rel=icon] to this file only while the Bears are live
+       (CF._syncLiveIcon, driven by CF.syncLiveTitle) and restores
+       favicon.svg the moment the game ends or leaves the live state. -->
+  <defs>
+    <radialGradient id="g" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#16283f"/>
+      <stop offset="100%" stop-color="#0b1626"/>
+    </radialGradient>
+  </defs>
+  <rect width="48" height="48" rx="11" fill="url(#g)"/>
+  <rect x="1.5" y="1.5" width="45" height="45" rx="10" fill="none" stroke="#5c7a99" stroke-opacity="0.65"/>
+  <rect x="3.5" y="3.5" width="41" height="41" rx="8.5" fill="none" stroke="#e8541e" stroke-opacity="0.22" stroke-width="1"/>
+  <g fill="#c83803">
+    <ellipse cx="24" cy="29.5" rx="7.6" ry="6.1"/>
+    <ellipse cx="13.4" cy="21" rx="3.4" ry="4.5" transform="rotate(-18 13.4 21)"/>
+    <ellipse cx="20.4" cy="15.6" rx="3.6" ry="4.9" transform="rotate(-6 20.4 15.6)"/>
+    <ellipse cx="28.6" cy="15.6" rx="3.6" ry="4.9" transform="rotate(6 28.6 15.6)"/>
+    <ellipse cx="35.6" cy="21" rx="3.4" ry="4.5" transform="rotate(18 35.6 21)"/>
+  </g>
+  <line x1="8" y1="40.5" x2="40" y2="40.5" stroke="#e8541e" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M12 40.5 h6 l-3 -6 z" fill="#e8541e"/>
+  <path d="M21 40.5 h6 l-3 -6 z" fill="#e8541e"/>
+  <path d="M30 40.5 h6 l-3 -6 z" fill="#e8541e"/>
+  <circle cx="37.5" cy="10.5" r="7" fill="#ff3b30" stroke="#ffffff" stroke-width="2.5"/>
+</svg>

@@ -1238,6 +1238,33 @@ CF._syncGamedaySnow = () => {
    a stale snapshot can never bill an old final as today's. */
 CF._baseTitle = null;
 CF._liveTitleOn = false;
+/* v1.192.0 — the tab's icon joins the score. The v1.190.0 title
+   still has to be read; the favicon is the part of a parked tab a
+   fan actually sees at a glance — in a crowded tab strip, the
+   tab switcher, a pinned tab (where the title is not shown at
+   all). While the Bears are live, CF.syncLiveTitle also swaps
+   link[rel="icon"] to img/favicon-live.svg — the same paw with a
+   broadcast-red badge dot — and restores the page's own icon the
+   moment the game leaves the live state (final, pre-game, no
+   game), so the dot can never linger on a game that is over.
+   The apple-touch-icon is never touched: a home-screen icon must
+   not claim a live game. */
+CF._baseIcon = null;
+CF._liveIconOn = false;
+CF._syncLiveIcon = (live) => {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  if (CF._baseIcon === null) CF._baseIcon = link.getAttribute("href") || "";
+  if (live) {
+    if (!CF._liveIconOn && CF._baseIcon.indexOf("favicon.svg") !== -1) {
+      link.setAttribute("href", CF._baseIcon.replace("favicon.svg", "favicon-live.svg"));
+      CF._liveIconOn = true;
+    }
+  } else if (CF._liveIconOn) {
+    link.setAttribute("href", CF._baseIcon);
+    CF._liveIconOn = false;
+  }
+};
 CF.syncLiveTitle = (game) => {
   if (CF._baseTitle === null) CF._baseTitle = document.title;
   const num = (v) => (v == null || v === "" ? NaN : Number(v));
@@ -1262,6 +1289,10 @@ CF.syncLiveTitle = (game) => {
   }
   if (title) { document.title = title; CF._liveTitleOn = true; }
   else if (CF._liveTitleOn) { document.title = CF._baseTitle; CF._liveTitleOn = false; }
+  /* v1.192.0 — the badge dot rides only the live state: a final
+     keeps its title line above but the game is over, so the icon
+     goes back to the plain paw in the same beat. */
+  CF._syncLiveIcon(!!(title && game && game.state === "in"));
 };
 
 /* Shared status pill class for injury rows (Out / Questionable / IR / …). */
