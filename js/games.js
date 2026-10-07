@@ -8,6 +8,36 @@
   let boardRequest = 0;
   let lastEvents = [];
   let lastPastGame = null; // most recent completed Bears game (season log)
+  let nextGame = null; // v1.193.0 — the next Bears game, resolved by the Sunday desk
+  let boardDay = null; // v1.193.0 — the ISO day the board last painted
+  let daySetter = null; // v1.193.0 — wireDates' setter, so the board can jump days
+
+  /* v1.193.0 — the board's no-games day stops being a dead end.
+     On the four-plus days a week with no NFL games the board's
+     empty state named the problem and offered nothing: reaching
+     the Bears' next game took four taps on the day-next button
+     (or a date-picker hunt), even though the Sunday desk on this
+     same page already knows that game. The empty state now
+     carries a one-tap jump to that game's board, and the branch
+     finally clears the board's aria-busy like its siblings do —
+     a game-free day used to leave the board announced as loading
+     forever. */
+  const chiDayISO = (dateStr) => {
+    try { return new Date(dateStr).toLocaleDateString("en-CA", { timeZone: "America/Chicago" }); }
+    catch (e) { return ""; }
+  };
+  const jumpHTML = (viewedDay) => {
+    if (!nextGame || !nextGame.date) return "";
+    const target = chiDayISO(nextGame.date);
+    if (!target || target === viewedDay) return "";
+    return '<button class="btn small" type="button" data-cf-jump-next style="display:inline-flex;margin-top:12px">Bears ' +
+      (nextGame.home ? "vs " : "at ") + CF.esc(String(nextGame.oppAbbr || "OPP")) + " · " +
+      CF.esc(CF.fmtDate(nextGame.date)) + " — see that board →</button>";
+  };
+  const paintBoardJump = () => {
+    const host = CF.$("#board .board-jump-host");
+    if (host) host.innerHTML = jumpHTML(boardDay);
+  };
   let deskEntered = false; // .cf-enter on the duel only at first paint; refresh re-renders stay instant
   let divEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
 
@@ -35,7 +65,14 @@
       // stops claiming "1s ago" for days-old numbers).
       CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, CF.dataEpoch(r));
       if (!events.length) {
-        box.innerHTML = '<div class="empty"><div class="big">🌫</div>No NFL games scheduled for this date.<br><span class="dim">Try another date, or check back after kickoff.</span></div>';
+        boardDay = selectedDay;
+        box.innerHTML = CF.emptyHTML({
+          icon: "🌫",
+          title: "No NFL games scheduled for this date",
+          sub: "Try another date, or check back after kickoff.",
+          action: '<span class="board-jump-host">' + jumpHTML(selectedDay) + "</span>",
+        });
+        box.setAttribute("aria-busy", "false");
         CF.syncLiveTitle(null);
         return;
       }
@@ -520,6 +557,8 @@
       schedData = sc.data;
       g = CF.API.nextBearsGameFromSchedule(sc.data);
     } catch (e) { /* schedule quiet */ }
+    nextGame = g || null;
+    paintBoardJump();
     if (!g) {
       if (pill) { pill.className = "pill sample"; pill.textContent = "offline"; }
       if (duel) duel.hidden = true;
@@ -694,6 +733,7 @@
       pick.value = isoDate(offset);
       loadBoard();
     };
+    daySetter = set;
     if (/^\d{4}-\d{2}-\d{2}$/.test(query.get("date") || "")) {
       const date = Date.parse(query.get("date") + "T12:00:00Z");
       if (Number.isFinite(date)) dayOffset = Math.round((date - Date.parse(isoDate(0) + "T12:00:00Z")) / 86400000);
@@ -722,6 +762,16 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     wireDates();
+    // v1.193.0 — the no-games jump: one tap on the empty state's
+    // button lands the board on the next Bears game's day, using
+    // the same offset math as the ?date= deep link above.
+    CF.$("#board").addEventListener("click", (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest("[data-cf-jump-next]") : null;
+      if (!btn || !nextGame || !daySetter) return;
+      const target = chiDayISO(nextGame.date);
+      const off = Math.round((Date.parse(target + "T12:00:00Z") - Date.parse(isoDate(0) + "T12:00:00Z")) / 86400000);
+      if (Number.isFinite(off)) daySetter(off);
+    });
     loadBoard();
     loadLog();
     loadDivision();
