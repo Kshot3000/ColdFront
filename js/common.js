@@ -298,6 +298,58 @@ CF.kickoffTime = (iso) => {
   } catch (e) { return ""; }
 };
 
+/* v1.194.0 — the next game joins the fan's own calendar. Every surface
+   resolves the next Bears game (date, venue, TV) and then just counts down
+   to it; nothing let a fan put kickoff where their week actually lives —
+   their calendar — the way ESPN and The Athletic do. icsForGame renders an
+   RFC 5545 VEVENT for a game whose kickoff time is real (timeValid and a
+   parseable date; a flex placeholder "date" would plant a wrong event, so
+   it returns "" instead), and calendarHref wraps it as a downloadable
+   data: URI. Kickoff is stored in UTC, the event runs a regulation
+   3h30m (DURATION, so no end-time math can drift), and venue + city ride
+   as LOCATION with the TV network and the game-center link in the notes.
+   Text values are escaped per RFC 5545 §3.3.11 and logical lines folded at
+   75 octets (§3.1) so strict parsers (Apple/Google/Outlook) accept it. */
+CF.icsForGame = (game, now) => {
+  if (!game || game.timeValid === false || !game.date) return "";
+  const start = new Date(game.date);
+  if (!Number.isFinite(start.getTime())) return "";
+  const stamp = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const esc = (s) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  const fold = (line) => {
+    let out = "";
+    while (line.length > 75) { out += line.slice(0, 75) + "\r\n "; line = " " + line.slice(75); }
+    return out + line;
+  };
+  const loc = [game.venue, game.city].filter((x) => x && x !== "Venue to be announced").join(", ");
+  const desc = ["Chicago Bears football — via The Cold Front."];
+  if (game.tv) desc.push("TV: " + game.tv);
+  desc.push("Game center: https://coldfronthq.com/games.html");
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//The Cold Front//Bears Schedule//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    "UID:bears-" + esc(game.id || stamp(start)) + "@coldfronthq.com",
+    "DTSTAMP:" + stamp(Number.isFinite(Date.parse(now)) ? new Date(now) : new Date()),
+    "DTSTART:" + stamp(start),
+    "DURATION:PT3H30M",
+    "SUMMARY:" + esc(game.name || "Chicago Bears football"),
+  ];
+  if (loc) lines.push("LOCATION:" + esc(loc));
+  lines.push("DESCRIPTION:" + esc(desc.join("\n")));
+  lines.push("URL:https://coldfronthq.com/games.html");
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return lines.map(fold).join("\r\n") + "\r\n";
+};
+
+CF.calendarHref = (game) => {
+  const ics = CF.icsForGame(game);
+  return ics ? "data:text/calendar;charset=utf-8," + encodeURIComponent(ics) : "";
+};
+
 /* v1.49.0 — Polymarket line-movement chip: compares this render's price
    against the previous render and returns a tiny ▲/▼ chip when the price
    moved at least one cent, otherwise an empty string. Prices are 0..1. */

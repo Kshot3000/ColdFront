@@ -40,6 +40,7 @@
       show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");
       show("#ng-meta", "The official schedule is one click away in the game center.");
       show("#ng-countdown", "");
+      CF.$("#ng-cal").hidden = true;
       CF.$("#prediction-toggle").disabled = true;
       CF.syncLiveTitle(null);
       return;
@@ -88,6 +89,19 @@
     show("#ng-mid", game.venue);
     show("#ng-meta", CF.fmtDate(game.date) + " · " + (game.timeValid ? (CF.kickoffTime(game.date) || "Time TBD") : "Time TBD") + (game.tv ? " · " + game.tv : ""));
     CF.$("#game-detail-link").href = "games.html?date=" + CF.dateInput(game.date) + "&game=" + encodeURIComponent(game.id) + "#boxscore";
+    /* v1.194.0 — "Add to calendar" joins the footer, but only while there is
+       a future kickoff worth saving: pre-game with a real, feed-confirmed
+       kickoff time (calendarHref refuses timeValid=false flex placeholders).
+       A live or final game hides it again on the next paint, so the link
+       never offers an event that already started. */
+    const cal194 = CF.$("#ng-cal");
+    const calHref194 = game.state === "pre" ? CF.calendarHref(game) : "";
+    cal194.hidden = !calHref194;
+    if (calHref194) {
+      cal194.href = calHref194;
+      cal194.setAttribute("download", "bears-" + CF.dateInput(game.date) + ".ics");
+      cal194.setAttribute("aria-label", "Add to calendar: " + game.name + ", " + CF.fmtDate(game.date) + " " + (CF.kickoffTime(game.date) || ""));
+    }
     // v1.108.0 — "Make your call" is only enabled for the upcoming game.
     // When disabled, say WHY so it doesn't read as a dead widget.
     const pt = CF.$("#prediction-toggle");
