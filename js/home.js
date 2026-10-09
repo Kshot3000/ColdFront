@@ -2,6 +2,7 @@
 "use strict";
 (function () {
   let countdown = 0, predictionGame = null, predictionOppAbbr = "OPP";
+  let shareGame195 = null; // v1.195.0 — the game the hero Share button sends; repainted with the hero
   let stndEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
   const show = (selector, text) => { CF.$(selector).textContent = text; };
 
@@ -41,6 +42,8 @@
       show("#ng-meta", "The official schedule is one click away in the game center.");
       show("#ng-countdown", "");
       CF.$("#ng-cal").hidden = true;
+      CF.$("#ng-share").hidden = true;
+      shareGame195 = null;
       CF.$("#prediction-toggle").disabled = true;
       CF.syncLiveTitle(null);
       return;
@@ -102,6 +105,16 @@
       cal194.setAttribute("download", "bears-" + CF.dateInput(game.date) + ".ics");
       cal194.setAttribute("aria-label", "Add to calendar: " + game.name + ", " + CF.fmtDate(game.date) + " " + (CF.kickoffTime(game.date) || ""));
     }
+    /* v1.195.0 — "Share" joins the footer for every resolved game the
+       share text can describe honestly: a pre-game with a matchup line,
+       a live game or final with real scores. The button keeps the game
+       it will send (shareGame195) so a click between refresh beats can
+       never share a different game than the card is showing. */
+    const share195 = CF.$("#ng-share");
+    const shareText195 = CF.shareTextForGame(game);
+    share195.hidden = !shareText195;
+    shareGame195 = shareText195 ? game : null;
+    if (shareText195) share195.setAttribute("aria-label", "Share this game: " + game.name);
     // v1.108.0 — "Make your call" is only enabled for the upcoming game.
     // When disabled, say WHY so it doesn't read as a dead widget.
     const pt = CF.$("#prediction-toggle");
@@ -784,6 +797,21 @@
     for (const [fn, interval] of [[loadMatchup,30000],[loadStandings,300000],[loadNorth,60000],[loadNews,300000],[loadInjuries,300000],[loadWeekClock,60000],[loadOddsPulse,60000],[loadSundayDesk,60000],[loadFilmRoom,120000]]) {
       fn(); CF.refresh.register(fn, interval);
     }
+    /* v1.195.0 — Share sends the resolved game out: the platform share
+       sheet where one exists, the clipboard (with a "Link copied"
+       answer in the label) where it doesn't. A cancelled sheet changes
+       nothing; an unavailable path says so, briefly, in the label. */
+    const shareBtn195 = CF.$("#ng-share");
+    let shareTimer195 = 0;
+    shareBtn195.addEventListener("click", async () => {
+      if (!shareGame195) return;
+      const status = await CF.shareGame(shareGame195);
+      if (status !== "copied" && status !== "unavailable") return;
+      const original195 = shareBtn195.innerHTML;
+      shareBtn195.textContent = status === "copied" ? "✓ Link copied" : "Share unavailable";
+      clearTimeout(shareTimer195);
+      shareTimer195 = setTimeout(() => { shareBtn195.innerHTML = original195; }, 2400);
+    });
     CF.$("#prediction-toggle").addEventListener("click", () => {
       const form = CF.$("#prediction-form");
       form.hidden = !form.hidden;

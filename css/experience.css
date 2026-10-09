@@ -163,6 +163,11 @@ main:focus { outline: none; }
    phones before (and unless) a game resolves — this guard keeps hidden
    meaning hidden at every width. */
 .match-footer a[hidden] { display: none; }
+/* v1.195.0 — the same guard for the footer's Share button (#ng-share, a
+   .text-button): the ≤760px .match-footer .text-button inline-flex rule
+   below would outrank the UA's [hidden] style exactly the way the link
+   rule did in v1.194.0, surfacing a live button in the quiet state. */
+.match-footer button[hidden] { display: none; }
 /* v1.62.0 — hero match-card frost-skeleton first paint: shimmer blocks mirror
    the title, team abbrs, venue, meta, and countdown units so the card reads as
    "warming up" instead of mismatched bare text, and real data swaps in

@@ -350,6 +350,61 @@ CF.calendarHref = (game) => {
   return ics ? "data:text/calendar;charset=utf-8," + encodeURIComponent(ics) : "";
 };
 
+/* v1.195.0 — the game leaves with the fan. Every surface resolved the
+   Bears game and the last three releases carried it further (the tab
+   title, the live favicon, the calendar file), but a fan who wanted to
+   send the matchup or the score to a friend still had to copy the URL
+   and type the details themselves. shareTextForGame writes the one
+   factual line a fan would send — the same voice the tab title uses:
+   a pre-game reads "Chicago Bears at Green Bay Packers · Sun, Oct 11 ·
+   3:25 PM · FOX — via The Cold Front" (Time TBD when the feed has not
+   confirmed a kickoff, never an invented one), a live game carries the
+   score and clock, a final carries the score with BEARS WIN up front
+   when Chicago won. In/post lines refuse placeholder scores outright —
+   a share must never invent a score. shareGame sends it through the
+   Web Share API where the platform offers one and falls back to the
+   clipboard (text + link) everywhere else; it resolves "shared",
+   "copied", "cancelled" (the fan closed the share sheet — not an
+   error, and never a clipboard hijack on top of it) or "unavailable"
+   so the caller can answer honestly in the button label. */
+CF.shareTextForGame = (game) => {
+  if (!game || !game.name) return "";
+  const ha = game.home && game.home.abbr, aa = game.away && game.away.abbr;
+  if (!ha || !aa || (ha !== "CHI" && aa !== "CHI")) return "";
+  const num = (v) => (v == null || v === "" ? NaN : Number(v));
+  if (game.state === "in" || game.state === "post") {
+    const hs = num(game.home && game.home.score), as = num(game.away && game.away.score);
+    if (!Number.isFinite(hs) || !Number.isFinite(as)) return "";
+    const line = aa + " " + as + " @ " + ha + " " + hs;
+    if (game.state === "in") {
+      const clock = game.display && !/^(live|scheduled)$/i.test(game.display) ? " · " + game.display : "";
+      return "🔴 LIVE · " + line + clock + " — The Cold Front";
+    }
+    const bears = ha === "CHI" ? hs : as, opp = ha === "CHI" ? as : hs;
+    return (bears > opp ? "BEARS WIN · Final · " : "Final · ") + line + " — The Cold Front";
+  }
+  if (game.state !== "pre") return "";
+  const when = CF.fmtDate(game.date) + " · " + (game.timeValid ? (CF.kickoffTime(game.date) || "Time TBD") : "Time TBD");
+  return game.name + " · " + when + (game.tv ? " · " + game.tv : "") + " — via The Cold Front";
+};
+
+CF.shareGame = async (game) => {
+  const text = CF.shareTextForGame(game);
+  if (!text) return "unavailable";
+  const url = "https://coldfronthq.com/";
+  if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+    try { await navigator.share({ title: "The Cold Front", text, url }); return "shared"; }
+    catch (e) { if (e && e.name === "AbortError") return "cancelled"; }
+  }
+  try {
+    if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(text + " " + url);
+      return "copied";
+    }
+  } catch (e) { /* clipboard refused — the caller says so honestly */ }
+  return "unavailable";
+};
+
 /* v1.49.0 — Polymarket line-movement chip: compares this render's price
    against the previous render and returns a tiny ▲/▼ chip when the price
    moved at least one cent, otherwise an empty string. Prices are 0..1. */
