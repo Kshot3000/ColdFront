@@ -950,6 +950,19 @@ main:focus { outline: none; }
 }
 .next-opp-body { flex-direction: column; gap: 12px; }
 .desk-meta-row { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; }
+/* v1.196.0 — the Sunday desk's own action row: "Add to calendar" and
+   "Share" join the Games desk card under the hero footer's honesty
+   rules (games.js paints them only for a resolved game). The row
+   starts hidden and each control starts hidden, and the [hidden]
+   guards below keep hidden meaning hidden at every width — the
+   ≤760px inline-flex rule in the v1.157.0 phone block would
+   otherwise outrank the UA's [hidden] style for both the link and
+   the .text-button, exactly as it did for the hero footer in
+   v1.194.0/v1.195.0. */
+.desk-actions { display: flex; flex-wrap: wrap; gap: 4px 24px; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff12; font-size: 12px; }
+.desk-actions[hidden] { display: none; }
+.desk-actions a[hidden] { display: none; }
+.desk-actions button[hidden] { display: none; }
 .duel {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -1539,6 +1552,7 @@ tr.ld-div.me .ld-div-abbr {
 @media (max-width: 760px) {
   .section-head a:not(.btn) { display: inline-flex; align-items: center; min-height: 40px; }
   .match-footer a { display: inline-flex; align-items: center; min-height: 40px; }
+  .desk-actions a, .desk-actions .text-button { display: inline-flex; align-items: center; min-height: 40px; }
   .wt-item { align-items: center; min-height: 40px; }
   .player-info .player-link { display: inline-flex; align-items: center; min-height: 40px; }
   .profile-link { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; vertical-align: middle; }

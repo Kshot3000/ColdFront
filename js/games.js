@@ -9,6 +9,7 @@
   let lastEvents = [];
   let lastPastGame = null; // most recent completed Bears game (season log)
   let nextGame = null; // v1.193.0 — the next Bears game, resolved by the Sunday desk
+  let deskShareGame196 = null; // v1.196.0 — the full event game the desk Share button sends; repainted with the desk
   let boardDay = null; // v1.193.0 — the ISO day the board last painted
   let daySetter = null; // v1.193.0 — wireDates' setter, so the board can jump days
 
@@ -542,6 +543,39 @@
     duel.hidden = false;
   }
 
+  /* v1.196.0 — the desk plans the Sunday too. The home hero's match
+     footer gained "Add to calendar" (v1.194.0) and "Share" (v1.195.0),
+     but a fan who lands on the Games page — from a bookmark, a search
+     result, or the week clock's gameday link — plans from this card,
+     and it offered neither: the desk resolved the same next game down
+     to its TV network and then stopped at information. The desk now
+     carries the same two actions under the same honesty rules, driven
+     by the full event game the desk's resolver already keeps
+     (g.game): the calendar link appears only for a pre-game (CF.
+     calendarHref itself refuses an unconfirmed kickoff), Share only
+     when CF.shareTextForGame can describe the game without inventing
+     a score, and the whole row hides again in the quiet state so a
+     feed-down desk never shows dead controls. */
+  function paintDeskActions(g) {
+    const row = CF.$("#next-opp-actions");
+    const cal = CF.$("#desk-cal");
+    const share = CF.$("#desk-share");
+    if (!row || !cal || !share) return;
+    const full = g && g.game ? g.game : null;
+    const calHref = full && full.state === "pre" ? CF.calendarHref(full) : "";
+    cal.hidden = !calHref;
+    if (calHref) {
+      cal.href = calHref;
+      cal.setAttribute("download", "bears-" + CF.dateInput(full.date) + ".ics");
+      cal.setAttribute("aria-label", "Add to calendar: " + full.name + ", " + CF.fmtDate(full.date) + " " + (CF.kickoffTime(full.date) || ""));
+    }
+    const shareText = full ? CF.shareTextForGame(full) : "";
+    share.hidden = !shareText;
+    deskShareGame196 = shareText ? full : null;
+    if (shareText) share.setAttribute("aria-label", "Share this game: " + full.name);
+    row.hidden = !(calHref || shareText);
+  }
+
   async function loadNextOpponent() {
     const vs = CF.$("#next-opp-vs");
     const meta = CF.$("#next-opp-meta");
@@ -567,6 +601,7 @@
       meta.textContent = "Next kickoff lands here when the schedule answers.";
       chip.innerHTML = '<span class="opp-chip dim">no opponent yet</span>';
       if (preview) { preview.innerHTML = ""; preview.hidden = true; }
+      paintDeskActions(null);
       if (CF.clearKickoffBanner) CF.clearKickoffBanner();
       return;
     }
@@ -596,6 +631,7 @@
       " · " + CF.esc(site) +
       (g.venue ? " · " + CF.esc(g.venue) : (g.home ? " · Soldier Field" : "")) +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
+    paintDeskActions(g);
     chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
     if (schedData) await paintMatchupPreview(schedData, g);
 
@@ -771,6 +807,23 @@
       const target = chiDayISO(nextGame.date);
       const off = Math.round((Date.parse(target + "T12:00:00Z") - Date.parse(isoDate(0) + "T12:00:00Z")) / 86400000);
       if (Number.isFinite(off)) daySetter(off);
+    });
+    /* v1.196.0 — the desk Share button sends the game the desk is
+       showing: the platform share sheet where one exists, the
+       clipboard (with a "Link copied" answer in the label) where it
+       doesn't — the hero button's exact behaviour (v1.195.0). A
+       cancelled sheet changes nothing; an unavailable path says so,
+       briefly, in the label. */
+    const deskShareBtn196 = CF.$("#desk-share");
+    let deskShareTimer196 = 0;
+    if (deskShareBtn196) deskShareBtn196.addEventListener("click", async () => {
+      if (!deskShareGame196) return;
+      const status = await CF.shareGame(deskShareGame196);
+      if (status !== "copied" && status !== "unavailable") return;
+      const original196 = deskShareBtn196.innerHTML;
+      deskShareBtn196.textContent = status === "copied" ? "✓ Link copied" : "Share unavailable";
+      clearTimeout(deskShareTimer196);
+      deskShareTimer196 = setTimeout(() => { deskShareBtn196.innerHTML = original196; }, 2400);
     });
     loadBoard();
     loadLog();
