@@ -337,7 +337,9 @@
 
   /* ---------- next opponent card ----------
      Home → Chicago weather chip (existing CF.loadWeather).
-     Away → opponent city note from schedule geo / venue / NFL_CITIES. */
+     Away → venue weather chip (v1.197.0, CF.venueWeatherFor),
+     falling back to the opponent city note from schedule geo /
+     venue / NFL_CITIES when the venue sky can't be read. */
   function formatDeskLine(line) {
     if (!line || !line.lines || !line.lines.length) return null;
     const l = line.lines[0];
@@ -481,10 +483,14 @@
         '<div class="s">No live line or Bears Polymarket right now. <a href="odds.html">Odds board →</a></div></div>';
     }
 
+    /* v1.197.0 — the desk reads the sky where the game is: a home
+       game reads Chicago, an away game reads the venue city via the
+       shared kickoff line (CF.kickoffWeatherHTML now takes the game
+       itself), and an unreadable venue simply omits the block. */
     let wxBlock = "";
-    if (g.home && CF.kickoffWeatherHTML) {
+    if (CF.kickoffWeatherHTML) {
       try {
-        const wx = await CF.kickoffWeatherHTML(true);
+        const wx = await CF.kickoffWeatherHTML(g);
         if (wx) {
           wxBlock =
             '<div class="matchup-stat desk-wx">' +
@@ -497,7 +503,7 @@
 
     root.innerHTML =
       '<div class="desk-title"><span class="k">Sunday desk</span> <span class="s">next opp · rest · last meetings · line' +
-      (g.home ? " · home wx" : "") + "</span></div>" +
+      (wxBlock ? (g.home ? " · home wx" : " · road wx") : "") + "</span></div>" +
       lastHTML + restHTML + histHTML + wireHTML + polyHTML + wxBlock;
     root.hidden = false;
   }
@@ -660,10 +666,29 @@
         chip.innerHTML = '<span class="opp-chip">❄ Chicago · weather unavailable</span>';
       }
     } else {
+      /* v1.197.0 — the away chip reads the venue sky, the way the
+         home chip reads Chicago's: a live Open-Meteo reading for the
+         host city (CF.venueWeatherFor), labelled as the latest
+         reading there. When the venue can't be resolved or read,
+         the chip keeps its road-trip note — geography, never an
+         invented temperature. */
       const note = CF.API.nflCityNote(g.oppAbbr, g.city, g.venue);
-      chip.innerHTML = note
+      let wxChip = "";
+      try {
+        const got = CF.venueWeatherFor ? await CF.venueWeatherFor(g) : null;
+        if (got) {
+          const f = (c) => Math.round(Number(c) * 9 / 5 + 32);
+          const desc = got.wx.phrase ? CF.esc(got.wx.phrase) : CF.esc(CF.weatherCode(got.wx.code));
+          wxChip =
+            '<span class="opp-chip away" title="' + CF.esc((g.venue || got.geo.city) + " conditions — latest reading, not a kickoff forecast") + '">' +
+            "❄ " + CF.esc(got.geo.city) + " · <b>" + f(got.wx.tempC) + "°F</b> " + desc +
+            (got.wx.wind != null ? " · wind " + Math.round(got.wx.wind / 1.609344) + " mph" : "") +
+            "</span>";
+        }
+      } catch (e3) { /* venue weather quiet — the road note below still paints */ }
+      chip.innerHTML = wxChip || (note
         ? '<span class="opp-chip away" title="Away site">✈ Road trip · <b>' + CF.esc(note) + "</b></span>"
-        : '<span class="opp-chip away">✈ Road game · city TBD</span>';
+        : '<span class="opp-chip away">✈ Road game · city TBD</span>');
     }
   }
 

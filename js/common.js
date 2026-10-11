@@ -1552,9 +1552,157 @@ CF.loadInjuryPrior = async () => {
   } catch (e) { /* no baked prior */ }
   return null;
 };
-/* Compact Chicago kickoff weather line for Sunday desk / next-opp (home only). */
-CF.kickoffWeatherHTML = async (isHome) => {
-  if (!isHome) return "";
+/* v1.197.0 — the front travels: kickoff weather follows the Bears on
+   the road. Until now the kickoff line was home-only: on an away week
+   — half the season, including a January trip to Lambeau — both desks
+   went silent on the one thing this site is about, and the only
+   weather on the page was Chicago's, where the game was not. The
+   venue table below is static geography (each NFL home city's stadium
+   coordinates, the same class of fact as CF.API.NFL_CITIES); the
+   numbers themselves always come live from Open-Meteo, and a venue
+   whose weather cannot be read paints nothing at all — never a
+   guessed temperature. */
+/* NFL home-city stadium coordinates (static geography). */
+CF.VENUE_GEO = {
+  ARI: { city: "Glendale", lat: 33.5276, lon: -112.2626 },
+  ATL: { city: "Atlanta", lat: 33.7554, lon: -84.4008 },
+  BAL: { city: "Baltimore", lat: 39.278, lon: -76.6227 },
+  BUF: { city: "Orchard Park", lat: 42.7738, lon: -78.787 },
+  CAR: { city: "Charlotte", lat: 35.2258, lon: -80.8526 },
+  CHI: { city: "Chicago", lat: 41.8623, lon: -87.6167 },
+  CIN: { city: "Cincinnati", lat: 39.0955, lon: -84.5161 },
+  CLE: { city: "Cleveland", lat: 41.5061, lon: -81.6995 },
+  DAL: { city: "Arlington", lat: 32.7473, lon: -97.0945 },
+  DEN: { city: "Denver", lat: 39.7439, lon: -105.0201 },
+  DET: { city: "Detroit", lat: 42.34, lon: -83.0456 },
+  GB: { city: "Green Bay", lat: 44.5013, lon: -88.0622 },
+  HOU: { city: "Houston", lat: 29.6847, lon: -95.4107 },
+  IND: { city: "Indianapolis", lat: 39.7601, lon: -86.1639 },
+  JAX: { city: "Jacksonville", lat: 30.3239, lon: -81.6373 },
+  KC: { city: "Kansas City", lat: 39.0489, lon: -94.4839 },
+  LAC: { city: "Inglewood", lat: 33.9535, lon: -118.3392 },
+  LAR: { city: "Inglewood", lat: 33.9535, lon: -118.3392 },
+  LV: { city: "Las Vegas", lat: 36.0909, lon: -115.1833 },
+  MIA: { city: "Miami Gardens", lat: 25.958, lon: -80.2389 },
+  MIN: { city: "Minneapolis", lat: 44.9736, lon: -93.2575 },
+  NE: { city: "Foxborough", lat: 42.0909, lon: -71.2643 },
+  NO: { city: "New Orleans", lat: 29.9508, lon: -90.0812 },
+  NYG: { city: "East Rutherford", lat: 40.8135, lon: -74.0745 },
+  NYJ: { city: "East Rutherford", lat: 40.8135, lon: -74.0745 },
+  PHI: { city: "Philadelphia", lat: 39.9008, lon: -75.1675 },
+  PIT: { city: "Pittsburgh", lat: 40.4468, lon: -80.0158 },
+  SEA: { city: "Seattle", lat: 47.5952, lon: -122.3316 },
+  SF: { city: "Santa Clara", lat: 37.403, lon: -121.97 },
+  TB: { city: "Tampa", lat: 27.9759, lon: -82.5033 },
+  TEN: { city: "Nashville", lat: 36.1665, lon: -86.7713 },
+  WSH: { city: "Landover", lat: 38.9076, lon: -76.8645 },
+  WAS: { city: "Landover", lat: 38.9076, lon: -76.8645 },
+};
+
+/* Resolve the venue geography for a next-game object (the shape
+   nextBearsGameFromSchedule returns: home flag, oppAbbr, and the
+   full event game in .game). The feed's own venue city wins when it
+   names a city in the table; a feed city the table doesn't know
+   (a neutral site — London, Munich) resolves to null rather than
+   borrowing the opponent's home weather, which would plant another
+   city's sky over the game. With no feed city, the opponent's home
+   city is the venue by definition of an away game. */
+CF.venueGeo = (g) => {
+  if (!g) return null;
+  const full = g.game || g;
+  const cityRaw = String((full && full.city) || g.city || "").trim().toLowerCase();
+  if (cityRaw) {
+    for (const abbr of Object.keys(CF.VENUE_GEO)) {
+      const v = CF.VENUE_GEO[abbr];
+      if (v.city.toLowerCase() === cityRaw) return { abbr, city: v.city, lat: v.lat, lon: v.lon };
+    }
+    return null;
+  }
+  const abbr = String(g.oppAbbr || "").toUpperCase();
+  const v = CF.VENUE_GEO[abbr];
+  return v ? { abbr, city: v.city, lat: v.lat, lon: v.lon } : null;
+};
+
+/* Current weather at arbitrary coordinates — CF.loadWeather's
+   Open-Meteo read, parameterised. The Chicago strip keeps its own
+   loader and cache; a venue read caches under its own key so the
+   two never overwrite each other. Daily fields resolve in the
+   venue's own timezone ("auto") so "today" is the venue's day.
+   Returns null when no honest reading exists. */
+CF.loadWeatherAt = async (lat, lon, cacheKey) => {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const base = CF.CONFIG.endpoints.weather;
+  const p = Object.assign({}, CF.CONFIG.endpoints.weatherParams, { latitude: lat, longitude: lon, timezone: "auto" });
+  const qs = Object.keys(p).map((k) => encodeURIComponent(k) + "=" + encodeURIComponent(p[k])).join("&");
+  try {
+    const d = await CF.fetchVia(base + "?" + qs, { timeout: 8000 });
+    const cur = (d && d.current) || {};
+    if (!Number.isFinite(cur.temperature_2m)) throw new Error("Weather reading missing");
+    let precipProb = null, snowCm = null;
+    if (d.daily && d.daily.precipitation_probability_max && d.daily.precipitation_probability_max.length) {
+      precipProb = d.daily.precipitation_probability_max[0];
+    }
+    if (d.daily && d.daily.snowfall_sum && d.daily.snowfall_sum.length) {
+      snowCm = d.daily.snowfall_sum[0];
+    }
+    const wx = {
+      tempC: cur.temperature_2m,
+      feelsC: cur.apparent_temperature,
+      wind: cur.wind_speed_10m,
+      gusts: cur.wind_gusts_10m,
+      humidity: cur.relative_humidity_2m,
+      code: cur.weather_code,
+      time: cur.time,
+      snowProb: precipProb,
+      snowCm,
+      daily: d.daily || null,
+      source: "open-meteo",
+    };
+    wx.readAt = Date.now();
+    wx.gauge = CF.coldFrontGauge(wx);
+    if (cacheKey) CF.cacheSet(cacheKey, wx, CF.CONFIG.ttl.weather);
+    return wx;
+  } catch (e) {
+    if (cacheKey) {
+      const c = CF.cacheGet(cacheKey);
+      if (c) { c.offline = true; return c; }
+    }
+    return null;
+  }
+};
+
+/* The venue reading for a next-game object: { geo, wx } or null. */
+CF.venueWeatherFor = async (g) => {
+  const geo = CF.venueGeo(g);
+  if (!geo) return null;
+  const wx = await CF.loadWeatherAt(geo.lat, geo.lon, "weather-venue-" + geo.abbr.toLowerCase());
+  return wx && wx.tempC != null ? { geo, wx } : null;
+};
+
+/* Compact kickoff weather line for Sunday desk / next-opp.
+   v1.197.0 — the argument is now the next-game object (the legacy
+   `true` still means the home game): a home game reads Chicago
+   exactly as before; an away game reads the venue city and names
+   it, under the same honesty label — the latest reading there,
+   never a kickoff forecast. An away venue that cannot be resolved
+   or read returns "" so the desks simply omit the block. */
+CF.kickoffWeatherHTML = async (arg) => {
+  if (!arg) return "";
+  const isHome = arg === true || arg.home !== false;
+  if (!isHome) {
+    try {
+      const got = await CF.venueWeatherFor(arg);
+      if (!got) return "";
+      const wx = got.wx, geo = got.geo;
+      const f = Math.round(Number(wx.tempC) * 9 / 5 + 32);
+      const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
+      const wind = wx.wind != null ? " · wind " + Math.round(wx.wind / 1.609344) + " mph" : "";
+      const gauge = wx.gauge ? (' · CFI <b>' + wx.gauge.score + "</b>") : "";
+      return '<div class="kickoff-wx" title="Latest weather in ' + CF.esc(geo.city) + '; not a kickoff forecast">' +
+        '<span class="k">' + CF.esc(geo.city) + " now</span>" +
+        '<span class="kickoff-wx-body">❄ ' + CF.esc(geo.city) + " · <b>" + f + "°F</b> " + desc + wind + gauge + "</span></div>";
+    } catch (e) { return ""; }
+  }
   try {
     const wx = await CF.loadWeather();
     if (!wx || wx.tempC == null) {

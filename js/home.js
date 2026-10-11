@@ -470,6 +470,16 @@
       }
     } catch (e2) { /* quiet */ }
 
+    /* v1.197.0 — the desk reads the sky where the game is: the
+       kickoff line now takes the game itself, so an away week paints
+       the venue city's weather (CF.venueWeatherFor under the hood)
+       instead of going silent, and the source pill below names
+       game-day weather only when a line actually painted. */
+    let wxHTML = "";
+    if (CF.kickoffWeatherHTML) {
+      try { wxHTML = await CF.kickoffWeatherHTML(g); } catch (e3) { wxHTML = ""; }
+    }
+
     // v1.69.0 — fan-facing status copy: the pill names the live sources feeding
     // the desk in plain words, not developer shorthand.
     if (pill) {
@@ -477,15 +487,10 @@
       bits.push(src === "live" ? "Live schedule" : "Schedule snapshot");
       if (lineOk) bits.push("Wire line");
       if (polyOk) bits.push("Polymarket");
-      if (g.home) bits.push("Game-day weather");
+      if (wxHTML) bits.push("Game-day weather");
       // v1.94.0 — the pill names its sources AND when they were last read.
       CF.freshStamp(pill, bits.join(" · "), Date.now());
       pill.className = "tag";
-    }
-
-    let wxHTML = "";
-    if (g.home && CF.kickoffWeatherHTML) {
-      try { wxHTML = await CF.kickoffWeatherHTML(true); } catch (e3) { wxHTML = ""; }
     }
 
     root.innerHTML =
