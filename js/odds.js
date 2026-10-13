@@ -9,7 +9,33 @@
   let polyEntered = false;
   // v1.49.0 — previous Polymarket prices per market (event slug + question),
   // so the next render can flag line movement with ▲/▼ chips
+  // v1.198.0 — the baseline survives the visit. Until now polyPrev lived
+  // only in this page's memory: the legend and the chip both promise
+  // movement "since your last check", but a reload — every real check —
+  // wiped the baseline, so a first paint could never carry a chip and
+  // the promise only held if a price happened to move during the 60s
+  // auto-refresh while the tab sat open. The baseline now persists on
+  // the device (cf.polyPrev, the same device-local pattern as the
+  // roster favorites and the injury snapshot): a returning fan's first
+  // paint compares against the prices they actually last saw. Storage
+  // denied or corrupt degrades to the old in-memory behaviour exactly.
+  const POLY_PREV_LS = "cf.polyPrev";
   const polyPrev = {};
+  try {
+    const savedPoly = JSON.parse(localStorage.getItem(POLY_PREV_LS) || "{}");
+    if (savedPoly && typeof savedPoly === "object" && !Array.isArray(savedPoly)) {
+      Object.keys(savedPoly).forEach((k) => {
+        const v = Number(savedPoly[k]);
+        if (Number.isFinite(v) && v >= 0 && v <= 1) polyPrev[k] = v;
+      });
+    }
+  } catch (e) { /* storage unavailable — in-memory only, as before */ }
+  // Persist the baseline, pruned to the markets this render saw so a
+  // resolved market's prices don't linger on the device forever.
+  const polyPrevSave = (seen) => {
+    Object.keys(polyPrev).forEach((k) => { if (!seen.has(k)) delete polyPrev[k]; });
+    try { localStorage.setItem(POLY_PREV_LS, JSON.stringify(polyPrev)); } catch (e) { /* ignore */ }
+  };
   // v1.86.0 — Polymarket volumes are dollars; show them that way. The bare
   // CF.fmt printed the raw float (268.18067599999995 -> "268.2"), which reads
   // like a share count sitting next to compact K/M figures. Whole dollars
@@ -204,6 +230,9 @@
       let n = 0; // per-card stagger index for the first-paint entrance
       // v1.94.0 — the Polymarket header carries its own freshness stamp.
       CF.freshStamp(CF.$("#poly-pill"), "Polymarket · live", Date.now());
+      // v1.198.0 — keys this render sees, so the persisted baseline can
+      // be pruned to live markets once the paint lands.
+      const polySeen = new Set();
       box.innerHTML = bears.slice(0, 8).map((ev) => {
         const kpre = (ev.slug || ev.url || ev.title) + "::";
         return (ev.markets || []).map((m0) => {
@@ -211,6 +240,7 @@
           // the RAW feed values, so the chips report real feed movement even
           // when a side had to be derived for display below).
           const kY = kpre + m0.question + "::yes", kN = kpre + m0.question + "::no";
+          polySeen.add(kY); polySeen.add(kN);
           const yesChip = CF.polyMoveChip(polyPrev[kY], m0.yes);
           const noChip = CF.polyMoveChip(polyPrev[kN], m0.no);
           polyPrev[kY] = m0.yes; polyPrev[kN] = m0.no;
@@ -252,6 +282,8 @@
           "</span></div>";
         }).join("");
       }).join("");
+      // v1.198.0 — this paint becomes the next visit's "last check".
+      polyPrevSave(polySeen);
       polyEntered = true;
     } catch (e) {
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';
