@@ -3,8 +3,57 @@
 (function () {
   let countdown = 0, predictionGame = null, predictionOppAbbr = "OPP";
   let shareGame195 = null; // v1.195.0 — the game the hero Share button sends; repainted with the hero
+  /* v1.199.0 — your call gets its verdict. A saved pick (cf.pick.<id>) was
+     write-only after kickoff: the toggle disables, the form stays hidden, and
+     the pick was never compared with the game it predicted — when the hero
+     rolled to the next game it was simply orphaned on the device. This grades
+     a pick against the real score, in the hero's own voice: an exact score
+     is an exact call, the right winner (or a called tie) is a hit, anything
+     else is an honest miss, and a live game reports on-track / off-the-pace
+     against the current score. Anything unprovable — no pick, corrupt pick,
+     placeholder scores, a pre-game — returns null and the strip stays
+     hidden, so the verdict can never invent a result. */
+  const pickVerdict199 = (saved, oppAbbr, state, bears, opp) => {
+    if (!saved) return null;
+    const pb = Number(saved.bears), po = Number(saved.other);
+    if (!Number.isFinite(pb) || !Number.isFinite(po)) return null;
+    if (!Number.isFinite(bears) || !Number.isFinite(opp)) return null;
+    const pick = "CHI " + pb + " · " + oppAbbr + " " + po;
+    const actual = "CHI " + bears + " · " + oppAbbr + " " + opp;
+    const pickWin = pb > po ? 1 : pb < po ? -1 : 0;
+    const actWin = bears > opp ? 1 : bears < opp ? -1 : 0;
+    if (state === "post") {
+      if (pb === bears && po === opp) return { cls: "is-exact", text: "🎯 Exact call! Your pick: " + pick + " — final: " + actual + "." };
+      if (pickWin === actWin) return { cls: "is-hit", text: "✓ You called it. Your pick: " + pick + " — final: " + actual + "." };
+      return { cls: "", text: "Your call missed. Your pick: " + pick + " — final: " + actual + "." };
+    }
+    if (state === "in") {
+      const on = pickWin === actWin;
+      return { cls: on ? "is-hit" : "", text: "Your call: " + pick + " — live: " + actual + (on ? " · on track." : " · off the pace.") };
+    }
+    return null;
+  };
   let stndEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
   const show = (selector, text) => { CF.$(selector).textContent = text; };
+  // v1.58.0 — the live differential chip answers every keystroke.
+  // v1.199.0 — hoisted from the DOMContentLoaded handler to IIFE scope:
+  // loadMatchup has called it since v1.58.0 whenever a saved pick exists,
+  // but a const inside the handler was never in loadMatchup's scope — a
+  // returning pick-holder's first paint threw ReferenceError there and
+  // skipped the rest of the paint (countdown, live-title sync). At IIFE
+  // scope the call site and the click/input listeners share one function.
+  const updatePredictionDiff = () => {
+    const diff = CF.$("#prediction-diff");
+    if (!diff) return;
+    const rawB = CF.$("#prediction-bears").value.trim(), rawO = CF.$("#prediction-other").value.trim();
+    const bears = Number(rawB), other = Number(rawO);
+    const ok = (raw, v) => raw !== "" && Number.isInteger(v) && v >= 0 && v <= 99;
+    diff.className = "prediction-diff";
+    if (!ok(rawB, bears) || !ok(rawO, other)) { diff.textContent = ""; return; }
+    if (bears > other) { diff.textContent = "BEARS BY " + (bears - other); diff.classList.add("is-bears"); }
+    else if (other > bears) { diff.textContent = predictionOppAbbr + " BY " + (other - bears); diff.classList.add("is-opp"); }
+    else { diff.textContent = "DEAD EVEN"; diff.classList.add("is-tie"); }
+  };
 
   async function loadMatchup() {
     const [board, schedule] = await Promise.allSettled([CF.API.getScoreboard(), CF.API.getSchedule()]);
@@ -44,6 +93,9 @@
       CF.$("#ng-cal").hidden = true;
       CF.$("#ng-share").hidden = true;
       shareGame195 = null;
+      /* v1.199.0 — the quiet state carries no verdict either. */
+      const verdictQuiet199 = CF.$("#prediction-verdict");
+      if (verdictQuiet199) { verdictQuiet199.hidden = true; verdictQuiet199.textContent = ""; verdictQuiet199.className = "prediction-verdict"; }
       CF.$("#prediction-toggle").disabled = true;
       CF.syncLiveTitle(null);
       return;
@@ -138,6 +190,25 @@
         CF.$("#prediction-other").value = saved.other;
         show("#prediction-status", "Your pick: CHI " + saved.bears + " · " + opponent + " " + saved.other + ". Saved on this device.");
         updatePredictionDiff();
+      }
+    }
+    /* v1.199.0 — paint the verdict strip on every beat (the pick is re-read
+       from the device each time, so a pick saved moments before kickoff
+       grades too): live and final games with a saved pick and real scores
+       show how the call is doing / did; everything else keeps it hidden. */
+    const verdict199 = CF.$("#prediction-verdict");
+    if (verdict199) {
+      let savedPick199 = null;
+      try { savedPick199 = JSON.parse(localStorage.getItem("cf.pick." + game.id) || "null"); } catch (_) { /* storage unavailable — no verdict */ }
+      const v199 = pickVerdict199(savedPick199, bearsHome37 ? game.away.abbr : game.home.abbr, game.state, bs37, os37);
+      if (v199) {
+        verdict199.hidden = false;
+        verdict199.textContent = v199.text;
+        verdict199.className = "prediction-verdict" + (v199.cls ? " " + v199.cls : "");
+      } else {
+        verdict199.hidden = true;
+        verdict199.textContent = "";
+        verdict199.className = "prediction-verdict";
       }
     }
     let lastCountdown = null;
@@ -823,19 +894,6 @@
       CF.$("#prediction-toggle").setAttribute("aria-expanded", String(!form.hidden));
       if (!form.hidden) { updatePredictionDiff(); CF.$("#prediction-bears").focus(); }
     });
-    // v1.58.0 — the live differential chip answers every keystroke.
-    const updatePredictionDiff = () => {
-      const diff = CF.$("#prediction-diff");
-      if (!diff) return;
-      const rawB = CF.$("#prediction-bears").value.trim(), rawO = CF.$("#prediction-other").value.trim();
-      const bears = Number(rawB), other = Number(rawO);
-      const ok = (raw, v) => raw !== "" && Number.isInteger(v) && v >= 0 && v <= 99;
-      diff.className = "prediction-diff";
-      if (!ok(rawB, bears) || !ok(rawO, other)) { diff.textContent = ""; return; }
-      if (bears > other) { diff.textContent = "BEARS BY " + (bears - other); diff.classList.add("is-bears"); }
-      else if (other > bears) { diff.textContent = predictionOppAbbr + " BY " + (other - bears); diff.classList.add("is-opp"); }
-      else { diff.textContent = "DEAD EVEN"; diff.classList.add("is-tie"); }
-    };
     for (const id of ["#prediction-bears", "#prediction-other"]) {
       CF.$(id).addEventListener("input", updatePredictionDiff);
     }

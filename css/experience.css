@@ -337,6 +337,32 @@ main:focus { outline: none; }
 }
 .predict-save { width: 100%; margin-top: 12px; }
 .prediction .src-note { font-size: 11px; margin: 10px 0 0; color: #8fa9bd; }
+/* ---------- v1.199.0 — the verdict strip ----------
+   A saved pick used to vanish at kickoff (toggle disabled, form hidden,
+   pick never graded). The strip sits under the match footer in the pick
+   card's own voice — the predict-well's ground and hairline — and warms
+   orange when the call lands: a steady border for calling the winner,
+   the differential chip's glow for an exact score. A miss stays steel,
+   stated plainly. The [hidden] guard keeps hidden meaning hidden: the
+   strip is a block box, so the UA rule would hold anyway, but the family
+   doctrine (v1.194.0–v1.196.0) never leaves that to chance. */
+.prediction-verdict {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid #d4eaff1c;
+  border-radius: 12px;
+  background: #081426b8;
+  color: #cfe0ee;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.prediction-verdict[hidden] { display: none; }
+.prediction-verdict.is-hit { border-color: rgba(232, 84, 30, 0.55); color: #ffd9c2; }
+.prediction-verdict.is-exact {
+  border-color: rgba(232, 84, 30, 0.8);
+  color: #ffd9c2;
+  box-shadow: 0 0 12px rgba(232, 84, 30, 0.35);
+}
 #prediction-toggle .toggle-mark { display: inline-block; transition: transform 0.25s var(--ease-out); }
 #prediction-toggle[aria-expanded="true"] .toggle-mark { transform: rotate(45deg); }
 #prediction-toggle:hover, #prediction-toggle:focus-visible { color: var(--orange-hot); }
