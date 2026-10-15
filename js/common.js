@@ -1541,7 +1541,13 @@ CF.injuryMovementHTML = (diff, opts) => {
 /* Resolve prior rows: device snapshot first, else baked nightly injuries. */
 CF.loadInjuryPrior = async () => {
   const local = CF.injSnapGet();
-  if (local && local.rows && local.rows.length) return { rows: local.rows, source: "device" };
+  // v1.200.0 — a device snapshot is authoritative even when its rows
+  // are empty: since the injuries page learned to write an empty
+  // table (a full-strength report), an empty device trail means
+  // "the report was empty when this device last read it", not "no
+  // trail". Falling through to the baked snapshot here resurrected
+  // its long-cleared names as fresh Cleared chips on every visit.
+  if (local && local.rows) return { rows: local.rows, source: "device" };
   try {
     // Use snapshotGet so /_qa and GitHub Pages subpaths resolve correctly.
     const data = await CF.snapshotGet("injuries-bears");

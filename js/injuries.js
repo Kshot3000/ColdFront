@@ -47,7 +47,13 @@
       host.innerHTML = "";
     }
     // Always refresh the device prior from the live table so the next visit diffs cleanly.
-    if (rows && rows.length) CF.injSnapSet(rows);
+    // v1.200.0 — an EMPTY live table is a result too: the whole report
+    // cleared. Writing it (instead of only writing non-empty tables)
+    // is what lets a clearing show exactly once — the names diff out
+    // as Cleared below, the prior advances to empty, and the next
+    // visit starts quiet instead of re-reporting the same clearing
+    // against a stale prior forever.
+    if (rows) CF.injSnapSet(rows);
   }
 
   /* The table prefers live data: league report (per-player status +
@@ -107,6 +113,14 @@
         note.textContent = "Check the official pregame report for final availability.";
         body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
         paintSnapshot([]);
+        // v1.200.0 — full strength is the loudest movement there is:
+        // everyone who was listed has cleared. This branch used to
+        // return before paintMovement, so a clearing never painted
+        // its Cleared chips and the device prior kept the old names —
+        // the movement strip stayed blank on the one week it had the
+        // best news, and home kept diffing against ghosts. Diff the
+        // empty table like any other table.
+        await paintMovement([]);
         return;
       }
       if (rows.length) {
