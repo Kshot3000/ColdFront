@@ -566,7 +566,7 @@ test('highlights NFL league reels merge with a source badge, and the freshness l
  const hjs=fs.readFileSync(path.join(__dirname,'../js/highlights.js'),'utf8');
  assert.ok(hjs.includes('UCDVYQ4Zhbm3S2dlz7P1GBDg'),'the verified NFL league channel ID is wired in, not a guessed one');
  const hhtml=fs.readFileSync(path.join(__dirname,'../highlights.html'),'utf8');
- assert.ok(!/highlights\.js\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.js\?v=(?!1\.201\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.js key');
  assert.ok(!/highlights\.css\?v=(?!1\.187\.0")1\.[0-9]+\.0"/.test(hhtml),'highlights.html has no stale highlights.css key');
  assert.ok(hhtml.includes('https://www.youtube.com/@NFL'),'the page links the NFL channel alongside the Bears channel');
  const atom=(items)=>'<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">'+
@@ -3553,7 +3553,7 @@ test('v1.121.0: the featured highlights poster is never a black void',async()=>{
  }finally{p.close();}
  const html=fs.readFileSync(path.join(__dirname,'..','highlights.html'),'utf8');
  assert.ok(html.includes('css/highlights.css?v=1.187.0'),'highlights.html busts the highlights.css cache');
- assert.ok(html.includes('js/highlights.js?v=1.181.0'),'highlights.html busts the highlights.js cache');
+ assert.ok(html.includes('js/highlights.js?v=1.201.0'),'highlights.html busts the highlights.js cache');
  assert.ok(!/highlights\.(css|js)\?v=1\.110\.0/.test(html),'highlights.html has no stale highlights cache keys');
  assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on highlights.html');
 });
@@ -5913,7 +5913,7 @@ test('v1.178.0: the last two refresh buttons admit when they are working — New
   assert.ok(!/main\.css\?v=(?!1\.191\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
  }
  assert.ok(newsHtml.includes('js/news.js?v=1.178.0'), 'news.html pins news.js 1.178.0');
- assert.ok(hlHtml.includes('js/highlights.js?v=1.181.0'), 'highlights.html pins highlights.js 1.181.0');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.201.0'), 'highlights.html pins highlights.js 1.201.0');
  const injHtml = fs.readFileSync(path.join(__dirname, '../injuries.html'), 'utf8');
  assert.ok(injHtml.includes('js/injuries.js?v=1.200.0'), 'injuries.html keeps injuries.js 1.200.0');
  // Footer branding untouched by this release.
@@ -6062,9 +6062,9 @@ test('v1.181.0: the now-playing highlights card says so — a badge and aria-cur
  // highlights.js and highlights.css changed, so their keys move to
  // 1.181.0 on highlights.html; main.css and common.js are untouched.
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
- assert.ok(hlHtml.includes('js/highlights.js?v=1.181.0'), 'highlights.html pins highlights.js 1.181.0');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.201.0'), 'highlights.html pins highlights.js 1.201.0');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html pins highlights.css 1.181.0');
- assert.ok(!/highlights\.js\?v=(?!1\.181\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
+ assert.ok(!/highlights\.js\?v=(?!1\.201\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
  assert.ok(!/highlights\.css\?v=(?!1\.187\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.css key');
  assert.ok(hlHtml.includes('css/main.css?v=1.191.0'), 'highlights.html keeps main.css 1.191.0');
  assert.ok(hlHtml.includes('js/common.js?v=1.200.0'), 'highlights.html keeps common.js 1.192.0');
@@ -6223,7 +6223,7 @@ test('v1.184.0: a tap answers back in the site\u2019s own orange — branded tap
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html pins highlights.css 1.187.0');
- assert.ok(hlHtml.includes('js/highlights.js?v=1.181.0'), 'highlights.html keeps highlights.js 1.181.0');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.201.0'), 'highlights.html keeps highlights.js 1.201.0');
  // Footer branding untouched by this release.
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
@@ -7461,4 +7461,73 @@ test('v1.200.0: the report can clear — a full-strength report paints its Clear
  // Footer branding untouched by this release.
  assert.ok(ih.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on injuries.html');
  assert.ok(ih.includes('@kshot9000'), 'the @kshot9000 attribution survives on injuries.html');
+});
+
+test('v1.201.0: a highlights refresh keeps your video — the feature is only re-postered when there is nothing to keep', async () => {
+ // load() re-postered the feature on the newest item
+ // unconditionally, so a fan who had picked (or was playing)
+ // another video and hit Refresh — this page's only refresh, and
+ // a manual one — lost it: the player was torn down mid-watch
+ // and the newest video took the frame. A refresh now keeps the
+ // current video whenever it is still in the feed (poster or
+ // playing iframe untouched, the grid re-render re-marks it);
+ // only a first paint, or a video that has rotated out of the
+ // feed, opens on the newest item. An empty feed clears the
+ // current id so a later feed cannot "keep" a ghost.
+ const hjs = fs.readFileSync(path.join(__dirname, '../js/highlights.js'), 'utf8');
+ assert.ok(hjs.includes('var keepCurrent201 = Boolean(state.current) && r.items.some(function (v) { return v.videoId === state.current; });'), 'load computes whether the current video survives the feed');
+ assert.ok(hjs.includes('if (!keepCurrent201) {'), 'the re-poster is gated on nothing-to-keep');
+ assert.ok(hjs.includes('state.current = null;'), 'an empty feed clears the current id');
+ // Behavioral: two shelf reels; open on the newest, click the
+ // older one into the player, refresh — the player must still
+ // hold the clicked video. Then rotate the clicked video out of
+ // the shelf and refresh again — the feature falls back to the
+ // newest remaining item's poster.
+ const emptyAtom = '<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015"></feed>';
+ let shelfItems = [
+  { videoId: 'vidNew', title: 'Chicago Bears Highlights vs. Eagles', published: '2026-09-29T00:00:00Z', src: 'bears' },
+  { videoId: 'vidOld', title: 'Bears vs. Lions | Game Highlights', published: '2026-09-20T00:00:00Z', src: 'nfl' }
+ ];
+ const p = await page('highlights', { fetch: async (u) => {
+  if (u.pathname.endsWith('data/snapshots/highlights.json')) { const s = { fetched: '2026-10-01T00:00:00Z', items: shelfItems }; return { ok: true, json: async () => s, text: async () => JSON.stringify(s) }; }
+  if (u.hostname === 'www.youtube.com') return { ok: true, text: async () => emptyAtom };
+ } });
+ try {
+  const d = p.w.document;
+  const waitFor = async (fn) => { for (let i = 0; i < 40 && !fn(); i++) await settle(100); };
+  await waitFor(() => d.querySelectorAll('#hl-list .hl-card').length === 2);
+  assert.match(d.querySelector('#hl-feature .hl-now h2').textContent, /Eagles/, 'first paint opens on the newest reel');
+  const old = [...d.querySelectorAll('#hl-list .hl-card')].find(c => c.getAttribute('data-vid') === 'vidOld');
+  old.click(); await settle();
+  const frame = () => d.querySelector('#hl-feature iframe');
+  assert.ok(frame() && frame().getAttribute('src').includes('vidOld'), 'the clicked video is playing in the feature');
+  d.querySelector('#hl-refresh').click();
+  await waitFor(() => !p.w.document.querySelector('#hl-refresh').disabled);
+  await settle(150);
+  assert.ok(frame() && frame().getAttribute('src').includes('vidOld'), 'a refresh keeps the playing video in the feature');
+  const cards = [...d.querySelectorAll('#hl-list .hl-card')];
+  assert.equal(cards.filter(c => c.getAttribute('aria-current') === 'true').length, 1, 'exactly one card is current after the kept refresh');
+  assert.equal(cards.find(c => c.getAttribute('aria-current') === 'true').getAttribute('data-vid'), 'vidOld', 'the kept video is the current card after the refresh');
+  // The clicked video rotates out of the feed: the next refresh
+  // falls back to the newest remaining item, as a poster.
+  shelfItems = shelfItems.filter(v => v.videoId !== 'vidOld');
+  d.querySelector('#hl-refresh').click();
+  await waitFor(() => !p.w.document.querySelector('#hl-refresh').disabled);
+  await settle(150);
+  assert.ok(!frame(), 'a rotated-out video leaves the player');
+  assert.match(d.querySelector('#hl-feature .hl-now h2').textContent, /Eagles/, 'the feature falls back to the newest remaining reel');
+  assert.equal([...d.querySelectorAll('#hl-list .hl-card')].find(c => c.getAttribute('aria-current') === 'true').getAttribute('data-vid'), 'vidNew', 'the fallback reel is the current card');
+  assert.deepEqual(p.errors, []);
+ } finally { p.close(); }
+ // Cache-bust pins: highlights.js moves to 1.201.0 on
+ // highlights.html; every other asset is byte-untouched
+ // (highlights.css 1.187.0, common.js 1.200.0, main.css 1.191.0).
+ const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
+ assert.ok(hlHtml.includes('js/highlights.js?v=1.201.0'), 'highlights.html pins highlights.js 1.201.0');
+ assert.ok(!/highlights\.js\?v=(?!1\.201\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
+ assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html keeps highlights.css 1.187.0');
+ assert.ok(hlHtml.includes('js/common.js?v=1.200.0'), 'highlights.html keeps common.js 1.200.0');
+ // Footer branding untouched by this release.
+ assert.ok(hlHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on highlights.html');
+ assert.ok(hlHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on highlights.html');
 });

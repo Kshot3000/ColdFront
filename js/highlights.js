@@ -33,6 +33,16 @@
    "false", the week-clock's spelling) and a solid "Now playing"
    badge in its meta row; featureVideo keeps class, attribute and
    badge in sync on every swap.
+   v1.201.0: a refresh keeps your video — load() re-postered the
+   feature on the newest item unconditionally, so a fan who had
+   picked (or was playing) another video and hit Refresh lost it:
+   the player was torn down and the newest video took the frame.
+   When the current video is still in the feed the feature is left
+   exactly as it is and the grid re-render re-marks it; only a
+   first paint, or a video that has rotated out of the feed, opens
+   on the newest item. An empty feed now also clears the current
+   id, so a later feed cannot "keep" a video the empty state
+   already replaced.
    ============================================================ */
 "use strict";
 
@@ -410,10 +420,16 @@
         upd.textContent = "Live feeds unreachable — showing the last good snapshot" + (age ? " (" + age + ")" : "") + ".";
       }
     }
+    // v1.201.0 — keep the fan's video across a refresh (see header):
+    // the feature is only re-postered when there is nothing to keep.
+    var keepCurrent201 = Boolean(state.current) && r.items.some(function (v) { return v.videoId === state.current; });
     if (r.items.length) {
-      posterFor(r.items[0]);
-      state.current = r.items[0].videoId;
+      if (!keepCurrent201) {
+        posterFor(r.items[0]);
+        state.current = r.items[0].videoId;
+      }
     } else {
+      state.current = null;
       CF.$("#hl-feature").innerHTML = CF.emptyHTML({
         icon: "📡", title: "No signal",
         sub: "The Bears and NFL channels wouldn't answer. Try refresh — or watch on YouTube directly."
