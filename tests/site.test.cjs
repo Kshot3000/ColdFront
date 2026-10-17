@@ -1501,7 +1501,7 @@ test('last-game box score leaders split into team blocks, Bears first, with acce
   assert.deepEqual(q.errors,[]);
  }finally{q.close();}
  const sh=fs.readFileSync(path.join(__dirname,'..','stats.html'),'utf8');
- assert.ok(sh.includes('js/stats.js?v=1.65.0'),'stats.html busts the stats.js cache');
+ assert.ok(sh.includes('js/stats.js?v=1.202.0'),'stats.html busts the stats.js cache');
  assert.ok(sh.includes('css/experience.css?v=1.199.0'),'stats.html busts the experience.css cache');
  assert.ok(sh.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
@@ -7530,4 +7530,84 @@ test('v1.201.0: a highlights refresh keeps your video — the feature is only re
  // Footer branding untouched by this release.
  assert.ok(hlHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on highlights.html');
  assert.ok(hlHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on highlights.html');
+});
+
+test('v1.202.0: a stats refresh keeps the numbers — no panel blanks mid-beat, and a dead feed keeps the last good paint', async () => {
+ // All three Stats panels auto-refresh (pulse + last box every
+ // 2 min, leaders every 5), and every beat used to punish the fan
+ // for staying: the leaders and last-box loaders blanked their
+ // panels back to a loading card at the start of every run, and a
+ // beat whose feed stayed down past every fallback replaced good
+ // numbers with an empty state (the pulse repainted its tiles as
+ // dashes). Loading cards and empty states are first-paint states
+ // now; a refresh in flight leaves the paint alone, and a failed
+ // refresh keeps the last good paint with the roster page's pill:
+ // "Refresh unavailable · previous view".
+ const sjs = fs.readFileSync(path.join(__dirname, '../js/stats.js'), 'utf8');
+ assert.ok(sjs.includes('if (box && !leadersEntered) box.innerHTML'), 'the leaders loading card is gated on first paint');
+ assert.ok(sjs.includes('if (box && !boxEntered) box.innerHTML'), 'the last-box loading card is gated on first paint');
+ assert.ok(sjs.includes('let pulsePainted = false;'), 'the pulse tracks a real paint');
+ assert.ok(sjs.includes('if (!answered && pulsePainted)'), 'a failed pulse refresh stands down');
+ assert.ok((sjs.match(/Refresh unavailable · previous view/g) || []).length >= 4, 'every stats failure path keeps the previous view');
+ // Behavioral, two fresh pages (a beat still in flight when the
+ // feed "dies" may legitimately finish with data it already
+ // fetched, so the phases never share a page): (1) a slow refresh
+ // — while the beat is in flight nothing may blank; (2) a dead-feed
+ // refresh with the device cache cleared, so every fallback
+ // misses — each panel keeps its paint and admits it on its pill.
+ const waitFor = async (fn, tries = 60) => { for (let i = 0; i < tries && !fn(); i++) await settle(100); };
+ const painted = async (fetch) => {
+  const p = await page('stats', { fetch });
+  const d = p.w.document;
+  await waitFor(() => d.querySelector('#leaders .tbl') && d.querySelector('#lastbox .bx-card') && d.querySelector('#pulse .stat-tile b').textContent === '1–0');
+  assert.ok(d.querySelector('#leaders .tbl'), 'first paint renders the leaders table');
+  assert.ok(d.querySelector('#lastbox .bx-card'), 'first paint renders the last game box');
+  const jobs = p.w.CF.refresh.jobs;
+  const byName = (n) => jobs.find((j) => j.fn && j.fn.name === n);
+  assert.ok(byName('loadPulse') && byName('loadLeaders') && byName('loadLastBox'), 'the three stats jobs are registered');
+  return { p, d, byName, html: {
+   leaders: d.querySelector('#leaders').innerHTML,
+   box: d.querySelector('#lastbox').innerHTML,
+   pulse: d.querySelector('#pulse').innerHTML } };
+ };
+ // (1) Slow refresh: mid-beat, the reading fan loses nothing.
+ let slow = false;
+ const s = await painted(async () => { if (slow) await settle(1200); return undefined; });
+ try {
+  slow = true;
+  s.byName('loadPulse').fn(); s.byName('loadLeaders').fn(); s.byName('loadLastBox').fn();
+  await settle(600);
+  assert.equal(s.d.querySelector('#leaders').innerHTML, s.html.leaders, 'a leaders refresh in flight leaves the table in place');
+  assert.equal(s.d.querySelector('#lastbox').innerHTML, s.html.box, 'a last-box refresh in flight leaves the box in place');
+  assert.equal(s.d.querySelector('#pulse').innerHTML, s.html.pulse, 'a pulse refresh in flight leaves the tiles in place');
+  assert.deepEqual(s.p.errors, []);
+ } finally { s.p.close(); }
+ // (2) Dead feed, cache cleared: the last good paint survives.
+ let down = false;
+ const k = await painted(async () => { if (down) throw new Error('feed down'); return undefined; });
+ try {
+  k.p.w.localStorage.clear();
+  down = true;
+  k.byName('loadPulse').fn(); k.byName('loadLeaders').fn(); k.byName('loadLastBox').fn();
+  const kept = (id) => (k.d.querySelector(id).textContent || '').includes('Refresh unavailable · previous view');
+  await waitFor(() => kept('#leaders-pill') && kept('#lastbox-pill') && kept('#pulse-pill'), 200);
+  assert.ok(kept('#leaders-pill'), 'the leaders pill admits the refresh missed');
+  assert.ok(kept('#lastbox-pill'), 'the last-box pill admits the refresh missed');
+  assert.ok(kept('#pulse-pill'), 'the pulse pill admits the refresh missed');
+  assert.equal(k.d.querySelector('#leaders').innerHTML, k.html.leaders, 'a dead feed keeps the leaders table');
+  assert.equal(k.d.querySelector('#lastbox').innerHTML, k.html.box, 'a dead feed keeps the last game box');
+  assert.equal(k.d.querySelector('#pulse').innerHTML, k.html.pulse, 'a dead feed keeps the pulse tiles');
+  assert.deepEqual(k.p.errors, []);
+ } finally { k.p.close(); }
+ // Cache-bust pins: stats.js moves to 1.202.0 on stats.html; every
+ // other asset is byte-untouched (common.js 1.200.0, main.css
+ // 1.191.0, experience.css 1.199.0).
+ const sh = fs.readFileSync(path.join(__dirname, '../stats.html'), 'utf8');
+ assert.ok(sh.includes('js/stats.js?v=1.202.0'), 'stats.html pins stats.js 1.202.0');
+ assert.ok(!/stats\.js\?v=(?!1\.202\.0")1\.[0-9]+\.0"/.test(sh), 'stats.html has no stale stats.js key');
+ assert.ok(sh.includes('js/common.js?v=1.200.0'), 'stats.html keeps common.js 1.200.0');
+ assert.ok(sh.includes('css/experience.css?v=1.199.0'), 'stats.html keeps experience.css 1.199.0');
+ // Footer branding untouched by this release.
+ assert.ok(sh.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on stats.html');
+ assert.ok(sh.includes('@kshot9000'), 'the @kshot9000 attribution survives on stats.html');
 });

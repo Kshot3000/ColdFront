@@ -53,6 +53,19 @@
 
   /* ---------- season pulse from the schedule ---------- */
   let pulseEntered = false; // .cf-enter only on first paint; refresh re-renders stay instant
+  /* v1.202.0 — a refresh keeps the numbers. This page auto-refreshes
+     all three panels (pulse and last box every 2 min, leaders every
+     5), and every beat used to punish the fan for staying: the
+     leaders and last-box loaders blanked their panels back to a
+     loading card at the start of every run, and a beat whose feed
+     stayed down past every fallback replaced the good numbers with
+     an empty state (the pulse repainted its tiles as dashes). The
+     roster page has kept its previous view on a failed refresh
+     since long before ("Refresh unavailable · previous view");
+     these panels now hold the same line — loading cards and empty
+     states belong to the first paint only, and a failed refresh
+     keeps the last good paint and says so on the pill. */
+  let pulsePainted = false; // a real schedule answer has painted tiles
 
   async function loadPulse() {
     const pill = CF.$("#pulse-pill");
@@ -60,6 +73,7 @@
     let cells = [
       ["—", "Record", ""], ["—", "Points / game", ""], ["—", "Allowed / game", ""], ["—", "Differential", ""],
     ];
+    let answered = false;
     try {
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
@@ -90,10 +104,20 @@
            diff > 0 ? "diff-pos" : (diff < 0 ? "diff-neg" : "")],
         ];
       }
+      answered = true;
     } catch (e) {
       pill.className = "pill sample";
       pill.textContent = "offline";
     }
+    // v1.202.0 — a failed refresh keeps the painted tiles (see the
+    // note at pulsePainted): the pill admits the refresh missed and
+    // the real record stays on the page instead of four dashes.
+    if (!answered && pulsePainted) {
+      pill.className = "pill sample";
+      pill.textContent = "Refresh unavailable · previous view";
+      return;
+    }
+    if (answered) pulsePainted = true;
     const entered = !pulseEntered;
     pulseEntered = true;
     tiles.innerHTML = cells.map((c, i) => tile(c[0], c[1], c[2], entered, i)).join("");
@@ -137,7 +161,9 @@
   async function loadLeaders() {
     const pill = CF.$("#leaders-pill");
     const box = CF.$("#leaders");
-    if (box) box.innerHTML = CF.emptyHTML({ icon: "📊", title: "Working the numbers", sub: "Season leaders when the wire has completed games.", loading: true });
+    // v1.202.0 — the loading card is a first-paint state only; a
+    // refresh leaves the table a fan is reading in place.
+    if (box && !leadersEntered) box.innerHTML = CF.emptyHTML({ icon: "📊", title: "Working the numbers", sub: "Season leaders when the wire has completed games.", loading: true });
 
     // 1) API-Sports (BYO key) — real season player stats.
     if (CF.API.apisportsKey()) {
@@ -204,6 +230,13 @@
         "</tbody></table></div>" +
         '<p class="src-note">Per-game leaders from the league wire across the completed games so far. Full season stats land here the moment the feed exposes them — or set an <a href="about.html#data-sources">API-Sports key</a> on the About page.</p>';
     } catch (e) {
+      // v1.202.0 — a failed refresh keeps the last good table; the
+      // unavailable state is for a first paint with nothing to show.
+      if (leadersEntered) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "offline";
       box.innerHTML = CF.emptyHTML({
@@ -231,7 +264,9 @@
   async function loadLastBox() {
     const pill = CF.$("#lastbox-pill");
     const box = CF.$("#lastbox");
-    if (box) box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Finding the last game", sub: "Pulling the most recent completed Bears box.", loading: true });
+    // v1.202.0 — first paint only, like the leaders card above: the
+    // 2-minute beat never blanks the box a fan is reading.
+    if (box && !boxEntered) box.innerHTML = CF.emptyHTML({ icon: "📋", title: "Finding the last game", sub: "Pulling the most recent completed Bears box.", loading: true });
     let last = null;
     try {
       const r = await CF.API.getSchedule();
@@ -242,6 +277,12 @@
         .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
       if (!last) throw new Error("no completed games in the log");
     } catch (e) {
+      // v1.202.0 — a failed refresh keeps the last good box.
+      if (boxEntered) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "offline";
       box.innerHTML = CF.emptyHTML({
@@ -297,6 +338,13 @@
         (leaders.length ? leadersTableHTML(leaders, teamNames, entered) : "") +
         '<p class="src-note">Final score + per-game leaders from the league wire. <a href="' + CF.esc(espn) + '" target="_blank" rel="noopener">Full stat sheet on ESPN ↗</a> · <a href="games.html">More games →</a></p>';
     } catch (e) {
+      // v1.202.0 — the event feed missing a refresh keeps the box
+      // already on the page, same as the schedule miss above.
+      if (boxEntered) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "feed quiet";
       box.innerHTML = CF.emptyHTML({
