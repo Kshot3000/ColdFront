@@ -129,6 +129,14 @@
   }
 
   let trkEntered = false; // first-paint entrance runs once; refreshes stay instant
+  /* v1.203.0 — a refresh keeps the tracker. The 5-minute beat used
+     to blank the table back to skeleton rows at the start of every
+     run, and a missed fetch replaced the good sessions (and the
+     week strip, via paintHeat({})) with the unavailable state.
+     The Stats panels closed this loop in v1.202.0: skeleton rows
+     and the empty state are first-paint states now, and a failed
+     refresh keeps the last good paint and says so on the pill. */
+  let trkPainted = false; // a real answer has painted the tracker
 
   async function loadTracker() {
     const body = CF.$("#tracker tbody");
@@ -141,7 +149,7 @@
       wrap.classList.add("trk");
       if (!trkEntered) wrap.classList.add("cf-enter");
     }
-    if (body) body.innerHTML = CF.skelRows(5, 2);
+    if (body && !trkPainted) body.innerHTML = CF.skelRows(5, 2);
     try {
       const r = await fetch("data/practice.json", { cache: "no-cache" });
       const data = await r.json();
@@ -191,6 +199,7 @@
           }) +
           "</td></tr>";
       trkEntered = true;
+      trkPainted = true;
       if (trackPill) {
         trackPill.textContent = rows.length ? rows.length + " sessions" : "empty";
         trackPill.className = "tag";
@@ -203,6 +212,15 @@
           "Practice schedules may change. Check official Bears announcements before making plans.";
       }
     } catch (e) {
+      // v1.203.0 — a missed refresh keeps the last good tracker
+      // and week strip; the unavailable state is first-paint only.
+      if (trkPainted) {
+        if (trackPill) {
+          trackPill.textContent = "Refresh unavailable · previous view";
+          trackPill.className = "tag";
+        }
+        return;
+      }
       paintHeat({});
       if (trackPill) {
         trackPill.textContent = "offline";

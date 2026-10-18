@@ -64,6 +64,22 @@
   const markSeen = (items, head) => items.forEach((it) => wireSeen.add(normHeadline(head(it))));
   let mainWireReady = Promise.resolve();
 
+  /* v1.203.0 — a refresh keeps the wire. Both wires auto-refresh
+     every 5 minutes (and on the manual button), and every beat used
+     to punish the fan for staying: load() blanked the main list and
+     the injury rail back to loading cards at the start of every run,
+     loadGoogle() did the same to the wide wire, and a beat whose
+     feeds stayed down past every fallback replaced good headlines
+     with a "both wires are dark" empty state. The Stats panels
+     closed this loop in v1.202.0 and the roster page has held the
+     line long before: loading cards and empty states are
+     first-paint states now, and a failed refresh keeps the last
+     good paint and says so on the pill — "Refresh unavailable ·
+     previous view". (The wide wire's "nothing new" paint is a real
+     answer, not a failure, so it still repaints on a refresh.) */
+  let mainPainted = false; // a real answer has painted the main list + rail
+  let gnPainted = false; // a real answer has painted the wide-wire list
+
   /* Main wire: ESPN league wire first; when it's quiet (offseason) or
      unreachable, the Google News wide wire carries the panel. The injury
      rail pulls from whichever source(s) answered. */
@@ -74,11 +90,14 @@
     wireSeen.clear(); // fresh pass — the main wire re-seeds the set below
     const enter = !wireEntered; // this render pass's entrance decision
     const pill = CF.$("#feed-pill");
-    pill.textContent = "connecting…";
+    // v1.203.0 — "connecting…" and the loading cards are first-paint
+    // states only; a refresh leaves the headlines a fan is reading
+    // in place (the refresh button already admits it is working).
+    if (!mainPainted) pill.textContent = "connecting…";
     const newsList = CF.$("#news-list");
     const injBox = CF.$("#injury-news");
-    if (newsList) newsList.innerHTML = CF.emptyHTML({ icon: "📡", title: "Tuning in", sub: "League wire first — then we keep the rail warm.", loading: true });
-    if (injBox) injBox.innerHTML = CF.emptyHTML({ icon: "🩹", title: "Scanning the rail", sub: "Flagging report-shaped headlines.", loading: true, style: "padding:18px 14px" });
+    if (newsList && !mainPainted) newsList.innerHTML = CF.emptyHTML({ icon: "📡", title: "Tuning in", sub: "League wire first — then we keep the rail warm.", loading: true });
+    if (injBox && !mainPainted) injBox.innerHTML = CF.emptyHTML({ icon: "🩹", title: "Scanning the rail", sub: "Flagging report-shaped headlines.", loading: true, style: "padding:18px 14px" });
     let listHTML = "", injHTML = "", count = 0, src = "";
 
     // 1) ESPN league wire — partitioned, not subsetted: the main wire renders
@@ -147,6 +166,7 @@
     if (listHTML) {
       CF.$("#news-list").innerHTML = listHTML;
       wireEntered = true; // first paint done — refreshes stay instant
+      mainPainted = true;
       CF.$("#injury-news").innerHTML = injHTML || CF.emptyHTML({
         icon: "🩹",
         title: "Nothing flagged",
@@ -161,6 +181,11 @@
       // snapshot's harvest time when it served one.
       const wideSnap = src.indexOf("wide wire") === 0 && CF.API.rssSource === "cache" && CF.API.rssEpoch;
       CF.freshStamp(pill, src + " · " + count + " stories", wideSnap ? CF.API.rssEpoch : CF.dataEpoch(CF.API.newsSource));
+    } else if (mainPainted) {
+      // v1.203.0 — every feed missed this beat: the last good wire
+      // stays on the page and the pill admits the refresh missed.
+      pill.className = "pill sample";
+      pill.textContent = "Refresh unavailable · previous view";
     } else {
       pill.className = "pill sample";
       pill.textContent = "offline — snapshot unavailable";
@@ -194,7 +219,9 @@
     const pill = CF.$("#gn-pill");
     const list = CF.$("#gn-list");
     if (!pill || !list) return;
-    list.innerHTML = CF.emptyHTML({ icon: "📰", title: "Tuning the shortwave", sub: "Wide wire across outlets — same story, every angle.", loading: true });
+    // v1.203.0 — the shortwave loading card is a first-paint state
+    // only, same rule as the main wire above.
+    if (!gnPainted) list.innerHTML = CF.emptyHTML({ icon: "📰", title: "Tuning the shortwave", sub: "Wide wire across outlets — same story, every angle.", loading: true });
     try {
       const items = await CF.API.getGoogleNews('Chicago Bears', 10);
       if (!items.length) throw new Error("empty wide wire");
@@ -212,6 +239,7 @@
           "</div></div>"
         ).join("");
         wireEntered = true; // first paint done — refreshes stay instant
+        gnPainted = true;
         pill.className = "pill ok";
         pill.textContent = "live · " + fresh.length + " stories";
       } else {
@@ -222,10 +250,17 @@
           title: "Nothing new on the wide wire",
           sub: "Every story up top already ran on the main wire or the injury rail.",
         });
+        gnPainted = true; // a real answer painted — later misses keep it
         pill.className = "pill ok";
         pill.textContent = "live · all stories already shown";
       }
     } catch (e) {
+      // v1.203.0 — a missed refresh keeps the last good wide wire.
+      if (gnPainted) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "offline";
       list.innerHTML = CF.emptyHTML({

@@ -7,6 +7,22 @@
   // v1.36.0 — .cf-enter on first paint only; the 5-minute refresh re-renders stay instant.
   let wireEntered = false;
 
+  /* v1.203.0 — a refresh keeps the report. Both sides of this page
+     auto-refresh every 5 minutes, and every beat used to punish the
+     fan for staying: loadReport blanked the table back to skeleton
+     rows at the start of every run, loadWire blanked the wire back
+     to a loading card, and a beat whose feeds stayed down past
+     every fallback replaced the good table/wire with an empty
+     state. The Stats panels closed this loop in v1.202.0 and the
+     roster page has held the line long before: skeleton/loading
+     cards and empty states are first-paint states now, and a failed
+     refresh keeps the last good paint — the report says so on its
+     pill ("Refresh unavailable · previous view"); the wire, which
+     has no pill, simply keeps its headlines when every source went
+     silent (a source that ANSWERED with nothing new still paints
+     the honest empty state). */
+  let reportPainted = false; // a real answer has painted the report table
+
   function sevCls(row) {
     return CF.injStatusCls(row.status || row.statusCls);
   }
@@ -81,7 +97,9 @@
     const body = CF.$("#report-table tbody");
     const pill = CF.$("#rep-pill");
     const note = CF.$("#rep-note");
-    if (body) body.innerHTML = CF.skelRows(5, 3);
+    // v1.203.0 — skeleton rows are a first-paint state only; a
+    // refresh leaves the table a fan is reading in place.
+    if (body && !reportPainted) body.innerHTML = CF.skelRows(5, 3);
 
     // 1) API-Sports (BYO key) — structured injury rows with ETAs.
     if (CF.API.apisportsKey()) {
@@ -93,6 +111,7 @@
           CF.freshStamp(pill, "live · API-Sports", Date.now());
           note.textContent = "Structured injury rows via API-Sports (key set on this device). Cross-check with the official pregame report.";
           body.innerHTML = rows.map((row) => reportRow(row, row.eta)).join("");
+          reportPainted = true;
           paintSnapshot(rows);
           await paintMovement(rows);
           return;
@@ -112,6 +131,7 @@
         CF.freshStamp(pill, CF.sourceLabel(r) + " · league report", CF.dataEpoch(r));
         note.textContent = "Check the official pregame report for final availability.";
         body.innerHTML = '<tr><td colspan="5">No players listed in the current Bears feed.</td></tr>';
+        reportPainted = true;
         paintSnapshot([]);
         // v1.200.0 — full strength is the loudest movement there is:
         // everyone who was listed has cleared. This branch used to
@@ -130,6 +150,7 @@
         CF.freshStamp(pill, CF.sourceLabel(r) + " · League report", CF.dataEpoch(r));
         note.textContent = "From the league wire (" + rows.length + " listed) — the wire on the right carries the story behind each one. Always cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        reportPainted = true;
         paintSnapshot(rows);
         await paintMovement(rows);
         return;
@@ -147,6 +168,7 @@
         CF.freshStamp(pill, CF.sourceLabel(r2) + " · Roster flags", CF.dataEpoch(r2));
         note.textContent = "Pulled from the live roster's injury flags. Cross-check with the official pregame report.";
         body.innerHTML = rows.map((row) => reportRow(row)).join("");
+        reportPainted = true;
         paintSnapshot(rows);
         await paintMovement(rows);
         return;
@@ -163,8 +185,16 @@
       body.innerHTML = rows.length
         ? rows.map((row) => reportRow(row, row.eta)).join("")
         : '<tr><td colspan="5" class="dim">No verified report is available. Check the official Bears injury report for current availability.</td></tr>';
+      reportPainted = true;
       paintSnapshot(rows.length ? rows : null);
     } catch (e3) {
+      // v1.203.0 — every fallback missed this beat: the last good
+      // table, snapshot strip and movement trail stay as they are.
+      if (reportPainted) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       paintSnapshot(null);
       body.innerHTML = '<tr><td colspan="5">' + CF.emptyHTML({
@@ -211,7 +241,9 @@
 
   async function loadWire() {
     const box = CF.$("#wire-list");
-    if (box) {
+    // v1.203.0 — the loading card is a first-paint state only; a
+    // refresh leaves the headlines a fan is reading in place.
+    if (box && !wireEntered) {
       box.innerHTML = CF.emptyHTML({
         icon: "🩹",
         title: "Tuning injury wire",
@@ -221,10 +253,14 @@
       });
     }
     const parts = [];
+    // v1.203.0 — a source that answers (even with nothing to show)
+    // is a real answer; total silence is a missed refresh.
+    let answered = 0;
 
     // 1) The league report's editorial notes — the story behind each row.
     try {
       const r = await CF.API.getLeagueInjuries();
+      answered++;
       const x = CF.API.bearsInjuryRows(r.data);
       const rows = x.rows.filter((row) => row.status && row.status.toLowerCase() !== "active" && row.comment);
       rows.forEach((row) => {
@@ -240,6 +276,7 @@
     // 2) ESPN league wire headlines that mention a body part or a status.
     try {
       const news = await CF.API.getNews();
+      answered++;
       (news || []).forEach((n) => {
         if (INJURY_RE.test(n.heading || "") || INJURY_RE.test(n.description || "")) {
           const href = (n.links && n.links.web && n.links.web.href) || "https://www.chicagobears.com/";
@@ -253,6 +290,7 @@
     // 3) The wide wire: Google News, injury-filtered.
     try {
       const items = await CF.API.getGoogleNews("Chicago Bears injury report", 10);
+      answered++;
       items.forEach((it) => {
         if (INJURY_RE.test(it.title || "") || INJURY_RE.test(it.desc || "")) {
           parts.push('<div class="news-item' + (wireEntered ? "" : " cf-enter") + '" style="grid-template-columns:1fr;padding:12px 14px;--ni:' + Math.min(parts.length, 12) + '">' +
@@ -267,6 +305,11 @@
       wireEntered = true; // first paint done — refreshes stay instant
       return;
     }
+    // v1.203.0 — total silence on a refresh keeps the last good
+    // wire (it has no pill to admit the miss on, so the headlines
+    // simply stay); a source that answered with nothing new still
+    // paints the honest empty state below.
+    if (wireEntered && !answered) return;
     box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">No injury headlines are available from the connected feeds right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';
   }
 

@@ -394,8 +394,15 @@
   async function load() {
     var list = CF.$("#hl-list");
     var pill = CF.$("#hl-pill");
-    pill.textContent = "connecting…";
-    list.innerHTML = skelCards(6);
+    // v1.203.0 — the skeleton cards are a first-paint state only:
+    // a manual refresh (the page's only beat) leaves the grid a fan
+    // is browsing in place while the feeds re-read, same rule the
+    // auto-refresh pages took in v1.202.0/v1.203.0. The feature
+    // itself already keeps the fan's video (v1.201.0).
+    if (firstPaint) {
+      pill.textContent = "connecting…";
+      list.innerHTML = skelCards(6);
+    }
     var r = await getVideos();
     state.items = r.items;
     setPill(r.live, r.items.length);
