@@ -34,6 +34,30 @@
     return null;
   };
   let stndEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
+  /* v1.204.0 — a home refresh keeps the page. Every panel below
+     auto-refreshes (the hero every 30 s, the north slate, week
+     clock and odds pulse every minute, the rest every 2–5), and a
+     beat whose feed stayed down past every fallback used to
+     replace the good paint with an unavailable/quiet state — the
+     failure-overwrite half of the blank-on-refresh class that
+     v1.202.0 (stats) and v1.203.0 (news/injuries/practice/
+     highlights) closed on their pages. The roster page's line
+     holds here too: a failed refresh keeps the last good paint
+     and admits it on the panel's pill ("Refresh unavailable ·
+     previous view"). Each flag below records that its panel has
+     painted a real answer; a loader whose source ANSWERED — even
+     with an honest empty or quiet state — still repaints, so
+     only a genuine miss (the fetch threw, or, for the hero, the
+     schedule itself rejected) ever stands down. */
+  let heroPainted = false;      // loadMatchup painted a real game
+  let standingsPainted = false; // loadStandings painted the table
+  let northPainted = false;     // loadNorth painted the slate
+  let newsPainted = false;      // loadNews painted stories (either wire)
+  let injHomePainted = false;   // loadInjuries painted the snapshot
+  let clockPainted = false;     // loadWeekClock painted a phase from a real game
+  let oddsPainted = false;      // loadOddsPulse painted the pulse
+  let deskPainted = false;      // loadSundayDesk painted the desk
+  let filmPainted = false;      // loadFilmRoom painted the teaser
   const show = (selector, text) => { CF.$(selector).textContent = text; };
   // v1.58.0 — the live differential chip answers every keystroke.
   // v1.199.0 — hoisted from the DOMContentLoaded handler to IIFE scope:
@@ -72,6 +96,17 @@
         source = schedule.value.source;
       }
     }
+    /* v1.204.0 — a hero refresh whose schedule read rejected
+       outright (the board alone cannot resolve the next game, and
+       the code below already labels that pill "Feed unavailable")
+       keeps the game already on the card: no quiet-state wipe, and
+       the countdown interval survives because we return before it
+       is cleared. A schedule that ANSWERED with no next game is a
+       real answer and still paints the quiet state below. */
+    if (!game && heroPainted && schedule.status === "rejected") {
+      show("#ng-pill", "Refresh unavailable · previous view");
+      return;
+    }
     clearInterval(countdown);
     const card = CF.$("#next-game");
     /* v1.37.0 — reset the hero card's Bears identity and result state on each paint. */
@@ -86,6 +121,7 @@
          skeleton blocks (the away/home "badges") no longer linger where
          no matchup exists. The card becomes a slim composed notice. */
       card.classList.add("is-quiet");
+      heroPainted = false; // v1.204.0 — the quiet state is a definitive paint, not a kept game
       show("#ng-title", "Waiting for the next Bears matchup");
       show("#ng-pill", schedule.status === "fulfilled" ? "Schedule quiet" : "Feed unavailable");
       show("#ng-meta", "The official schedule is one click away in the game center.");
@@ -227,6 +263,7 @@
     /* v1.190.0 — the tab keeps score while the Bears are live
        (and after today's final); every refresh beat re-syncs it. */
     CF.syncLiveTitle(game);
+    heroPainted = true; // v1.204.0 — a real game is on the card now
   }
 
   function renderSeason(result) {
@@ -255,6 +292,7 @@
       /* v1.41.0 — standings glow-up: Bears row carries the 🐻 identity chip,
          the division leader carries a 👑 DIV LEAD chip (glowing when it's us),
          Pct reads in display numerals. */
+      standingsPainted = true; // v1.204.0 — a real table is on the page now
       CF.$("#div-table tbody").innerHTML = division.rows.map((row, i) =>
         '<tr class="stnd-row' + (row.isMe ? " stnd-me" : "") + '">' +
         '<td class="strong stnd-team">' +
@@ -276,6 +314,10 @@
         }
       }
     } catch (_) {
+      // v1.204.0 — a failed refresh keeps the table (and the race
+      // bars this catch never cleared, so the panel no longer
+      // half-wipes); the unavailable row is a first-paint state.
+      if (standingsPainted) { show("#div-pill", "Refresh unavailable · previous view"); return; }
       show("#div-pill", "Unavailable");
       CF.$("#div-table tbody").innerHTML = '<tr><td colspan="4" class="dim">Standings are temporarily unavailable. <a href="https://www.espn.com/nfl/standings" target="_blank" rel="noopener">ESPN standings ↗</a></td></tr>';
     }
@@ -286,6 +328,7 @@
       const result = await CF.API.getWeekScoreboard();
       const games = (result.data.events || []).map(CF.API.gameFromEvent).filter((game) => [game.home.abbr, game.away.abbr].some((team) => ["CHI", "DET", "GB", "MIN"].includes(team)));
       show("#north-pill", CF.sourceLabel(result.source));
+      northPainted = true; // v1.204.0 — the slate answered; whatever it holds is the paint
       CF.$("#north-games").innerHTML = games.length ? games.map((game) => {
         const ours = [game.home.abbr, game.away.abbr].includes("CHI");
         // v1.30.0 — final-result treatment for our game: a Bears win warms the
@@ -300,6 +343,8 @@
         return '<a class="mini-game ' + (ours ? ("our-game " + resultCls).trim() : '') + '" href="games.html?date=' + CF.dateInput(game.date) + '"><div><strong>' + CF.esc(game.away.abbr + " @ " + game.home.abbr) + '</strong><span>' + CF.esc(CF.fmtDate(game.date) + " · " + (game.timeValid ? (CF.kickoffTime(game.date) || "Time TBD") : "Time TBD")) + '</span>' + chip + '</div><div class="mini-status"><strong>' + (game.state === "pre" ? '↗' : CF.esc((game.away.score ?? "—") + ' – ' + (game.home.score ?? "—"))) + '</strong><span>' + CF.esc(game.state === "pre" ? (game.tv || "Scheduled") : game.display) + '</span></div></a>';
       }).join("") : '<div class="empty">No NFC North games in this week’s feed. <a href="games.html">Explore the schedule ↗</a></div>';
     } catch (_) {
+      // v1.204.0 — a failed refresh keeps the slate a fan is reading.
+      if (northPainted) { show("#north-pill", "Refresh unavailable · previous view"); return; }
       show("#north-pill", "Unavailable");
       CF.$("#north-games").innerHTML = '<div class="empty">The weekly slate is temporarily unavailable. <a href="games.html">Open the game center ↗</a></div>';
     }
@@ -343,6 +388,7 @@
     try {
       const items = await CF.API.getNews();
       if (!items.length) throw new Error("No news");
+      newsPainted = true; // v1.204.0
       CF.$("#home-news").innerHTML = items.slice(0, 4).map(story).join("");
       paintTicker(items);
       // v1.94.0 — the wire pill says when it was last read, not just its source.
@@ -351,6 +397,7 @@
     } catch (_) {
       try {
         const items = await CF.API.getGoogleNews("Chicago Bears", 4);
+        newsPainted = true; // v1.204.0 — the fallback wire is a real paint too
         CF.$("#home-news").innerHTML = items.map(story).join("");
         paintTicker(items);
         // v1.94.0 — the wire pill says when it was last read, not just its source.
@@ -359,6 +406,10 @@
         CF.freshStamp(CF.$("#wire-pill"), CF.API.rssSource === "cache" ? "Cached wire" : "Across the wire",
           (CF.API.rssSource === "cache" && CF.API.rssEpoch) ? CF.API.rssEpoch : Date.now());
       } catch (_) {
+        // v1.204.0 — both wires down on a refresh keeps the stories
+        // and leaves the ticker running; the empty state and the
+        // hidden ticker are first-paint states.
+        if (newsPainted) { show("#wire-pill", "Refresh unavailable · previous view"); return; }
         show("#wire-pill", "Feed unavailable");
         const ticker = CF.$("#wire-ticker");
         if (ticker) ticker.hidden = true;
@@ -377,8 +428,11 @@
       // v1.127.0 — the stamp wears the payload's own age, not the paint time.
       CF.freshStamp(CF.$("#inj-home-pill"), CF.sourceLabel(result.source) + " · league report", CF.dataEpoch(result));
       if (result.source === "live") await paintHomeInjuryMove(rows);
+      injHomePainted = true; // v1.204.0
       CF.$("#home-injuries tbody").innerHTML = rows.length ? rows.slice(0, 4).map((row) => { const sev = CF.injStatusCls(row.status); return '<tr class="inj-sev-' + sev + '"><td class="strong">' + CF.esc(row.name) + '</td><td>' + CF.esc(row.pos) + '</td><td>' + CF.esc(row.injury || "No additional detail") + '</td><td><span class="st ' + sev + '">' + CF.esc(CF.injStatusLabel(row.status)) + '</span></td></tr>'; }).join("") : '<tr><td colspan="4" class="dim">No players listed in the current feed. Check the official report before kickoff.</td></tr>';
     } catch (_) {
+      // v1.204.0 — a failed refresh keeps the snapshot on the page.
+      if (injHomePainted) { show("#inj-home-pill", "Refresh unavailable · previous view"); return; }
       show("#inj-home-pill", "Report unavailable");
       CF.$("#home-injuries tbody").innerHTML = '<tr><td colspan="4" class="dim">The league report did not answer. <a href="injuries.html">Check roster flags and the full report ↗</a></td></tr>';
     }
@@ -450,13 +504,21 @@
     const pill = CF.$("#sunday-desk-pill");
     if (!root) return;
     let g = null, sched = null, src = "live";
+    let schedFailed = false; // v1.204.0 — the schedule threw (vs answered with no next game)
     try {
       const sc = await CF.API.getSchedule();
       sched = sc.data;
       src = sc.source || "live";
       g = CF.API.nextBearsGameFromSchedule(sc.data);
-    } catch (e) { /* schedule quiet */ }
+    } catch (e) { schedFailed = true; /* schedule quiet */ }
     if (!g) {
+      // v1.204.0 — a schedule that never answered keeps the desk a
+      // fan is reading; one that answered with no next game still
+      // paints the honest empty state below.
+      if (schedFailed && deskPainted) {
+        if (pill) { pill.textContent = "Refresh unavailable · previous view"; pill.className = "tag"; }
+        return;
+      }
       if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
       root.innerHTML =
         '<div class="pulse-empty dim">No next kickoff on the board yet. ' +
@@ -564,6 +626,7 @@
       pill.className = "tag";
     }
 
+    deskPainted = true; // v1.204.0 — a real desk is on the page now
     root.innerHTML =
       '<div class="desk-accent" aria-hidden="true"></div>' +
       '<div class="desk-head">' +
@@ -635,8 +698,10 @@
 
     let wireHTML = "";
     let wireOk = false;
+    let wireAnswered = false; // v1.204.0 — the wire feed answered (vs threw)
     try {
       const r = await CF.API.getOdds();
+      wireAnswered = true;
       const line = CF.API.oddsForGame(r.data, gameId);
       const fmt = formatLineBits(line);
       if (fmt) {
@@ -654,8 +719,10 @@
 
     let polyHTML = "";
     let polyOk = false;
+    let polyAnswered = false; // v1.204.0 — the market feed answered (vs threw)
     try {
       const events = await CF.API.getPolymarket(80);
+      polyAnswered = true;
       const bears = CF.API.polymarketBears(events);
       let top = null;
       for (const ev of bears) {
@@ -683,11 +750,20 @@
     } catch (e2) { /* poly quiet */ }
 
     if (!wireOk && !polyOk) {
+      // v1.204.0 — if NEITHER feed even answered, this beat is a
+      // miss, not news: keep the pulse already on the page. A feed
+      // that answered with no line/market still paints the honest
+      // empty state below.
+      if (!wireAnswered && !polyAnswered && oddsPainted) {
+        if (pill) { pill.textContent = "Refresh unavailable · previous view"; pill.className = "tag"; }
+        return;
+      }
       if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
       root.innerHTML =
         '<div class="pulse-empty dim">No live line or Bears market right now' +
         (gameLabel ? " (next: " + CF.esc(gameLabel) + ")" : "") +
         '. <a href="odds.html">Odds board →</a></div>';
+      oddsPainted = true; // the honest empty is a definitive paint too
       return;
     }
     if (pill) {
@@ -695,6 +771,7 @@
       CF.freshStamp(pill, (wireOk && polyOk) ? "wire + poly" : (wireOk ? "wire" : "polymarket"), Date.now());
       pill.className = "tag";
     }
+    oddsPainted = true; // v1.204.0
     root.innerHTML = wireHTML + polyHTML;
   }
 
@@ -766,8 +843,10 @@
 
   async function loadWeekClock() {
     let game = null, schedGame = null;
+    let answered = false; // v1.204.0 — at least one source answered
     try {
       const sb = await CF.API.getScoreboard();
+      answered = true;
       game = CF.API.bearsGameFromScoreboard(sb.data);
       /* v1.115.0 — the nightly-baked scoreboard can sit ~24h stale after a
          game (a "pre" game whose kickoff is past the 6h grace window). The
@@ -780,8 +859,18 @@
     } catch (e) { /* board quiet */ }
     try {
       const sc = await CF.API.getSchedule();
+      answered = true;
       schedGame = CF.API.nextBearsGameFromSchedule(sc.data);
     } catch (e2) { /* schedule quiet */ }
+    /* v1.204.0 — total silence on a refresh keeps the phase already
+       on the clock: the fallback phase below is a first-paint (or
+       genuinely schedule-less) state, and crowning a calm Midweek
+       fallback over a real gameday phase because both feeds
+       blinked would be a false phase change. The clock's pill is a
+       phase label, not a freshness claim, so the kept phase needs
+       no admission — it simply stays true. */
+    if (!answered && clockPainted) return;
+    clockPainted = !!(game || schedGame);
     paintWeekClock(weekPhaseFromGame(game, schedGame));
   }
 
@@ -805,6 +894,7 @@
     const section = CF.$("#film-room-section");
     if (!root) return;
     let last = null;
+    let filmSchedFailed = false; // v1.204.0 — the schedule threw (vs answered with no last game)
     try {
       const r = await CF.API.getSchedule();
       const rows = CF.API.scheduleList(r.data);
@@ -812,10 +902,18 @@
       last = rows
         .filter((g) => new Date(g.date).getTime() < now - 3 * 3600e3 && g.scoreMe != null && g.scoreOpp != null)
         .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-    } catch (e) { /* schedule quiet */ }
+    } catch (e) { filmSchedFailed = true; /* schedule quiet */ }
     if (!last) {
+      // v1.204.0 — a schedule that never answered keeps the teaser
+      // on the page; one that answered with no completed game
+      // still hides it below.
+      if (filmSchedFailed && filmPainted) {
+        if (pill) { pill.textContent = "Refresh unavailable · previous view"; pill.className = "tag"; }
+        return;
+      }
       if (section) section.hidden = true;
       root.innerHTML = "";
+      filmPainted = false;
       if (pill) { pill.textContent = "quiet"; pill.className = "tag"; }
       return;
     }
@@ -824,6 +922,7 @@
     if (ageH > 120) {
       if (section) section.hidden = true;
       root.innerHTML = "";
+      filmPainted = false;
       if (pill) { pill.textContent = "archived"; pill.className = "tag"; }
       return;
     }
@@ -839,6 +938,7 @@
         pill.textContent = "last final";
         pill.className = "tag";
       }
+      filmPainted = true; // v1.204.0
       root.innerHTML =
         '<div class="film-room-card">' +
         '<div class="film-room-head">' +
@@ -863,6 +963,12 @@
         '<a class="btn small" href="stats.html">Stats →</a>' +
         "</div></div>";
     } catch (e2) {
+      // v1.204.0 — the event feed missing a refresh keeps the
+      // teaser already on the page instead of hiding the section.
+      if (filmPainted) {
+        if (pill) { pill.textContent = "Refresh unavailable · previous view"; pill.className = "tag"; }
+        return;
+      }
       if (section) section.hidden = true;
       root.innerHTML = "";
       if (pill) { pill.textContent = "feed quiet"; pill.className = "tag"; }
