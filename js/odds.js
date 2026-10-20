@@ -7,6 +7,31 @@
   let wireEntered = false;
   // v1.43.0 — .cf-enter on the Polymarket board only at first paint; the 60s refresh re-renders stay instant
   let polyEntered = false;
+  /* v1.205.0 — a refresh keeps the boards. This page was the
+     failure-overwrite half of the blank-on-refresh class's last
+     stand alongside the Games page (flagged as the next sweep in
+     v1.204.0): both boards auto-refresh every 60 s (and on the
+     manual button, through refreshOdds), neither loader blanks
+     at entry, but a beat whose feed stayed down past every
+     fallback (the API layer answers from the device snapshot
+     before throwing, so the overwrite needs a total outage)
+     replaced the good paint with an unavailable state — the wire
+     line a fan was reading became "No league-wire line right
+     now" and the market cards became "Polymarket didn't
+     answer". The family line holds here too (roster page first;
+     stats v1.202.0, news/injuries/practice/highlights v1.203.0,
+     home v1.204.0, games v1.205.0): a failed refresh keeps the
+     last good paint and admits it on the panel's pill ("Refresh
+     unavailable · previous view"). Each flag below records that
+     its board has painted a definitive answer; a source that
+     ANSWERED — even with an honest empty (the wire feed answered
+     with no lines for this game; Polymarket answered with no
+     Bears markets) — still repaints, and that empty becomes the
+     board a later total outage keeps. Cleared with a reason:
+     loadFullBoard (explicit key submission into an initially
+     empty board, not a refresh — cleared in v1.203.0). */
+  let wirePainted = false; // loadWireOdds painted a definitive board
+  let polyPainted = false; // loadPoly painted a definitive board
   // v1.49.0 — previous Polymarket prices per market (event slug + question),
   // so the next render can flag line movement with ▲/▼ chips
   // v1.198.0 — the baseline survives the visit. Until now polyPrev lived
@@ -95,8 +120,10 @@
       } catch (e2) { /* nothing */ }
     }
 
+    let oddsAnswered = false; // v1.205.0 — the odds feed answered (vs threw)
     try {
       const r = await CF.API.getOdds(nextGame?.date ? CF.dateInput(nextGame.date) : null);
+      oddsAnswered = true;
       const line = CF.API.oddsForGame(r.data, gameId);
       if (!line || !line.lines.length) throw new Error("no lines");
       pill.className = "pill ok";
@@ -120,7 +147,18 @@
         "</div>"
       ).join("");
       wireEntered = true;
+      wirePainted = true; // v1.205.0 — real lines are on the board now
     } catch (e) {
+      /* v1.205.0 — a beat whose odds feed never answered keeps
+         the board already on the page; a feed that answered with
+         no lines paints the honest empty below, and that empty
+         becomes the definitive paint a later outage keeps. */
+      if (!oddsAnswered && wirePainted) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
+      if (oddsAnswered) wirePainted = true;
       pill.className = "pill sample";
       pill.textContent = "wire line unavailable";
       box.innerHTML =
@@ -225,6 +263,7 @@
       if (!bears.length) {
         box.innerHTML = '<div class="empty"><div class="big">🔮</div>No Bears markets found in the current feed. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">Browse all NFL markets ↗</a></div>';
         if (pill) pill.textContent = "Polymarket · no Bears markets";
+        polyPainted = true; // v1.205.0 — the feed answered; this empty is the definitive paint
         return;
       }
       let n = 0; // per-card stagger index for the first-paint entrance
@@ -285,7 +324,16 @@
       // v1.198.0 — this paint becomes the next visit's "last check".
       polyPrevSave(polySeen);
       polyEntered = true;
+      polyPainted = true; // v1.205.0 — real markets are on the board now
     } catch (e) {
+      /* v1.205.0 — a missed refresh keeps the markets already on
+         the board; the didn't-answer paint is a first-paint
+         state. The pill carries the admission (loadPoly manages
+         this pill's text, never its class). */
+      if (polyPainted) {
+        if (pill) pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       box.innerHTML = '<div class="empty"><div class="big">🔮</div>Polymarket didn\'t answer from this network. <a href="https://polymarket.com/nfl" target="_blank" rel="noopener">polymarket.com/nfl ↗</a></div>';
       // v1.95.0 — stop saying "checking…" when the feed already said no.
       if (pill) pill.textContent = "Polymarket · unavailable";

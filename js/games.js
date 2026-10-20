@@ -42,6 +42,43 @@
   let deskEntered = false; // .cf-enter on the duel only at first paint; refresh re-renders stay instant
   let divEntered = false; // v1.41.0 — .cf-enter on the standings only at first paint; the 5-minute refresh re-renders stay instant
 
+  /* v1.205.0 — a refresh keeps the board, the log, the table and
+     the desk. This page was the failure-overwrite half of the
+     blank-on-refresh class's last stand (flagged as the next
+     sweep in v1.204.0): every panel auto-refreshes (board 30 s —
+     the most frequent beat in the fleet — log and desk 3 min,
+     division 5 min), none of the loaders blank at entry, but a
+     beat whose feed stayed down past every fallback (the API
+     layer answers from the device snapshot before throwing, so
+     the overwrite needs a total outage) replaced the good paint
+     with an unreachable/offline state: the board's games became
+     "Board unreachable", the log's rows became an offline line,
+     the division table wiped along with its race bars, and the
+     Sunday desk collapsed to "Board is quiet" and cleared its
+     preview, actions and kickoff banner. The family line holds
+     here too (roster page first; stats v1.202.0, news/injuries/
+     practice/highlights v1.203.0, home v1.204.0): a failed
+     refresh keeps the last good paint and admits it on the
+     panel's pill ("Refresh unavailable · previous view"). Each
+     flag below records that its panel has painted a real answer;
+     a source that ANSWERED — even with an honest empty — still
+     repaints. The board's keep is date-aware (boardDay): picking
+     another day is a selection, not a refresh, so a miss on a
+     newly picked day paints that day's unreachable state rather
+     than keeping a different day's games under today's pill.
+     The desk distinguishes a schedule that threw (schedFailed)
+     from one that answered with no next game, like the home
+     desk in v1.204.0. Cleared with reasons: loadBoxscore
+     (explicit different-game selection, not a refresh — cleared
+     in v1.203.0) and the desk's wire/poly/weather sub-blocks
+     (they degrade inside a fresh successful schedule paint,
+     where stale odds beside fresh schedule data would
+     misrepresent freshness — the v1.204.0 desk reasoning). */
+  let boardPainted = false; // loadBoard painted a board for boardDay
+  let logPainted = false;   // loadLog painted the season log
+  let divPainted = false;   // loadDivision painted the standings
+  let deskPainted = false;  // loadNextOpponent painted the Sunday desk
+
   const isoDate = (offset) => {
     const value=CF.dayParam(offset);
     return value.slice(0,4)+"-"+value.slice(4,6)+"-"+value.slice(6,8);
@@ -67,6 +104,7 @@
       CF.freshStamp(pill, CF.sourceLabel(r) + " · " + selectedDay, CF.dataEpoch(r));
       if (!events.length) {
         boardDay = selectedDay;
+        boardPainted = true; // v1.205.0 — the honest no-games day is a real paint too
         box.innerHTML = CF.emptyHTML({
           icon: "🌫",
           title: "No NFL games scheduled for this date",
@@ -82,6 +120,8 @@
         .some((c) => (c.team || {}).abbreviation === "CHI");
       events.sort((a, b) => (isBears(b) ? 1 : 0) - (isBears(a) ? 1 : 0));
       box.innerHTML = events.map((e) => eventCard(e, isBears(e))).join("");
+      boardDay = selectedDay; // v1.205.0 — this day's board is the paint on screen
+      boardPainted = true;
       box.setAttribute("aria-busy", "false");
       /* v1.190.0 — the tab keeps score off today's board only:
          the Bears event the fan is looking at, never a final
@@ -92,6 +132,16 @@
       // so scheduled → live → final transitions pick themselves up.
     } catch (e) {
       if(request !== boardRequest) return;
+      /* v1.205.0 — a missed refresh for the day already on screen
+         keeps that day's board; a miss for a newly picked day is
+         a selection, so it falls through to the unreachable paint
+         and the old day stops being keepable. */
+      if (boardPainted && boardDay === selectedDay) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
+      boardPainted = false;
       pill.className = "pill sample";
       pill.textContent = "offline";
       box.innerHTML = CF.emptyHTML({
@@ -188,7 +238,17 @@
         ...(upcoming.length && past.length ? '<tr class="log-divider"><td colspan="7" style="border:none;padding:16px 8px 10px"><div style="display:flex;align-items:center;gap:14px" aria-hidden="true"><span style="flex:1;height:2px;min-width:24px;background:linear-gradient(90deg,transparent,var(--orange-glow));border-radius:2px"></span><span style="font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);white-space:nowrap">Completed &middot; the season so far</span><span style="flex:1;height:2px;min-width:24px;background:linear-gradient(90deg,var(--orange-glow),transparent);border-radius:2px"></span></div></td></tr>' : ""),
         ...past.map(logRow),
       ].join("");
+      logPainted = true; // v1.205.0 — a real log is on the page now
     } catch (e) {
+      /* v1.205.0 — a failed refresh keeps the log already on the
+         page. The empty-schedule throw above lands here too: the
+         log has no answered-empty paint of its own, so an empty
+         list is indistinguishable from a feed miss and keeps. */
+      if (logPainted) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="7" class="dim"><span class="log-empty">Season log unreachable — no snapshot saved on this device yet. <a href="https://www.espn.com/nfl/schedule/" target="_blank" rel="noopener">ESPN NFL schedule ↗</a></span></td></tr>';
@@ -592,14 +652,25 @@
     const preview = CF.$("#next-opp-preview");
     if (!vs || !meta || !chip) return;
     let g = null, schedData = null;
+    let schedFailed = false; // v1.205.0 — the schedule threw (vs answered empty)
     try {
       const sc = await CF.API.getSchedule();
       schedData = sc.data;
       g = CF.API.nextBearsGameFromSchedule(sc.data);
-    } catch (e) { /* schedule quiet */ }
+    } catch (e) { schedFailed = true; /* schedule quiet */ }
+    /* v1.205.0 — a refresh whose schedule read threw keeps the
+       desk already on the page (duel, preview, actions, banner
+       and the board's nextGame pointer all stand); a schedule
+       that ANSWERED with no next game still paints the quiet
+       state below. */
+    if (schedFailed && deskPainted) {
+      if (pill) { pill.className = "pill sample"; pill.textContent = "Refresh unavailable · previous view"; }
+      return;
+    }
     nextGame = g || null;
     paintBoardJump();
     if (!g) {
+      deskPainted = false; // v1.205.0 — the quiet state is a definitive paint, not a kept desk
       if (pill) { pill.className = "pill sample"; pill.textContent = "offline"; }
       if (duel) duel.hidden = true;
       if (cd) cd.hidden = true;
@@ -638,6 +709,7 @@
       (g.venue ? " · " + CF.esc(g.venue) : (g.home ? " · Soldier Field" : "")) +
       (g.tv ? " · TV <b>" + CF.esc(g.tv) + "</b>" : "");
     paintDeskActions(g);
+    deskPainted = true; // v1.205.0 — the desk's core is painted; the preview/weather below degrade inside this paint
     chip.innerHTML = '<span class="opp-chip dim">reading conditions…</span>';
     if (schedData) await paintMatchupPreview(schedData, g);
 
@@ -720,6 +792,14 @@
       } catch (e3) { /* fall through to offline */ }
     }
     if (!div || !div.rows.length) {
+      /* v1.205.0 — every standings source missed this beat: a
+         refresh keeps the table and race bars already on the
+         page; the offline paint is a first-paint state. */
+      if (divPainted) {
+        pill.className = "pill sample";
+        pill.textContent = "Refresh unavailable · previous view";
+        return;
+      }
       pill.className = "pill sample";
       pill.textContent = "offline";
       body.innerHTML = '<tr><td colspan="7" class="dim">Standings unavailable right now.</td></tr>';
@@ -763,6 +843,7 @@
       }
     }
     paintRaceBars(div.rows, CF.$("#div-race-2"));
+    divPainted = true; // v1.205.0 — a real table is on the page now
   }
 
   function paintRaceBars(rows, root) {
