@@ -5440,8 +5440,12 @@ p { text-wrap: pretty; }
    ============================================================ */
 .site-head .app-chip { flex: none; }
 @media (max-width: 960px) {
-  .site-head .wrap { flex-wrap: wrap; }
-  .site-head .wrap:has(.app-chip:not([hidden])) { row-gap: 8px; }
+  /* v1.206.0 — the wrap itself is :has-gated too, exactly as the
+     v1.168.0 note above promised ("the chip-free header never
+     changes"): ungated, the wrap let the phone header's ordinary
+     controls wrap whenever brand + docked snow toggle + menu
+     button outgrew the row (see the v1.206.0 block below). */
+  .site-head .wrap:has(.app-chip:not([hidden])) { flex-wrap: wrap; row-gap: 8px; }
   .site-head .app-chip {
     order: 99;
     flex: 1 1 100%;
@@ -5467,6 +5471,41 @@ p { text-wrap: pretty; }
 @media (min-width: 961px) and (max-width: 1250px) {
   .site-head .wrap:has(.app-chip:not([hidden])) { flex-wrap: wrap; }
   .site-head:has(.app-chip:not([hidden])) .app-chip { order: 99; margin-left: auto; }
+}
+
+/* ============================================================
+   v1.206.0 — the phone header is one row again
+   ------------------------------------------------------------
+   Rendered QA at 390px and 320px (2026-10-21): the sticky header
+   stood 125px tall on every page — the menu button sat alone on
+   a second row, left-aligned, under the brand + snow row. The
+   v1.168.0 app-chip block set flex-wrap: wrap on the header row
+   at ≤960px unconditionally, and once the snow toggle docks
+   into the header on phones (v1.79.0, ≤760px) the three
+   controls — brand 235px + snow 40px + menu 44px + two 18px
+   gaps = 355px — outgrow the 345px row at 390px (and the 281px
+   row at 320px), so the last control wraps. A fan pays for that
+   stray row on every scroll of every page: ~58px of viewport
+   and a header that reads as broken. The wrap is now gated on
+   a visible install chip (the edit in the v1.168.0 block above —
+   a shown chip still takes its own full-width row under the
+   controls), and the phone row itself is slimmed to fit: tighter
+   gaps, a 34px paw, and a stepped-down wordmark at ≤480px, with
+   one more step at ≤380px, where the 44px menu target and the
+   40px snow target keep their full size — the brand absorbs
+   the squeeze, never the tap targets. Desktop is untouched:
+   at ≥481px every value below is the pre-v1.206.0 one.
+   ============================================================ */
+@media (max-width: 480px) {
+  .site-head .wrap { gap: 10px; }
+  .site-head .brand { gap: 9px; }
+  .site-head .brand .mark { width: 34px; height: 34px; }
+  .site-head .brand .name { font-size: 16px; letter-spacing: 0.06em; }
+}
+@media (max-width: 380px) {
+  .site-head .brand { gap: 8px; }
+  .site-head .brand .mark { width: 32px; height: 32px; }
+  .site-head .brand .name { font-size: 14px; letter-spacing: 0.04em; }
 }
 
 /* ============================================================
