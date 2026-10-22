@@ -1286,16 +1286,27 @@ CF.renderWeatherStrip = (root) => {
     }
     const f = (c) => Math.round(c * 9 / 5 + 32);
     const desc = wx.phrase ? CF.esc(wx.phrase) : CF.esc(CF.weatherCode(wx.code));
-    now.innerHTML =
-      "<b>" + f(wx.tempC) + "°F</b> " + desc +
-      " · feels <b>" + f(wx.feelsC) + "°F</b>" +
-      " · wind <b>" + Math.round(wx.wind / 1.609344) + " mph</b>" +
-      (wx.gusts ? " (gusts " + Math.round(wx.gusts / 1.609344) + " mph)" : "") +
-      (wx.snowCm != null && Number(wx.snowCm) > 0 ? " · snow " + (Math.round(Number(wx.snowCm) * 10) / 10) + " cm" : "") +
-      (wx.snowWord ? " · snow in the forecast" : "") +
-      (wx.snowProb != null && !wx.snowWord ? " · precip. " + Math.round(wx.snowProb) + "%" : "") +
-      (wx.source === "nws" ? ' · <span class="dim" style="font-size:11px">NWS forecast</span>' : "") +
-      CF.wxReadStamp(wx);
+    // v1.207.0 — each metric rides in a .wx-seg span that never
+    // breaks internally, so on phones (where the strip's grid
+    // gives the conditions a narrow left column beside the Index
+    // dial) the line wraps BETWEEN metrics: "wind 18 mph (gusts
+    // 29 mph)" stays whole instead of fragmenting mid-phrase
+    // across three lines. Desktop's single row never wraps, so
+    // the segments are inert there, and the painted text —
+    // separators included — is byte-identical to before.
+    const segs = [
+      "<b>" + f(wx.tempC) + "°F</b> " + desc,
+      "feels <b>" + f(wx.feelsC) + "°F</b>",
+      "wind <b>" + Math.round(wx.wind / 1.609344) + " mph</b>" +
+        (wx.gusts ? " (gusts " + Math.round(wx.gusts / 1.609344) + " mph)" : ""),
+    ];
+    if (wx.snowCm != null && Number(wx.snowCm) > 0) segs.push("snow " + (Math.round(Number(wx.snowCm) * 10) / 10) + " cm");
+    if (wx.snowWord) segs.push("snow in the forecast");
+    if (wx.snowProb != null && !wx.snowWord) segs.push("precip. " + Math.round(wx.snowProb) + "%");
+    if (wx.source === "nws") segs.push('<span class="dim" style="font-size:11px">NWS forecast</span>');
+    const stamp = CF.wxReadStamp(wx).replace(/^ · /, "");
+    if (stamp) segs.push(stamp);
+    now.innerHTML = segs.map((s) => '<span class="wx-seg">' + s + "</span>").join(" · ");
     if (wx.gauge) {
       gauge.innerHTML = CF.cfiDialSVG(wx.gauge.score, wx.gauge.cls, wx.gauge.label);
       gauge.className = "wx-gauge cfi-dial-wrap " + wx.gauge.cls;

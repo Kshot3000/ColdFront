@@ -7,10 +7,22 @@ body { overflow-x: clip; }
 }
 .cf-atmosphere .cf-bands { opacity: .28; }
 .cf-atmosphere .cf-aurora { background: radial-gradient(ellipse at 18% 25%, #85ccff24, transparent 52%), radial-gradient(ellipse at 85% 65%, #ff642329, transparent 54%); }
-.weather-strip { padding: 7px 4%; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 11px; }
+/* v1.207.0 — the strip stops paying double rent. This rule padded the
+   strip element itself (7px vertical, 4% horizontal) on top of the
+   .wrap's own width and 9px vertical padding from main.css, so the
+   band rendered 103px tall on desktop with live data and its phone
+   wrap lost ~8% of the viewport to a second inset — the squeeze
+   that pushed the brand and the Index gauge onto separate rows.
+   The .wrap owns the strip's layout now, like every other band:
+   the strip's content edges align with the header and hero wraps,
+   and the vertical padding is paid exactly once. */
+.weather-strip { padding: 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 11px; }
 .wx-brand { letter-spacing: .1em; }
 .wx-item + .wx-item { margin-left: auto; }
 .wx-gauge { font-size: 10px; }
+/* v1.207.0 — a weather metric never breaks internally; the strip's
+   conditions line wraps between metrics instead (see common.js). */
+.wx-seg { white-space: nowrap; }
 .site-head { border-bottom-color: #ffffff12; }
 .nav { gap: 2px; }
 .nav a { padding: 12px 10px; }
@@ -547,13 +559,31 @@ main:focus { outline: none; }
      the row stays clean), and the conditions own row two with wrapping
      allowed — everything readable, nothing swipeable-to-nowhere. The location
      item stays hidden on phones per the existing rule; desktop untouched. */
-  .weather-strip .wrap { flex-wrap: wrap; overflow-x: visible; row-gap: 6px; }
-  .weather-strip .wx-brand { font-size: 10px; letter-spacing: 0.14em; gap: 6px; }
-  .weather-strip .wx-cfi { order: 2; width: auto; margin-left: auto; }
-  .weather-strip .wx-gauge { display: inline-flex; }
+  /* v1.207.0 — the phone strip composes as a two-column grid instead
+     of v1.133.0's stacked rows. The stacked form put the 51px dial
+     row ABOVE the conditions row: 122px of weather before the header
+     at 390px, 160px at 320px where the dial wrapped onto a row of
+     its own. Now the brand and the conditions stack in the left
+     column and the Cold Front Index dial spans both rows on the
+     right — everything v1.133.0 protected survives (no truncation,
+     the dial visible at full 72px, the spark still resting), and
+     the strip lands at ~70px at 390px. The gauge column is
+     minmax(0, auto): the wide "reading the front…" loading pill
+     may wrap its own text on the narrowest phones rather than
+     pushing the brand off its row, and the brand's letter-spacing
+     eases 0.14em -> 0.12em so brand + dial share the 320px row. */
+  .weather-strip .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); column-gap: 10px; row-gap: 3px; align-items: center; flex-wrap: nowrap; overflow-x: visible; }
+  .weather-strip .wx-brand { grid-column: 1; grid-row: 1; font-size: 10px; letter-spacing: 0.12em; gap: 6px; }
+  .weather-strip .wx-cfi { grid-column: 2; grid-row: 1 / span 2; width: auto; margin-left: 0; }
+  .weather-strip .wx-gauge { display: inline-flex; white-space: normal; }
   .weather-strip .cfi-dial { width: 72px; height: auto; }
   .weather-strip .cfi-spark-wrap { display: none; }
-  .weather-strip #wx-now { order: 3; flex: 1 1 100%; white-space: normal; }
+  /* display:block matters: as a .wx-item the conditions line is a
+     flex box, whose items shrink and fragment mid-phrase (and a
+     nowrap segment overflows the cell instead of wrapping). As a
+     plain block in its grid cell the line wraps as text — between
+     the .wx-seg metrics, never inside one. */
+  .weather-strip #wx-now { display: block; grid-column: 1; grid-row: 2; white-space: normal; }
   /* v1.79.0 — on phones the floating snow pill parked on readable content
      (it covered the responsible-gambling helpline number on odds.html and the
      matchup line on the NEXT UP card). The toggle now docks into the sticky
