@@ -106,6 +106,14 @@
       </span>
     </div>
 
+    <!-- v1.208.0 — the wire becomes searchable: one box filters the main
+         wire, the injury rail and the wide wire as the fan types (the
+         roster-controls styling is shared with the Team page search). -->
+    <div class="roster-controls">
+      <input type="search" id="news-q" placeholder="Search the wire (try a name, a team, or 'injury')…" aria-label="Search Bears stories">
+      <span class="dim" id="news-count" role="status" style="align-self:center;font-size:13px"></span>
+    </div>
+
     <div class="grid" style="grid-template-columns: 2fr 1fr; align-items:start" id="news-grid">
       <div class="news-list" id="news-list">
         <div class="empty is-loading" role="status"><div class="big">📡</div><div class="empty-title">Tuning in</div><p class="empty-sub">League wire first — then we keep the rail warm.</p></div>
@@ -191,6 +199,6 @@
 <script src="js/common.js?v=1.207.0"></script>
 <script src="js/snow.js?v=1.137.0"></script>
 <script src="js/api.js?v=1.127.0"></script>
-<script src="js/news.js?v=1.203.0"></script>
+<script src="js/news.js?v=1.208.0"></script>
 </body>
 </html>

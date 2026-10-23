@@ -80,6 +80,53 @@
   let mainPainted = false; // a real answer has painted the main list + rail
   let gnPainted = false; // a real answer has painted the wide-wire list
 
+  /* v1.208.0 — the wire becomes searchable. News was the last content
+     page with no way to find a story: the roster has searched for
+     years, Highlights filters, Games picks a day — but a fan hunting
+     the latest on one player had to scroll three lists (main wire,
+     injury rail, wide wire) by eye. The search box now filters all
+     three as the fan types: a story stays only when every word of
+     the query appears in its own card text (headline, summary,
+     source, byline), the count line mirrors the roster's ("12 of 34
+     stories"), a list whose stories all filter out gets a plain
+     no-match note instead of a silent gap, and clearing the box
+     restores the full wire untouched — nothing re-fetches or
+     re-renders, the cards were only hidden (experience.css's global
+     [hidden] guard keeps a hidden card hidden under .news-item's
+     grid). Every paint re-applies the standing query, so a refresh
+     beat never resurrects stories the fan filtered out. */
+  let wireQuery = "";
+  function applyWireFilter() {
+    const terms = wireQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0, total = 0;
+    ["news-list", "injury-news", "gn-list"].forEach((id) => {
+      const list = CF.$("#" + id);
+      if (!list) return;
+      const items = [...list.querySelectorAll(".news-item")];
+      let listShown = 0;
+      items.forEach((item) => {
+        const on = terms.every((t) => (item.textContent || "").toLowerCase().includes(t));
+        item.hidden = !on;
+        if (on) listShown++;
+      });
+      total += items.length;
+      shown += listShown;
+      let note = list.querySelector(".wire-nomatch");
+      if (terms.length && items.length && !listShown) {
+        if (!note) {
+          note = document.createElement("div");
+          note.className = "empty wire-nomatch";
+          note.setAttribute("role", "status");
+          if (id === "injury-news") note.style.padding = "18px 14px";
+          list.appendChild(note);
+        }
+        note.innerHTML = '<div class="empty-title">No stories match</div><p class="empty-sub">Nothing here matches &ldquo;' + CF.esc(wireQuery.trim()) + "&rdquo; — try fewer words, or clear the search.</p>";
+      } else if (note) note.remove();
+    });
+    const count = CF.$("#news-count");
+    if (count) count.textContent = total ? shown + " of " + total + " stories" : "";
+  }
+
   /* Main wire: ESPN league wire first; when it's quiet (offseason) or
      unreachable, the Google News wide wire carries the panel. The injury
      rail pulls from whichever source(s) answered. */
@@ -206,6 +253,7 @@
       });
     }
     } finally {
+      applyWireFilter(); // v1.208.0 — the standing search survives the paint
       resolveMain(); // the wide wire may now build — it dedupes against the seen set
     }
   }
@@ -259,6 +307,7 @@
       if (gnPainted) {
         pill.className = "pill sample";
         pill.textContent = "Refresh unavailable · previous view";
+        applyWireFilter(); // v1.208.0 — the standing search survives the paint
         return;
       }
       pill.className = "pill sample";
@@ -270,6 +319,7 @@
         action: '<a class="btn small" style="display:inline-flex;margin-top:12px" href="https://news.google.com/search?q=Chicago%20Bears&hl=en-US&gl=US&ceid=US:en" target="_blank" rel="noopener">Read it on Google News ↗</a>',
       });
     }
+    applyWireFilter(); // v1.208.0 — the standing search survives the paint
   }
 
   /* ---------- v1.178.0 — the refresh button admits when it's working ----------
@@ -304,6 +354,9 @@
   document.addEventListener("DOMContentLoaded", () => {
     refreshWire(false);
     CF.$("#refresh").addEventListener("click", () => refreshWire(true));
+    // v1.208.0 — typing in the wire search filters all three lists live.
+    const newsQ = CF.$("#news-q");
+    if (newsQ) newsQ.addEventListener("input", () => { wireQuery = newsQ.value; applyWireFilter(); });
     // Auto-refresh every 5 min while the tab is open (CF.refresh in common.js
     // already handles hidden-tab skip + catch-up on return); both beats
     // funnel through the same busy guard, so a beat that lands
