@@ -23,6 +23,83 @@
      the honest empty state). */
   let reportPainted = false; // a real answer has painted the report table
 
+  /* v1.209.0 — the report becomes searchable. After v1.208.0 this
+     was the last fan-critical page with no way to find a player:
+     on game week the question is binary — "is he playing?" — and
+     the fan had to scan the whole report table and the wire rail
+     by eye to answer it. One box above the grid now filters both
+     surfaces as the fan types: a row or headline stays only when
+     every word of the query appears in its own text (name,
+     position, injury, status, date on the table; headline and
+     excerpt on the wire), the count line mirrors the roster's and
+     the wire's ("3 of 18 entries"), a surface whose entries all
+     filter out gets a plain no-match note instead of a silent
+     gap, and clearing the box restores the page untouched — the
+     rows were only hidden, never re-rendered (experience.css's
+     global [hidden] guard keeps a hidden row hidden under the
+     table's row display). Only real report rows count: skeleton,
+     full-strength and unavailable rows are states, not players.
+     The snapshot and movement strips stay unfiltered on purpose —
+     they describe the whole report, not the fan's current view.
+     Every paint re-applies the standing query, so the 5-minute
+     refresh beats never resurrect entries the fan filtered out. */
+  let injQuery = "";
+  function applyInjFilter() {
+    const terms = injQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0, total = 0;
+    const body = CF.$("#report-table tbody");
+    if (body) {
+      const rows = [...body.querySelectorAll("tr")].filter((tr) => /(^|\s)inj-sev-/.test(tr.className));
+      let listShown = 0;
+      rows.forEach((tr) => {
+        const on = terms.every((t) => (tr.textContent || "").toLowerCase().includes(t));
+        tr.hidden = !on;
+        if (on) listShown++;
+      });
+      total += rows.length;
+      shown += listShown;
+      let note = body.querySelector(".inj-nomatch");
+      if (terms.length && rows.length && !listShown) {
+        if (!note) {
+          note = document.createElement("tr");
+          note.className = "inj-nomatch";
+          const td = document.createElement("td");
+          td.colSpan = 5;
+          td.className = "dim";
+          note.appendChild(td);
+          body.appendChild(note);
+        }
+        note.querySelector("td").textContent = 'No players match "' + injQuery.trim() + '" — try fewer words, or clear the search.';
+      } else if (note) note.remove();
+    }
+    const list = CF.$("#wire-list");
+    if (list) {
+      const items = [...list.querySelectorAll(".news-item")];
+      let listShown = 0;
+      items.forEach((item) => {
+        const on = terms.every((t) => (item.textContent || "").toLowerCase().includes(t));
+        item.hidden = !on;
+        if (on) listShown++;
+      });
+      total += items.length;
+      shown += listShown;
+      let note = list.querySelector(".wire-nomatch");
+      if (terms.length && items.length && !listShown) {
+        if (!note) {
+          note = document.createElement("div");
+          note.className = "empty wire-nomatch";
+          note.setAttribute("role", "status");
+          note.style.padding = "18px 14px";
+          note.style.fontSize = "12.5px";
+          list.appendChild(note);
+        }
+        note.innerHTML = '<div class="empty-title">No headlines match</div><p class="empty-sub">Nothing here matches &ldquo;' + CF.esc(injQuery.trim()) + "&rdquo; — try fewer words, or clear the search.</p>";
+      } else if (note) note.remove();
+    }
+    const count = CF.$("#inj-count");
+    if (count) count.textContent = total ? shown + " of " + total + " entries" : "";
+  }
+
   function sevCls(row) {
     return CF.injStatusCls(row.status || row.statusCls);
   }
@@ -114,6 +191,7 @@
           reportPainted = true;
           paintSnapshot(rows);
           await paintMovement(rows);
+          applyInjFilter(); // v1.209.0
           return;
         }
       } catch (e) { /* fall through to the league report */ }
@@ -141,6 +219,7 @@
         // best news, and home kept diffing against ghosts. Diff the
         // empty table like any other table.
         await paintMovement([]);
+        applyInjFilter(); // v1.209.0
         return;
       }
       if (rows.length) {
@@ -153,6 +232,7 @@
         reportPainted = true;
         paintSnapshot(rows);
         await paintMovement(rows);
+        applyInjFilter(); // v1.209.0
         return;
       }
     } catch (e) { /* league feed silent */ }
@@ -171,6 +251,7 @@
         reportPainted = true;
         paintSnapshot(rows);
         await paintMovement(rows);
+        applyInjFilter(); // v1.209.0
         return;
       }
     } catch (e2) { /* roster silent too */ }
@@ -187,6 +268,7 @@
         : '<tr><td colspan="5" class="dim">No verified report is available. Check the official Bears injury report for current availability.</td></tr>';
       reportPainted = true;
       paintSnapshot(rows.length ? rows : null);
+      applyInjFilter(); // v1.209.0
     } catch (e3) {
       // v1.203.0 — every fallback missed this beat: the last good
       // table, snapshot strip and movement trail stay as they are.
@@ -202,6 +284,7 @@
         title: "Report unavailable",
         sub: "Could not load the community report from this network.",
       }) + "</td></tr>";
+      applyInjFilter(); // v1.209.0
     }
   }
 
@@ -303,6 +386,7 @@
     if (parts.length) {
       box.innerHTML = parts.slice(0, 12).join("");
       wireEntered = true; // first paint done — refreshes stay instant
+      applyInjFilter(); // v1.209.0
       return;
     }
     // v1.203.0 — total silence on a refresh keeps the last good
@@ -311,6 +395,7 @@
     // paints the honest empty state below.
     if (wireEntered && !answered) return;
     box.innerHTML = '<div class="empty" style="padding:18px 14px;font-size:12.5px">No injury headlines are available from the connected feeds right now. <a href="https://www.espn.com/nfl/team/_/name/chi/" target="_blank" rel="noopener">ESPN Bears ↗</a></div>';
+    applyInjFilter(); // v1.209.0
   }
 
   /* ---------- v1.177.0 — the wire's refresh button says what it does ----------
@@ -344,6 +429,8 @@
   document.addEventListener("DOMContentLoaded", () => {
     loadReport();
     refreshWire();
+    // v1.209.0 — typing in the report search filters the table + wire live.
+    CF.$("#inj-q").addEventListener("input", (e) => { injQuery = e.target.value; applyInjFilter(); });
     CF.$("#wire-refresh").addEventListener("click", () => { if (wireBusy) return; CF.toast("Refreshing the wire…"); refreshWire(); });
     // Keep both sides moving for as long as the tab is open (CF.refresh in common.js):
     CF.refresh.register(refreshWire, 5 * 60e3);          // live injury wire: 5 min
