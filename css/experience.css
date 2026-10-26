@@ -72,7 +72,15 @@ main:focus { outline: none; }
 .btn { min-height: 44px; }
 .hero-actions .primary { background: linear-gradient(135deg, var(--orange) 0%, #cc3600 100%); box-shadow: 0 6px 30px #ee551a27; border-color: transparent; padding: 13px 22px; }
 .hero-actions .primary:hover { background: linear-gradient(135deg, #d63800 0%, var(--orange) 100%); transform: translateY(-2px); }
-.hero-note { display: flex; align-items: center; gap: 9px; color: #86a4bb; font-size: 11px; margin-top: 20px; letter-spacing: .05em; }
+/* v1.210.0 — the hero note reads over the photo. Every other text that
+   sits on the hero imagery carries a dark text-shadow for exactly this
+   (h1, .sub, the photo-band copy and band eyebrow), and a rendered probe
+   measured the note as the one exception — text-shadow: none on the
+   hero's smallest line (11px, mid ice #86a4bb), parked on phones over
+   the bright crowd/field band of the gameday layer, where its words
+   dissolved into the photo. It wears the .sub's shadow voice now,
+   scaled for its size; colour, size and spacing are unchanged. */
+.hero-note { display: flex; align-items: center; gap: 9px; color: #86a4bb; font-size: 11px; margin-top: 20px; letter-spacing: .05em; text-shadow: 0 1px 4px rgba(0,0,0,0.7), 0 2px 18px rgba(0,0,0,0.65); }
 .hero-note::before { content: ""; width: 6px; height: 6px; background: #88bddf; border-radius: 50%; box-shadow: 0 0 12px #88bddf; }
 .match-card { padding: 27px; background: linear-gradient(145deg,#182b40e8,#071323f5); border: 1px solid #aecfe82e; border-top: 3px solid #f56c30; box-shadow: 0 18px 80px #0007, inset 0 1px #ffffff09; }
 /* v1.117.0 — mid-width hero QA (2026-09-30) caught the nowrap status pill
