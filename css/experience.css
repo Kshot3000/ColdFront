@@ -1681,3 +1681,46 @@ tr.ld-div.me .ld-div-abbr {
   .bx-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .snow-toggle { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
+
+/* ============================================================
+   v1.211.0 — the injury report answers on a phone without a
+   sideways swipe. The report table inherits table.tbl's
+   560px min-width, a fleet-wide swipe design — but a rendered
+   probe measured what that costs this page at 390px: the
+   Status column spans x 311–450 in a 357px wrap, so the
+   status pill (the one column that answers "is he playing?")
+   rests sliced mid-word at the right edge, and Report date
+   sits entirely off-screen. This is the one table whose
+   columns are short enough to fit a phone honestly, so on
+   small screens it stops swiping: the min-width lifts, the
+   layout goes fixed with fan-priority widths (Status takes
+   the largest share), cells and the severity pill compact
+   a step, and Report date — the filing date the section
+   pill already announces — folds away under 640px. Every
+   row's player, position, injury and full status pill is
+   visible at rest at 390px, 360px and 320px (rendered:
+   wrap scroll width equals its client width at 390/360,
+   widest pill "Injured Reserve" fully inside its cell).
+   Desktop and every other table keep the swipe design.
+   ============================================================ */
+@media (max-width: 640px) {
+  #report-table { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #report-table th, #report-table td { padding: 10px 7px; }
+  #report-table th:nth-child(1), #report-table td:nth-child(1) { width: 24%; }
+  #report-table th:nth-child(2), #report-table td:nth-child(2) { width: 11%; }
+  #report-table th:nth-child(3), #report-table td:nth-child(3) { width: 27%; }
+  #report-table th:nth-child(4), #report-table td:nth-child(4) { width: 38%; }
+  #report-table th:nth-child(5), #report-table td:nth-child(5) { display: none; }
+  #report-table .st { font-size: 10.5px; padding: 3px 6px 3px 17px; }
+  #report-table .st::before { left: 6px; width: 7px; height: 7px; }
+}
+@media (max-width: 380px) {
+  #report-table { font-size: 12px; }
+  #report-table th, #report-table td { padding: 10px 6px; }
+  #report-table th:nth-child(1), #report-table td:nth-child(1) { width: 24%; }
+  #report-table th:nth-child(2), #report-table td:nth-child(2) { width: 11%; }
+  #report-table th:nth-child(3), #report-table td:nth-child(3) { width: 24%; }
+  #report-table th:nth-child(4), #report-table td:nth-child(4) { width: 41%; }
+  #report-table .st { font-size: 10px; padding: 3px 6px 3px 15px; }
+  #report-table .st::before { left: 5px; width: 6px; height: 6px; }
+}
