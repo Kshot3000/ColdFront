@@ -1724,3 +1724,49 @@ tr.ld-div.me .ld-div-abbr {
   #report-table .st { font-size: 10px; padding: 3px 6px 3px 15px; }
   #report-table .st::before { left: 5px; width: 6px; height: 6px; }
 }
+
+/* ============================================================
+   v1.212.0 — the home training-room snapshot answers on a
+   phone too. This closes the v1.211.0 defect class: the
+   snapshot table is the report table's twin (Player / Pos /
+   Latest update / Status, the same .st severity pill), and
+   it kept table.tbl's 560px swipe min-width, so a rendered
+   probe at 390px measured its Status column at x 382–560 in
+   a 357px wrap — the pill that answers "is he playing?" on
+   the front door rested entirely off-screen, worse than the
+   report page, where it was only sliced. The columns are
+   the same short ones, so under 640px it stops swiping with
+   the report's own composition: min-width lifts, layout
+   goes fixed with fan-priority widths (Player 24 / Pos 11 /
+   Latest update 27 / Status 38), cells and the pill compact
+   a step; under 380px Status widens to 41%. No column folds
+   away — the snapshot carries only four, and all four are
+   the answer. One adaptation the report never needed: .tbl
+   th is nowrap, and "Latest update" cannot fit its column
+   nowrap at phone sizes (a rendered shot showed it running
+   into "Status"), so this table's headers may wrap — the
+   two-word header takes two lines and every label stays
+   whole. Desktop and every other table keep the swipe
+   design; the report table keeps its v1.211.0 fit.
+   ============================================================ */
+@media (max-width: 640px) {
+  #home-injuries { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #home-injuries th { white-space: normal; }
+  #home-injuries th, #home-injuries td { padding: 10px 7px; }
+  #home-injuries th:nth-child(1), #home-injuries td:nth-child(1) { width: 24%; }
+  #home-injuries th:nth-child(2), #home-injuries td:nth-child(2) { width: 11%; }
+  #home-injuries th:nth-child(3), #home-injuries td:nth-child(3) { width: 27%; }
+  #home-injuries th:nth-child(4), #home-injuries td:nth-child(4) { width: 38%; }
+  #home-injuries .st { font-size: 10.5px; padding: 3px 6px 3px 17px; }
+  #home-injuries .st::before { left: 6px; width: 7px; height: 7px; }
+}
+@media (max-width: 380px) {
+  #home-injuries { font-size: 12px; }
+  #home-injuries th, #home-injuries td { padding: 10px 6px; }
+  #home-injuries th:nth-child(1), #home-injuries td:nth-child(1) { width: 24%; }
+  #home-injuries th:nth-child(2), #home-injuries td:nth-child(2) { width: 11%; }
+  #home-injuries th:nth-child(3), #home-injuries td:nth-child(3) { width: 24%; }
+  #home-injuries th:nth-child(4), #home-injuries td:nth-child(4) { width: 41%; }
+  #home-injuries .st { font-size: 10px; padding: 3px 6px 3px 15px; }
+  #home-injuries .st::before { left: 5px; width: 6px; height: 6px; }
+}
