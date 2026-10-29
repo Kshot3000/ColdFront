@@ -23,6 +23,11 @@
       '<span class="ld-div-name">' + (isMe ? '<span aria-hidden="true">🐻</span> ' : "") +
       CF.esc(label) + ' <span class="ld-div-abbr">' + CF.esc(abbr) + "</span></span></th></tr>";
   }
+  /* v1.213.0 — the short leaders tables (this one and the per-game
+     leaders below) carry ld-fit: on phones they fit their wrap
+     instead of swiping, so the Line column rests on-screen (the
+     fit itself lives in experience.css). The API-Sports season
+     leaders table keeps the swipe — its stat columns are wide. */
   function leadersTableHTML(leaders, names, entered) {
     const rowHTML = (l) =>
       '<tr class="ld-row">' + leaderCatCell(l) +
@@ -46,7 +51,7 @@
       body = "<tbody>" + leaders.map(rowHTML).join("") + "</tbody>";
     }
     return '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '">' +
-      '<table class="tbl ld"><caption class="sr-only">Last game leaders by team</caption>' +
+      '<table class="tbl ld ld-fit ld-fit-3"><caption class="sr-only">Last game leaders by team</caption>' +
       '<thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead>' +
       body + "</table></div>";
   }
@@ -220,7 +225,7 @@
       const entered = !leadersEntered;
       leadersEntered = true;
       box.innerHTML =
-        '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears per-game leaders, recent completed games</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th><th scope="col">When</th></tr></thead><tbody>' +
+        '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld ld-fit ld-fit-4"><caption class="sr-only">Bears per-game leaders, recent completed games</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th><th scope="col">When</th></tr></thead><tbody>' +
         rowsOut.map((l) =>
           '<tr class="ld-row">' + leaderCatCell(l) +
           '<td class="ld-leader">' + leaderCell(l) + "</td>" +

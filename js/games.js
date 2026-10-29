@@ -348,7 +348,10 @@
       const pillCls = st.state === "post" ? "final" : (st.state === "in" ? "live" : "");
       const pillDot = st.state === "in" ? '<span class="dot" aria-hidden="true"></span>' : "";
       /* Category glyph chips — same family mapping as the stats-page leaders
-         (v1.39.0), so the box-score rows read as the same leaderboard. */
+         (v1.39.0), so the box-score rows read as the same leaderboard.
+         v1.213.0 — the table carries ld-fit ld-fit-3: on phones it fits
+         its wrap instead of swiping, so the Line column rests on-screen
+         (the fit itself lives in experience.css). */
       const boxGlyph = (category) => {
         const s = String(category || "").toLowerCase();
         if (/intercept/.test(s)) return "🎯";
@@ -367,7 +370,7 @@
         "<h3 style=\"margin:0\">" + CF.esc(ev.name || "Box score") + "</h3>" +
         '<span class="pill ' + pillCls + '">' + pillDot + CF.esc(statusTxt) + "</span></div>" +
         duel +
-        '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl"><caption class="sr-only">Box score leaders by category</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead><tbody>' +
+        '<div class="tbl-wrap" style="margin-top:14px;border:none"><table class="tbl ld-fit ld-fit-3"><caption class="sr-only">Box score leaders by category</caption><thead><tr><th scope="col">Category</th><th scope="col">Leader</th><th scope="col" class="num">Line</th></tr></thead><tbody>' +
         leaders.map((l) => {
           const nm = l.url ? '<a href="' + CF.esc(CF.safeURL(l.url)) + '" target="_blank" rel="noopener">' + CF.esc(l.player) + "</a>" : CF.esc(l.player);
           return '<tr><td class="strong ld-cat"><span class="ld-glyph" aria-hidden="true">' + boxGlyph(l.category || l.label) + "</span>" + CF.esc(l.label) + "</td>" +

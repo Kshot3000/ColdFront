@@ -1770,3 +1770,59 @@ tr.ld-div.me .ld-div-abbr {
   #home-injuries .st { font-size: 10px; padding: 3px 6px 3px 15px; }
   #home-injuries .st::before { left: 5px; width: 6px; height: 6px; }
 }
+
+/* ============================================================
+   v1.213.0 — the leader tables answer on a phone too. The
+   v1.211/v1.212 sweep measured the .tbl tables in the static
+   markup, but three leader tables are built by JS after a
+   feed answers — the Games box score (Category / Leader /
+   Line), the Stats last-game leaders (same three, in team
+   blocks) and the Stats per-game leaders (the same plus
+   When) — and a rendered probe with realistic rows measured
+   the same defect in all three: they kept table.tbl's 560px
+   swipe min-width, so at 390px the Line column — the headline
+   stat itself, the one .ld-line styles with a glow — rests
+   entirely off-screen (x 482–560 in the box score's 325px
+   wrap; x 484–560 in the Stats wraps at 357px), and When
+   sits off-screen behind it. These tables carry ld-fit now
+   (games.js / stats.js), and under 640px they stop swiping
+   like the report did: min-width lifts, layout goes fixed
+   with fan-priority widths (the Line takes the widest share
+   it can honestly get), cells compact a step, and the three
+   nowrap voices that would overflow a fixed column — the
+   category cell, the glowing line, the date — may wrap
+   instead. No column folds: every column here is short, and
+   When is part of the answer (which game the line came
+   from). Under 380px the Line widens a step more. The wide
+   tables keep the swipe by design: the API-Sports season
+   leaders (Player / Pos plus up to five stat columns), the
+   season log, the practice tracker and the roster table.
+   Widths are set on the head cells and the body cells; the
+   last-game table's team-divider rows are <th colspan="3">
+   in the body, so they are deliberately not width targets.
+   ============================================================ */
+@media (max-width: 640px) {
+  .tbl.ld-fit { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  .tbl.ld-fit th, .tbl.ld-fit td { padding: 10px 7px; }
+  .tbl.ld-fit .ld-cat { white-space: normal; }
+  .tbl.ld-fit .ld-line { white-space: normal; font-size: 14px; line-height: 1.35; }
+  .tbl.ld-fit .ld-when { white-space: normal; }
+  .tbl.ld-fit-3 thead th:nth-child(1), .tbl.ld-fit-3 tbody td:nth-child(1) { width: 31%; }
+  .tbl.ld-fit-3 thead th:nth-child(2), .tbl.ld-fit-3 tbody td:nth-child(2) { width: 41%; }
+  .tbl.ld-fit-3 thead th:nth-child(3), .tbl.ld-fit-3 tbody td:nth-child(3) { width: 28%; }
+  .tbl.ld-fit-4 thead th:nth-child(1), .tbl.ld-fit-4 tbody td:nth-child(1) { width: 25%; }
+  .tbl.ld-fit-4 thead th:nth-child(2), .tbl.ld-fit-4 tbody td:nth-child(2) { width: 35%; }
+  .tbl.ld-fit-4 thead th:nth-child(3), .tbl.ld-fit-4 tbody td:nth-child(3) { width: 24%; }
+  .tbl.ld-fit-4 thead th:nth-child(4), .tbl.ld-fit-4 tbody td:nth-child(4) { width: 16%; }
+}
+@media (max-width: 380px) {
+  .tbl.ld-fit { font-size: 12px; }
+  .tbl.ld-fit th, .tbl.ld-fit td { padding: 10px 6px; }
+  .tbl.ld-fit-3 thead th:nth-child(1), .tbl.ld-fit-3 tbody td:nth-child(1) { width: 29%; }
+  .tbl.ld-fit-3 thead th:nth-child(2), .tbl.ld-fit-3 tbody td:nth-child(2) { width: 40%; }
+  .tbl.ld-fit-3 thead th:nth-child(3), .tbl.ld-fit-3 tbody td:nth-child(3) { width: 31%; }
+  .tbl.ld-fit-4 thead th:nth-child(1), .tbl.ld-fit-4 tbody td:nth-child(1) { width: 24%; }
+  .tbl.ld-fit-4 thead th:nth-child(2), .tbl.ld-fit-4 tbody td:nth-child(2) { width: 33%; }
+  .tbl.ld-fit-4 thead th:nth-child(3), .tbl.ld-fit-4 tbody td:nth-child(3) { width: 25%; }
+  .tbl.ld-fit-4 thead th:nth-child(4), .tbl.ld-fit-4 tbody td:nth-child(4) { width: 18%; }
+}
