@@ -1826,3 +1826,91 @@ tr.ld-div.me .ld-div-abbr {
   .tbl.ld-fit-4 thead th:nth-child(3), .tbl.ld-fit-4 tbody td:nth-child(3) { width: 25%; }
   .tbl.ld-fit-4 thead th:nth-child(4), .tbl.ld-fit-4 tbody td:nth-child(4) { width: 18%; }
 }
+
+/* ============================================================
+   v1.214.0 — the Games page answers on a phone. The v1.213.0
+   comment above lists the season log among the wide tables
+   keeping the swipe — a rendered re-measure of the two Games
+   tables (realistic rows in the real containers) refutes it
+   for both. The log's Date cell is nowrap and long, pushing
+   the table to 622px: at 390px (357px wrap) the Score column
+   spans x 338–401 with its digits right-aligned at the far
+   edge — off-screen — and Result (401–502), the W/L pill
+   itself, sits entirely past the swipe. But three of the
+   log's seven columns are not the answer: Site is already
+   spelled by the Opponent cell's own "vs"/"@" prefix, TV is
+   broadcast colour the desk and board carry, and the Box
+   link duplicates the played row's own tap (the whole row
+   carries data-boxgame). What remains — Date / Opponent /
+   Score / Result — fits a phone honestly, so under 640px
+   the log stops swiping like the report did: min-width
+   lifts, layout goes fixed (Date 28 / Opponent 31 / Score
+   15 / Result 26), cells and the result pill compact a step,
+   Site/TV/Box fold away, and the date cell may wrap — in
+   the fixed layout its kickoff time takes a clean second
+   line at a step smaller instead of the one nowrap line
+   that pushed the table to 622px (the main.css nowrap rule
+   guards the AUTO layout, where a wrapped date stole width
+   from the chip column; that layout is untouched). The
+   division table on the same page fails the same way in
+   miniature: v1.212.0 cleared it as "core W/L/Pct rest
+   visible", but the re-measure puts Pct at x 335–399 with
+   its digits right-aligned off-screen — the percentage a
+   standings table exists to show. GP (the sum the W/L
+   columns already tell) and Div (divisional colour) fold;
+   Team / W / L / Pct / Streak fit (37 / 12 / 12 / 18 / 21).
+   The Result header takes a small left indent in both
+   blocks — Score's header is right-aligned to its cell
+   edge and the two merged into one word at 320px on the
+   first cut. Under 380px both tables compact one step
+   more (the log at 11.5px, its Result share widening for
+   the UPCOMING pill) and the log's divider label may wrap
+   to two centered lines. The genuinely wide tables keep
+   the swipe:
+   the season leaders (up to seven stat columns), the
+   practice tracker (prose Notes) and the roster table view
+   (eight detail columns behind the card grid).
+   ============================================================ */
+@media (max-width: 640px) {
+  #log-table { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #log-table th, #log-table td { padding: 10px 7px; }
+  #log-table td:first-child { white-space: normal; }
+  #log-table td:first-child .dim { font-size: 10.5px; }
+  #log-table th:nth-child(1), #log-table td:nth-child(1) { width: 28%; }
+  #log-table th:nth-child(2), #log-table td:nth-child(2) { width: 31%; }
+  #log-table th:nth-child(4), #log-table td:nth-child(4) { width: 15%; }
+  #log-table th:nth-child(5), #log-table td:nth-child(5) { width: 26%; }
+  #log-table th:nth-child(5) { padding-left: 12px; }
+  #log-table th:nth-child(3), #log-table td:nth-child(3) { display: none; }
+  #log-table th:nth-child(6), #log-table td:nth-child(6) { display: none; }
+  #log-table th:nth-child(7), #log-table td:nth-child(7) { display: none; }
+  #log-table .st { font-size: 10px; padding: 3px 6px; letter-spacing: 0.02em; }
+  #div-table-2 { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #div-table-2 th, #div-table-2 td { padding: 10px 7px; }
+  #div-table-2 th:nth-child(1), #div-table-2 td:nth-child(1) { width: 37%; }
+  #div-table-2 th:nth-child(3), #div-table-2 td:nth-child(3) { width: 12%; }
+  #div-table-2 th:nth-child(4), #div-table-2 td:nth-child(4) { width: 12%; }
+  #div-table-2 th:nth-child(5), #div-table-2 td:nth-child(5) { width: 18%; }
+  #div-table-2 th:nth-child(7), #div-table-2 td:nth-child(7) { width: 21%; }
+  #div-table-2 th:nth-child(2), #div-table-2 td:nth-child(2) { display: none; }
+  #div-table-2 th:nth-child(6), #div-table-2 td:nth-child(6) { display: none; }
+}
+@media (max-width: 380px) {
+  #log-table { font-size: 11.5px; }
+  #log-table th, #log-table td { padding: 10px 6px; }
+  #log-table td:first-child .dim { font-size: 10px; }
+  #log-table th:nth-child(1), #log-table td:nth-child(1) { width: 27%; }
+  #log-table th:nth-child(2), #log-table td:nth-child(2) { width: 30%; }
+  #log-table th:nth-child(4), #log-table td:nth-child(4) { width: 16%; }
+  #log-table th:nth-child(5), #log-table td:nth-child(5) { width: 27%; }
+  #log-table th:nth-child(5) { padding-left: 10px; }
+  #log-table .st { font-size: 9.5px; padding: 3px 5px; }
+  #log-table .log-divider div > span:nth-child(2) { white-space: normal !important; text-align: center; }
+  #div-table-2 { font-size: 12px; }
+  #div-table-2 th, #div-table-2 td { padding: 10px 6px; }
+  #div-table-2 th:nth-child(1), #div-table-2 td:nth-child(1) { width: 35%; }
+  #div-table-2 th:nth-child(3), #div-table-2 td:nth-child(3) { width: 12%; }
+  #div-table-2 th:nth-child(4), #div-table-2 td:nth-child(4) { width: 12%; }
+  #div-table-2 th:nth-child(5), #div-table-2 td:nth-child(5) { width: 19%; }
+  #div-table-2 th:nth-child(7), #div-table-2 td:nth-child(7) { width: 22%; }
+}
