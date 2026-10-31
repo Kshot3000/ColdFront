@@ -1914,3 +1914,56 @@ tr.ld-div.me .ld-div-abbr {
   #div-table-2 th:nth-child(5), #div-table-2 td:nth-child(5) { width: 19%; }
   #div-table-2 th:nth-child(7), #div-table-2 td:nth-child(7) { width: 22%; }
 }
+
+/* ============================================================
+   v1.215.0 — the roster table view answers on a phone too.
+   The v1.214.0 sweep cleared this table as "secondary behind
+   cards" without measuring whether it could fit — a rendered
+   re-measure (worst-case rows in the real container) refutes
+   the clear: the table rests at table.tbl's 560px in a 357px
+   wrap at 390px, so Ht spans x 345–393 with its text sliced
+   at the wrap edge and Wt (393–448) sits entirely past the
+   swipe, From (448–561) behind it. A fan who taps Table view
+   — the dense view, chosen precisely to compare players —
+   gets number, name, position, age and experience at rest,
+   and neither of the two physical stats the table exists to
+   compare. Seven of the eight columns are short tokens
+   (jersey, position, age, "10 yrs", 6' 5", "312 lbs"), so
+   under 640px it stops swiping like the report did: min-width
+   lifts, layout goes fixed (# 9 / Player 24 / Pos 11 / Age 11
+   / Exp 15 / Ht 13 / Wt 17), cells compact a step, and From —
+   the one long column, a birthplace or college string —
+   folds away: the same player's card on this page carries
+   the college/from line, and the name's own profile link
+   opens the full bio. The shared-jersey PS badge may wrap
+   under its number in the fitted jersey cell. Under 380px
+   everything compacts one step more, Player widens a step
+   for two-word names, and the header voice steps down half
+   a size so POS / AGE / EXP stay whole inside their columns.
+   The genuinely wide tables keep the swipe: the season
+   leaders (up to seven stat columns) and the practice
+   tracker (prose Notes). Desktop keeps all eight columns.
+   ============================================================ */
+@media (max-width: 640px) {
+  #roster-table { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #roster-table th, #roster-table td { padding: 10px 6px; }
+  #roster-table th:nth-child(1), #roster-table td:nth-child(1) { width: 9%; }
+  #roster-table th:nth-child(2), #roster-table td:nth-child(2) { width: 24%; }
+  #roster-table th:nth-child(3), #roster-table td:nth-child(3) { width: 11%; }
+  #roster-table th:nth-child(4), #roster-table td:nth-child(4) { width: 11%; }
+  #roster-table th:nth-child(5), #roster-table td:nth-child(5) { width: 15%; }
+  #roster-table th:nth-child(6), #roster-table td:nth-child(6) { width: 13%; }
+  #roster-table th:nth-child(7), #roster-table td:nth-child(7) { width: 17%; }
+  #roster-table th:nth-child(8), #roster-table td:nth-child(8) { display: none; }
+}
+@media (max-width: 380px) {
+  #roster-table { font-size: 12px; }
+  #roster-table th { font-size: 10.5px; letter-spacing: 0.1em; }
+  #roster-table th:nth-child(1), #roster-table td:nth-child(1) { width: 9%; }
+  #roster-table th:nth-child(2), #roster-table td:nth-child(2) { width: 26%; }
+  #roster-table th:nth-child(3), #roster-table td:nth-child(3) { width: 11%; }
+  #roster-table th:nth-child(4), #roster-table td:nth-child(4) { width: 10%; }
+  #roster-table th:nth-child(5), #roster-table td:nth-child(5) { width: 15%; }
+  #roster-table th:nth-child(6), #roster-table td:nth-child(6) { width: 13%; }
+  #roster-table th:nth-child(7), #roster-table td:nth-child(7) { width: 16%; }
+}
