@@ -1967,3 +1967,61 @@ tr.ld-div.me .ld-div-abbr {
   #roster-table th:nth-child(6), #roster-table td:nth-child(6) { width: 13%; }
   #roster-table th:nth-child(7), #roster-table td:nth-child(7) { width: 16%; }
 }
+
+/* ============================================================
+   v1.216.0 — the full odds board answers on a phone too.
+   Every phone-fit sweep measured the tables in the static
+   markup or the wire-built leaders, and this one escaped
+   them all: the Odds API full board is built by odds.js
+   after a fan pastes a key, inside a card, and it carried
+   its own inline 480px min-width instead of the fleet's
+   560px. A rendered probe with realistic books measured
+   what that costs: the card insets the wrap to 299px at
+   390px, so the ML column — half the comparison this
+   board exists for — spans x 273–402 with its away price
+   sliced at the wrap edge, and Updated (402–481) sits
+   entirely past the swipe; at 320px the wrap is 234px
+   and the O/U is sliced too. The four price columns are
+   all short tokens (a book name, "-3.5 (-110)", "47.5",
+   "-175 / +150"), so under 640px the board stops swiping
+   like the report did: the inline min-width is gone (the
+   table carries fb-fit now), the layout goes fixed with
+   fan-priority widths (Book 27 / Spread 25 / O/U 13 /
+   ML 35), cells compact a step, the headers may wrap so
+   "ML home/away" takes two whole lines, and Updated —
+   per-book timestamp metadata, the Report date of this
+   table — folds away (the v1.211.0 precedent). The BEST
+   chip may wrap under its number in the fitted Spread
+   and ML cells (the roster PS-badge precedent, verified
+   inside its cell on realistic rows). Under 380px
+   everything compacts one step more, Book widens for
+   two-word book names ("Fanatics Sportsbook"), and the
+   header voice steps down half a size with the ML header
+   allowed to break so SPREAD and ML HOME/AWAY stay whole
+   — a first cut without the step-down overflowed the
+   wrap by 14px at 320px on those two headers alone.
+   The genuinely wide tables keep the swipe: the season
+   leaders (up to seven columns under dynamic stat
+   headers, key-gated) and the practice tracker (prose
+   Notes). Desktop keeps all five columns.
+   ============================================================ */
+@media (max-width: 640px) {
+  .tbl.fb-fit { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  .tbl.fb-fit th { white-space: normal; }
+  .tbl.fb-fit th, .tbl.fb-fit td { padding: 10px 6px; }
+  .tbl.fb-fit thead th:nth-child(1), .tbl.fb-fit tbody td:nth-child(1) { width: 27%; }
+  .tbl.fb-fit thead th:nth-child(2), .tbl.fb-fit tbody td:nth-child(2) { width: 25%; }
+  .tbl.fb-fit thead th:nth-child(3), .tbl.fb-fit tbody td:nth-child(3) { width: 13%; }
+  .tbl.fb-fit thead th:nth-child(4), .tbl.fb-fit tbody td:nth-child(4) { width: 35%; }
+  .tbl.fb-fit thead th:nth-child(5), .tbl.fb-fit tbody td:nth-child(5) { display: none; }
+}
+@media (max-width: 380px) {
+  .tbl.fb-fit { font-size: 12px; }
+  .tbl.fb-fit th { font-size: 10.5px; letter-spacing: 0.08em; }
+  .tbl.fb-fit thead th:nth-child(4) { overflow-wrap: anywhere; }
+  .tbl.fb-fit th, .tbl.fb-fit td { padding: 10px 5px; }
+  .tbl.fb-fit thead th:nth-child(1), .tbl.fb-fit tbody td:nth-child(1) { width: 32%; }
+  .tbl.fb-fit thead th:nth-child(2), .tbl.fb-fit tbody td:nth-child(2) { width: 23%; }
+  .tbl.fb-fit thead th:nth-child(3), .tbl.fb-fit tbody td:nth-child(3) { width: 14%; }
+  .tbl.fb-fit thead th:nth-child(4), .tbl.fb-fit tbody td:nth-child(4) { width: 31%; }
+}

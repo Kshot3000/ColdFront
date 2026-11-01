@@ -396,8 +396,14 @@
           '<td class="num">'+mlCell(r.home)+" / "+mlCell(r.away)+'</td>' +
           '<td class="dim">'+CF.esc(r.b.last_update ? CF.fmtTime(r.b.last_update) : "—")+'</td></tr>';
       });
+      // v1.216.0 — the full board carries fb-fit: on phones it
+      // fits its card instead of swiping, so the ML comparison
+      // rests on-screen and only the Updated timestamp folds
+      // (the fit itself lives in experience.css). The old
+      // inline 480px min-width is gone — desktop inherits the
+      // fleet's table.tbl design.
       box.innerHTML =
-        '<div class="tbl-wrap"><table class="tbl" style="min-width:480px"><caption class="sr-only">Odds by sportsbook</caption><thead><tr>' +
+        '<div class="tbl-wrap"><table class="tbl fb-fit"><caption class="sr-only">Odds by sportsbook</caption><thead><tr>' +
         "<th scope=\"col\">Book</th><th scope=\"col\" class=\"num\">Spread</th><th scope=\"col\" class=\"num\">O/U</th><th scope=\"col\" class=\"num\">ML home/away</th><th scope=\"col\">Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
         '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
