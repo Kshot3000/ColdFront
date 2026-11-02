@@ -2025,3 +2025,66 @@ tr.ld-div.me .ld-div-abbr {
   .tbl.fb-fit thead th:nth-child(3), .tbl.fb-fit tbody td:nth-child(3) { width: 14%; }
   .tbl.fb-fit thead th:nth-child(4), .tbl.fb-fit tbody td:nth-child(4) { width: 31%; }
 }
+
+/* ============================================================
+   v1.217.0 — the practice tracker answers on a phone, and
+   its Notes finally read at full width. Every earlier fit
+   sweep left this table on the swipe because its fifth
+   column is prose: a rendered probe with realistic rows
+   (the test fixture's own sessions plus beat-length notes)
+   measured what that costs at 390px — the table rests at
+   560px in a 357px wrap, the Media column spans x 248–389
+   so its longest pills ("Availability report" 256–381,
+   "Open locker room" 256–380) are sliced at the wrap edge,
+   and Notes (389–561) sits entirely past the swipe: the
+   one column with actual news in it was the one a phone
+   fan never saw. Prose cannot fold and cannot honestly
+   fit a fifth share, so the note leaves the column
+   entirely (practice.js): each session's note rides its
+   own full-width row directly under the session, on every
+   screen — desktop notes gain the full measure too,
+   instead of a squeezed fifth column. What remains in the
+   row — Day / Session / Focus / Media — is four short
+   voices, so under 640px the tracker stops swiping like
+   the report did: min-width lifts, layout goes fixed
+   (Day 16 / Session 31 / Focus 25 / Media 28), cells
+   compact a step, and the Media pill — nowrap since
+   v1.71.0 so fan-English labels never broke mid-pill in
+   the auto layout — may wrap inside its fitted column
+   and centers as it does (the fitted headers and BEST
+   chips wrap the same way). The today pill stacks under
+   its day the same way. Under 380px everything compacts
+   one step more, Media widens for its two-word pills,
+   and the header voice steps down half a size so
+   SESSION stays whole. The season leaders keep the
+   swipe: up to seven columns under dynamic, feed-chosen
+   stat headers, key-gated — no honest fixed share has
+   been certified against their worst-case headers.
+   ============================================================ */
+#tracker td.trk-note { padding: 0 14px 13px; border-bottom: 1px solid var(--line); }
+#tracker tr.trk-row:has(+ .trk-note-row) td { border-bottom: none; }
+#tracker .trk-note { color: var(--text-dim); font-size: 12.5px; line-height: 1.55; }
+#tracker .trk-note-k { display: inline-block; margin-right: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange-hot); }
+#tracker tr.trk-note-row.trk-today td { background: rgba(232, 84, 30, 0.1); }
+@media (max-width: 640px) {
+  #tracker { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  #tracker th, #tracker td { padding: 10px 7px; }
+  #tracker thead th:nth-child(1), #tracker tbody .trk-row td:nth-child(1) { width: 16%; }
+  #tracker thead th:nth-child(2), #tracker tbody .trk-row td:nth-child(2) { width: 31%; }
+  #tracker thead th:nth-child(3), #tracker tbody .trk-row td:nth-child(3) { width: 25%; }
+  #tracker thead th:nth-child(4), #tracker tbody .trk-row td:nth-child(4) { width: 28%; }
+  #tracker .st { white-space: normal; text-align: center; font-size: 10px; padding: 3px 6px; letter-spacing: 0.02em; }
+  #tracker td.trk-note { padding: 0 7px 10px; }
+  #tracker .trk-note { font-size: 12px; }
+}
+@media (max-width: 380px) {
+  #tracker { font-size: 12px; }
+  #tracker th { font-size: 10.5px; letter-spacing: 0.08em; }
+  #tracker th, #tracker td { padding: 10px 6px; }
+  #tracker thead th:nth-child(1), #tracker tbody .trk-row td:nth-child(1) { width: 17%; }
+  #tracker thead th:nth-child(2), #tracker tbody .trk-row td:nth-child(2) { width: 30%; }
+  #tracker thead th:nth-child(3), #tracker tbody .trk-row td:nth-child(3) { width: 23%; }
+  #tracker thead th:nth-child(4), #tracker tbody .trk-row td:nth-child(4) { width: 30%; }
+  #tracker .st { font-size: 9.5px; padding: 3px 5px; }
+  #tracker td.trk-note { padding: 0 6px 10px; }
+}

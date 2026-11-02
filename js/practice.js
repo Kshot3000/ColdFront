@@ -149,7 +149,7 @@
       wrap.classList.add("trk");
       if (!trkEntered) wrap.classList.add("cf-enter");
     }
-    if (body && !trkPainted) body.innerHTML = CF.skelRows(5, 2);
+    if (body && !trkPainted) body.innerHTML = CF.skelRows(4, 2);
     try {
       const r = await fetch("data/practice.json", { cache: "no-cache" });
       const data = await r.json();
@@ -163,6 +163,18 @@
               const lv = inferLevel(row);
               const meta = levelMeta(lv);
               const cls = "trk-row trk-lv" + lv + (isToday ? " is-today-row trk-today" : "");
+              /* v1.217.0 — Notes leave the column: a session's note
+                 is prose, and as a fifth column it rested entirely
+                 past the phone swipe (and squeezed on desktop).
+                 It now rides its own full-width row under the
+                 session, so the four short columns can fit a
+                 phone and the note reads at full measure. */
+              const note = String(row.notes || "").trim()
+                ? '<tr class="trk-note-row trk-lv' + lv + (isToday ? " trk-today" : "") + '">' +
+                  '<td colspan="4" class="trk-note"><span class="trk-note-k">Notes</span>' +
+                  CF.esc(row.notes) +
+                  "</td></tr>"
+                : "";
               return (
                 "<tr class=\"" + cls + "\">" +
                 '<td class="strong">' +
@@ -184,14 +196,12 @@
                 (/availability|presser/i.test(row.media || "") ? "active" : "day-to-day") +
                 '">' +
                 CF.esc(row.media || "—") +
-                "</span></td>" +
-                '<td class="dim">' +
-                CF.esc(row.notes || "") +
-                "</td></tr>"
+                "</span></td></tr>" +
+                note
               );
             })
             .join("")
-        : '<tr class="trk-row"><td colspan="5">' +
+        : '<tr class="trk-row"><td colspan="4">' +
           CF.emptyHTML({
             icon: "❄️",
             title: "Tracker is empty",
@@ -227,7 +237,7 @@
         trackPill.className = "tag";
       }
       body.innerHTML =
-        '<tr class="trk-row"><td colspan="5">' +
+        '<tr class="trk-row"><td colspan="4">' +
         CF.emptyHTML({
           icon: "🌫",
           title: "Tracker unavailable",
