@@ -2088,3 +2088,62 @@ tr.ld-div.me .ld-div-abbr {
   #tracker .st { font-size: 9.5px; padding: 3px 5px; }
   #tracker td.trk-note { padding: 0 6px 10px; }
 }
+
+/* ============================================================
+   v1.218.0 — the season leaders answer on a phone, and the
+   phone-fit sweep closes. This was the last table held on the
+   swipe (the v1.213/v1.217 blocks above): the API-Sports season
+   leaders are built by stats.js only when a fan's key is set,
+   with up to five stat columns whose headers the feed chooses.
+   A fresh rendered probe with realistic worst cases measured
+   what the swipe costs: the table rests at 873px in a 357px
+   wrap at 390px (696px with a second header set) — most stat
+   columns entirely off-screen. Every column is a short voice
+   once the headers stop shouting their full names: the values
+   are numbers (a season total is at most "4,832"), Pos is two
+   letters, and Player wraps at its space. So under 640px the
+   table (ld-season in stats.js) stops swiping like the rest:
+   min-width lifts, layout goes fixed (Player 31.5 / Pos 10.5,
+   the stat columns share what remains), cells compact, the
+   stat cells' side padding trims to 3px, the glowing numbers
+   stay nowrap, and the head cells swap to the short labels
+   stats.js builds beside the full ones (th-full / th-short —
+   the full label stays in the DOM for desktop and screen
+   readers) and wrap at word boundaries, break-word held as a
+   safety net for any header word the short map doesn't know.
+   The shares were solved from measured text widths, not
+   guessed: "4,832" is 31.3px at 12.5px, the longest Bear
+   surname (Ogbongbemiga) is 91.7px, "PASS" is 28.3px at the
+   stepped-down header voice (10px / 0.06em). Under 380px
+   everything compacts one step more (11.5px, stat padding
+   2px, Player 32) — at 320px the same arithmetic holds with
+   about a pixel to spare, verified by per-cell measurement.
+   Rendered QA on the real tree (worst-case rows, four header
+   sets incl. a three-column serving): wrap scroll width
+   equals client width at 390 (357/357), 360 (329/329) and
+   320 (292/292) with zero per-cell overflow, and desktop is
+   unchanged. No table on the site swipes on a phone anymore.
+   ============================================================ */
+.tbl.ld-season .th-short { display: none; }
+@media (max-width: 640px) {
+  .tbl.ld-season { min-width: 0; table-layout: fixed; font-size: 12.5px; }
+  .tbl.ld-season th, .tbl.ld-season td { padding: 10px 5px; }
+  .tbl.ld-season th:nth-child(n+3), .tbl.ld-season td:nth-child(n+3) { padding-left: 3px; padding-right: 3px; }
+  .tbl.ld-season thead th:nth-child(1), .tbl.ld-season tbody td:nth-child(1) { width: 31.5%; }
+  .tbl.ld-season thead th:nth-child(2), .tbl.ld-season tbody td:nth-child(2) { width: 10.5%; }
+  .tbl.ld-season th { white-space: normal; overflow-wrap: break-word; font-size: 10px; letter-spacing: 0.06em; }
+  .tbl.ld-season .th-full { display: none; }
+  .tbl.ld-season .th-short { display: inline; }
+  .tbl.ld-season td:first-child { overflow-wrap: break-word; }
+  .tbl.ld-season .ld-line { white-space: nowrap; font-size: 12.5px; }
+  .tbl.ld-season .ld-cat { white-space: nowrap; }
+}
+@media (max-width: 380px) {
+  .tbl.ld-season { font-size: 11.5px; }
+  .tbl.ld-season th, .tbl.ld-season td { padding: 9px 3px; }
+  .tbl.ld-season th:nth-child(n+3), .tbl.ld-season td:nth-child(n+3) { padding-left: 2px; padding-right: 2px; }
+  .tbl.ld-season thead th:nth-child(1), .tbl.ld-season tbody td:nth-child(1) { width: 32%; }
+  .tbl.ld-season thead th:nth-child(2), .tbl.ld-season tbody td:nth-child(2) { width: 10%; }
+  .tbl.ld-season th { font-size: 9.5px; letter-spacing: 0; }
+  .tbl.ld-season .ld-line { font-size: 11.5px; }
+}

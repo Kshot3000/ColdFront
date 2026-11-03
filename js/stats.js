@@ -27,7 +27,9 @@
      leaders below) carry ld-fit: on phones they fit their wrap
      instead of swiping, so the Line column rests on-screen (the
      fit itself lives in experience.css). The API-Sports season
-     leaders table keeps the swipe — its stat columns are wide. */
+     leaders table kept the swipe then — its stat columns are wide.
+     v1.218.0 — it carries ld-season now and fits too (see
+     seasonColShort below); every leaders table answers on a phone. */
   function leadersTableHTML(leaders, names, entered) {
     const rowHTML = (l) =>
       '<tr class="ld-row">' + leaderCatCell(l) +
@@ -161,6 +163,19 @@
       ldGlyph(l.category || l.label) + "</span>" + CF.esc(l.label) + "</td>";
   }
 
+  /* v1.218.0 — phone header labels for the season leaders below. The
+     feed chooses the stat columns, and a full name ("Passing
+     Touchdowns") cannot sit over a fitted phone column, so each head
+     cell carries the full label plus an ESPN-style short label
+     (PASS TD) that the phone stylesheet swaps in visually. Unknown
+     words pass through uppercased, and the full label always stays
+     in the DOM — desktop and screen readers read it; the short span
+     is aria-hidden. */
+  const SEASON_COL_ABBR = { passing: "PASS", passer: "PASS", passes: "PASS", rushing: "RUSH", receiving: "REC", receptions: "REC", yards: "YDS", touchdowns: "TD", touchdown: "TD", interceptions: "INT", completions: "CMP", attempts: "ATT", attempt: "ATT", per: "/", rating: "RTG", sacks: "SCK", tackles: "TKL", assists: "AST", fumbles: "FUM", lost: "LST", targets: "TGT", longest: "LNG", field: "FG", goals: "G", extra: "XP", points: "PTS", punts: "PNT", punt: "PNT", returns: "RET", return: "RET", kick: "K", total: "TOT", average: "AVG", percentage: "PCT", games: "G", solo: "SOLO", forced: "FF", recovered: "FR", defended: "PD" };
+  function seasonColShort(c) {
+    return String(c).split(/\s+/).map((w) => SEASON_COL_ABBR[w.toLowerCase()] || w.toUpperCase()).join(" ");
+  }
+
   let leadersEntered = false; // .cf-enter only on first paint; the 5-min refresh re-renders stay instant
 
   async function loadLeaders() {
@@ -180,8 +195,8 @@
           const entered = !leadersEntered;
           leadersEntered = true;
           box.innerHTML =
-            '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld"><caption class="sr-only">Bears season leaders</caption><thead><tr><th scope="col">Player</th><th scope="col">Pos</th>' +
-            d.cols.map((c) => '<th scope="col" class="num">' + CF.esc(c) + "</th>").join("") +
+            '<div class="tbl-wrap ld' + (entered ? " cf-enter" : "") + '"><table class="tbl ld ld-season"><caption class="sr-only">Bears season leaders</caption><thead><tr><th scope="col">Player</th><th scope="col">Pos</th>' +
+            d.cols.map((c) => { const s = seasonColShort(c); return '<th scope="col" class="num"><span class="th-full">' + CF.esc(c) + "</span>" + (s !== String(c) ? '<span class="th-short" aria-hidden="true">' + CF.esc(s) + "</span>" : "") + "</th>"; }).join("") +
             "</tr></thead><tbody>" +
             d.top.map((p) =>
               '<tr class="ld-row"><td class="strong">' + CF.esc(p.name) + '</td><td class="ld-cat">' + CF.esc(p.pos || "—") + "</td>" +
