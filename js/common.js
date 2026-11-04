@@ -298,6 +298,29 @@ CF.kickoffTime = (iso) => {
   } catch (e) { return ""; }
 };
 
+/* v1.219.0 — a scheduled kickoff speaks Chicago time in one voice.
+   Every other surface already pins America/Chicago (the hero card, the
+   Sunday desk, the share text), but three paints still quoted ESPN's
+   own pre-game status string verbatim — and ESPN names a kickoff in
+   EASTERN time ("11/8 - 8:20 PM EST"), so the Games board pill told a
+   Chicago fan 8:20 while the same card's meta line said 7:20 PM CST,
+   and the season log's Result column and the box-score header carried
+   the same Eastern string. kickoffLine is the single Chicago stamp
+   for a pre-game: short for pills ("11/8 · 7:20 PM CST"), long for
+   headers and table cells ("Sun, Nov 8 · 7:20 PM CST"). When the
+   feed's time is a flex placeholder (kickoffTime's late-night guard),
+   the stamp stays date-only and the surface's own TBD wording carries
+   the rest — a kickoff time is never invented. */
+CF.kickoffLine = (iso, long) => {
+  if (!iso || !Number.isFinite(Date.parse(iso))) return "";
+  const time = CF.kickoffTime(iso);
+  if (long) return CF.fmtDate(iso) + (time ? " · " + time : "");
+  let md = "";
+  try { md = new Date(iso).toLocaleDateString("en-US", { timeZone: "America/Chicago", month: "numeric", day: "numeric" }); }
+  catch (e) { md = ""; }
+  return (md || CF.fmtDate(iso)) + (time ? " · " + time : "");
+};
+
 /* v1.194.0 — the next game joins the fan's own calendar. Every surface
    resolves the next Bears game (date, venue, TV) and then just counts down
    to it; nothing let a fan put kickoff where their week actually lives —

@@ -161,7 +161,10 @@
     const home = (c.competitors || []).find((x) => x.homeAway === "home") || {};
     const away = (c.competitors || []).find((x) => x.homeAway === "away") || {};
     const st = (e.status?.type || c.status?.type) || {};
-    let pill = '<span class="pill">' + CF.esc(st.shortDetail || "scheduled") + "</span>";
+    // v1.219.0 — a scheduled game's pill is the Chicago kickoff line,
+    // not ESPN's Eastern-time status string (see CF.kickoffLine): the
+    // card's own meta line below already speaks Chicago time.
+    let pill = '<span class="pill">' + CF.esc(st.state === "pre" ? (CF.kickoffLine(e.date) || st.shortDetail || "scheduled") : (st.shortDetail || "scheduled")) + "</span>";
     if (st.state === "in") pill = '<span class="pill live"><span class="dot"></span>' + CF.esc(st.detail || "live") + (e.status && e.status.displayClock ? " · " + CF.esc(e.status.displayClock) : "") + "</span>";
     if (st.state === "post") pill = '<span class="pill final">' + CF.esc(st.shortDetail || "final") + "</span>";
     const tv = (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "";
@@ -324,7 +327,9 @@
       const winner = (hsN != null && asN != null && !isNaN(hsN) && !isNaN(asN))
         ? (hsN > asN ? "home" : (asN > hsN ? "away" : "tie")) : null;
       const venue = (c.venue && (c.venue.fullName || c.venue.displayName)) || "";
-      const statusTxt = st.shortDetail || st.detail || CF.fmtDate(ev.date);
+      // v1.219.0 — a pre-game box header carries the Chicago kickoff
+      // line, not ESPN's Eastern-time status string (CF.kickoffLine).
+      const statusTxt = state === "pre" ? (CF.kickoffLine(ev.date, true) || st.shortDetail || CF.fmtDate(ev.date)) : (st.shortDetail || st.detail || CF.fmtDate(ev.date));
       const duelSide = (team, score, side) => {
         const isBears = bearsSide === side, isWin = winner === side;
         return '<div class="duel-side box-side' + (side === "away" ? " opp" : "") + (isBears ? " bears" : "") + '">' +

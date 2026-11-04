@@ -1885,6 +1885,13 @@ tr.ld-div.me .ld-div-abbr {
   #log-table th:nth-child(6), #log-table td:nth-child(6) { display: none; }
   #log-table th:nth-child(7), #log-table td:nth-child(7) { display: none; }
   #log-table .st { font-size: 10px; padding: 3px 6px; letter-spacing: 0.02em; }
+  /* v1.219.0 — the Result pill now carries a full Chicago kickoff
+     line ("11/8 · 7:20 PM CST"), longer than the UPCOMING word the
+     nowrap pill was sized for: at 26% of a phone the fixed layout
+     clipped its tail mid-word. The pill wraps inside its cell
+     instead (the practice tracker's .st pattern, v1.217.0), so the
+     whole stamp — zone included — stays readable. */
+  #log-table .st { white-space: normal; text-align: center; }
   #div-table-2 { min-width: 0; table-layout: fixed; font-size: 12.5px; }
   #div-table-2 th, #div-table-2 td { padding: 10px 7px; }
   #div-table-2 th:nth-child(1), #div-table-2 td:nth-child(1) { width: 37%; }

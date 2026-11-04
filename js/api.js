@@ -312,7 +312,13 @@ CF.API = {
     return {id:e.id, name:e.name || "Bears football", season:e.season?.displayName || "",
       seasonType:e.seasonType?.name || "", week:e.week?.text || (e.week?.number ? "Week " + e.week.number : ""),
       date:e.date || c.date, timeValid:e.timeValid !== false && c.timeValid !== false,
-      state:status.type?.state || "pre", display:status.type?.shortDetail || status.type?.detail || "Scheduled",
+      state:status.type?.state || "pre",
+      // v1.219.0 — a pre-game's display is the Chicago kickoff line,
+      // not ESPN's Eastern-time status string (see CF.kickoffLine);
+      // the season log's Result column renders this for upcoming rows.
+      display:(status.type?.state || "pre") === "pre"
+        ? (CF.kickoffLine(e.date || c.date) || status.type?.shortDetail || status.type?.detail || "Scheduled")
+        : (status.type?.shortDetail || status.type?.detail || "Scheduled"),
       clock:status.displayClock || "", home:team("home"), away:team("away"),
       venue:venue.fullName || venue.displayName || "Venue to be announced",
       city:venue.address?.city || c.geolocation?.city || "",
