@@ -661,10 +661,35 @@ main:focus { outline: none; }
 .wt-sep { color: #88bddf; font-size: 11px; margin: 0 18px; opacity: .7; transition: color 0.22s var(--ease-out), opacity 0.22s var(--ease-out), text-shadow 0.22s var(--ease-out); }
 .wt-item:hover + .wt-sep, .wt-item:focus-visible + .wt-sep { color: #cfeaff; opacity: 1; text-shadow: 0 0 10px rgba(136, 189, 223, 0.9); }
 .wire-ticker-standby { color: #7f9bb1; font-size: 12px; padding-left: 18px; white-space: nowrap; }
+/* v1.220.0 — the reduced-motion wire finally reads as the static list
+   the v1.14.0 comment always promised. The marquee paints every headline
+   twice (paintTicker's second group exists only so the -50% loop can
+   wrap seamlessly; it is aria-hidden and untabbable), but the static
+   layout never retired it: a rendered probe under emulated
+   prefers-reduced-motion measured both groups stacked, each 3,246px
+   wide inside a 272px phone viewport — the same first headline twice,
+   clipped mid-word, and the other seven headlines past the overflow,
+   unreachable. The duplicate now leaves the static layout entirely,
+   the track takes the viewport's full width as a wrapping flex row,
+   the surviving group wraps with it, and a headline may wrap its own
+   text instead of running off the edge. On phones the list stacks one
+   headline per row under a THE WIRE header bar — the ❄ separators,
+   stranded one per line in the wrapped row, retire there, and the
+   label stops stretching into a full-height orange slab beside the
+   list. The marquee a no-preference fan sees is byte-untouched. */
 @media (prefers-reduced-motion: reduce) {
-  .wire-ticker-track { animation: none; width: auto; flex-wrap: wrap; row-gap: 6px; padding: 8px 0; }
+  .wire-ticker-track { animation: none; display: flex; width: 100%; flex-wrap: wrap; row-gap: 6px; padding: 8px 0; }
+  .wire-ticker-track .wt-group { display: flex; flex-wrap: wrap; row-gap: 6px; min-width: 0; }
+  .wire-ticker-track .wt-group[aria-hidden="true"] { display: none; }
+  .wt-item { white-space: normal; }
   .wire-ticker-viewport { mask-image: none; -webkit-mask-image: none; }
   .wt-item, .wt-src, .wt-sep { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 760px) {
+  .wire-ticker { flex-direction: column; }
+  .wire-ticker-label { padding: 9px 14px; }
+  .wire-ticker-track .wt-sep { display: none; }
+  .wt-item { flex: 1 1 100%; }
 }
 @media (max-width: 760px) {
   .wire-ticker-label { padding: 10px 12px; font-size: 10px; letter-spacing: .12em; }
