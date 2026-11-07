@@ -2179,3 +2179,49 @@ tr.ld-div.me .ld-div-abbr {
   .tbl.ld-season th { font-size: 9.5px; letter-spacing: 0; }
   .tbl.ld-season .ld-line { font-size: 11.5px; }
 }
+
+/* ============================================================
+   v1.221.0 — the Odds page answers on a phone. The phone-fit
+   sweep closed on tables in v1.218.0, but the Odds board's two
+   card surfaces were never probed with real feed shapes — the
+   v1.220.0 run's Polymarket fixture didn't match the parser,
+   so its cards painted empty states and the defect below sat
+   unmeasured. A fresh probe with the REAL gamma shape (JSON-
+   string outcomes/prices, team-name outcomes, the persisted
+   movement baseline seeded so both chips carry their ▲/▼
+   badges — the widest honest state of the card) measured:
+   (1) .poly-card is grid 1fr auto and .pr never wraps, so the
+   price column takes its max-content (~238px at 390px with
+   badges) and the question is crushed into the ~55px that
+   remains — one word per line, cards 212–372px tall against
+   119px on desktop, the question a fan came to read reduced
+   to a vertical strip. Even badge-free Yes/No chips (~168px)
+   leave a phone question ~130px. Under 640px the card stacks
+   instead: the question takes the full measure on its own
+   row, the prices follow on a wrapping row of their own (team-
+   name chips take a full row each; Yes/No chips share a row
+   and grow to fill it), then the bar and the sub line, which
+   already span the card. Desktop's side-by-side card is
+   byte-untouched.
+   (2) The same probe's page overflow (scrollWidth 445 on a
+   375px client at 390px) traced to #odds-pill: freshStamp
+   gives the wire pill the full provenance line ("live · vs
+   Green Bay Packers · Sun, Nov 8 · 1s ago" ≈ 430px of nowrap
+   Oswald), and .section-head .pill only learned to wrap
+   under 380px (v1.152.0) — 10px short of the common 390px
+   phone, where the pill sat on its own flex line at full
+   min-content width with its freshness stamp off-screen.
+   The v1.152.0 treatment now runs at the fleet's phone
+   breakpoint: under 640px a section-head tag/pill wraps as a
+   banner (the v1.141.0 feed-pill voice: normal wrap, left
+   text, 1.55 line-height), and the freshness stamp stays
+   whole on its own line (the v1.144.0 rule), so no pill on
+   any page can push its page sideways at phone widths.
+   ============================================================ */
+@media (max-width: 640px) {
+  .poly-card { grid-template-columns: 1fr; }
+  .poly-card .pr { flex-wrap: wrap; }
+  .poly-card .poly-price { flex: 1 1 auto; }
+  .section-head .tag, .section-head .pill { white-space: normal; max-width: 100%; line-height: 1.55; text-align: left; }
+  .section-head .tag .fresh-stamp, .section-head .pill .fresh-stamp { white-space: nowrap; }
+}
