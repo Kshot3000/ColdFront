@@ -165,7 +165,9 @@
     // not ESPN's Eastern-time status string (see CF.kickoffLine): the
     // card's own meta line below already speaks Chicago time.
     let pill = '<span class="pill">' + CF.esc(st.state === "pre" ? (CF.kickoffLine(e.date) || st.shortDetail || "scheduled") : (st.shortDetail || "scheduled")) + "</span>";
-    if (st.state === "in") pill = '<span class="pill live"><span class="dot"></span>' + CF.esc(st.detail || "live") + (e.status && e.status.displayClock ? " · " + CF.esc(e.status.displayClock) : "") + "</span>";
+    // v1.222.0 — the live pill takes CF.liveLine: ESPN's detail already
+    // embeds the clock, so appending displayClock printed it twice.
+    if (st.state === "in") pill = '<span class="pill live"><span class="dot"></span>' + CF.esc(CF.liveLine(st.detail, st.shortDetail, e.status && e.status.displayClock)) + "</span>";
     if (st.state === "post") pill = '<span class="pill final">' + CF.esc(st.shortDetail || "final") + "</span>";
     const tv = (c.broadcasts && c.broadcasts[0]) ? ((c.broadcasts[0].names || []).join(" / ")) : "";
     const watch = (c.broadcasts && c.broadcasts[0] && c.broadcasts[0].links && c.broadcasts[0].links.web) ? c.broadcasts[0].links.web.href : null;

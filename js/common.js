@@ -321,6 +321,26 @@ CF.kickoffLine = (iso, long) => {
   return (md || CF.fmtDate(iso)) + (time ? " · " + time : "");
 };
 
+/* v1.222.0 — a live pill states the clock once. ESPN's in-progress
+   detail already embeds the game clock ("0:57 - 2nd Quarter" beside
+   displayClock "0:57"), but the Games board pill appended the clock
+   again, so every live card on game day read "0:57 - 2nd Quarter ·
+   0:57" — the one number a fan glances for, printed twice (measured
+   live 2026-11-08 on CIN @ ATL, hours before the Bears' own Sunday
+   night kickoff). liveLine is the single voice for that pill: the
+   detail (shortDetail as fallback) carries the line, and the clock
+   joins only when it adds information — the detail doesn't already
+   contain it and the clock isn't the stopped 0:00 of a break
+   ("Halftime · 0:00" would be noise, not news). No status at all
+   falls back to the bare clock, then to "live". */
+CF.liveLine = (detail, shortDetail, displayClock) => {
+  const base = String(detail || shortDetail || "").trim();
+  const clock = String(displayClock || "").trim();
+  if (!base) return clock || "live";
+  if (clock && clock !== "0:00" && !base.includes(clock)) return base + " · " + clock;
+  return base;
+};
+
 /* v1.194.0 — the next game joins the fan's own calendar. Every surface
    resolves the next Bears game (date, venue, TV) and then just counts down
    to it; nothing let a fan put kickoff where their week actually lives —

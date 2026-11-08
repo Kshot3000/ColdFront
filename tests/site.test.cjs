@@ -284,7 +284,7 @@ test('v1.148.0: the 18+ age cue becomes a badge and the pm-legend glyph pair nev
  assert.ok(/<span style="white-space:nowrap"><span class="mv up"[^]*?<span class="mv down"/s.test(odds),'the pm-legend movement glyphs ride one nowrap span');
  // Cache keys moved with the release.
  assert.ok(odds.includes('css/main.css?v=1.206.0'),'odds.html pins main.css 1.206.0');
- assert.ok(odds.includes('js/common.js?v=1.219.0'),'odds.html pins common.js 1.192.0');
+ assert.ok(odds.includes('js/common.js?v=1.222.0'),'odds.html pins common.js 1.192.0');
 });
 
 test('v1.149.0: the season-log empty state fits the phone scrollport instead of hiding its link',async()=>{
@@ -303,7 +303,7 @@ test('v1.149.0: the season-log empty state fits the phone scrollport instead of 
  // on games.html only.
  const gh=fs.readFileSync(path.join(__dirname,'../games.html'),'utf8');
  assert.ok(gh.includes('css/main.css?v=1.206.0'),'games.html pins main.css 1.206.0');
- assert.ok(gh.includes('js/games.js?v=1.219.0'),'games.html pins games.js 1.163.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'),'games.html pins games.js 1.163.0');
  for(const name of ['index','news','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'../'+name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html pins main.css 1.206.0');
@@ -1502,7 +1502,7 @@ test('v1.63.0: last-meeting stats stay honest when the season log has no meeting
  const ih=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
  assert.ok(ih.includes('js/home.js?v=1.204.0'),'index.html busts the home.js cache');
- assert.ok(gh.includes('js/games.js?v=1.219.0'),'games.html busts the games.js cache');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'),'games.html busts the games.js cache');
  assert.ok(ih.includes('data-cf-copy="btc"'),'footer tip chip is intact');
 });
 test('last-game box score leaders split into team blocks, Bears first, with accessible dividers',async()=>{
@@ -1596,7 +1596,7 @@ test('v1.66.0: unfilled ad slots self-collapse; filled slots survive untouched',
  // Every page busts the common.js cache at the new key.
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -2059,12 +2059,12 @@ test('v1.83.0: wind reads in mph everywhere — no km/h, no inflated kickoff num
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html carries the v1.111.0 common.js cache key');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html carries the v1.111.0 common.js cache key');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
  }
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.219.0'),'games.html carries the v1.94.0 games.js cache key');
- assert.ok(!/games\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.222.0'),'games.html carries the v1.94.0 games.js cache key');
+ assert.ok(!/games\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
  // Footer branding must survive the release.
  assert.ok(common.includes('3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK'),'the BTC tip chip address survives in common.js');
  assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
@@ -2113,12 +2113,12 @@ test('v1.84.0: sunday-desk week pill reads "WK 3", never "WK Week 3"',async()=>{
  // Only games.html loads games.js, so only its key moves — but every page
  // loads common.js and must not pick up a stale key. Footer branding survives.
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.219.0'),'games.html carries the v1.94.0 games.js cache key');
- assert.ok(!/games\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.222.0'),'games.html carries the v1.94.0 games.js cache key');
+ assert.ok(!/games\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html keeps the v1.111.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html keeps the v1.111.0 common.js cache key');
  }
  assert.ok(ghtml.includes('@kshot9000'),'the @kshot9000 attribution survives on games.html');
 });
@@ -2214,12 +2214,12 @@ test('v1.87.0: season-log date cells separate the date from kickoff with a middo
  // common.js changed this release, so its key moves to v1.89.0 everywhere. Footer
  // branding survives.
  const ghtml=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(ghtml.includes('js/games.js?v=1.219.0'),'games.html carries the v1.94.0 games.js cache key');
- assert.ok(!/games\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
+ assert.ok(ghtml.includes('js/games.js?v=1.222.0'),'games.html carries the v1.94.0 games.js cache key');
+ assert.ok(!/games\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(ghtml),'games.html has no stale games.js key');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html keeps the v1.111.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html keeps the v1.111.0 common.js cache key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2256,7 +2256,7 @@ test('v1.88.0: team hero headline speaks the live roster count',async()=>{
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const ph=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(ph.includes('js/common.js?v=1.219.0'),name+'.html keeps the v1.111.0 common.js cache key');
+  assert.ok(ph.includes('js/common.js?v=1.222.0'),name+'.html keeps the v1.111.0 common.js cache key');
   assert.ok(ph.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(ph.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2308,15 +2308,15 @@ test('v1.89.0: injury designations speak fan English — "ir" and "inactive" nev
  // scripts. Footer branding survives.
  const ih=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(ih.includes('js/injuries.js?v=1.209.0'),'injuries.html busts the injuries.js cache');
- assert.ok(ih.includes('js/common.js?v=1.219.0'),'injuries.html busts the common.js cache');
+ assert.ok(ih.includes('js/common.js?v=1.222.0'),'injuries.html busts the common.js cache');
  const xh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(xh.includes('js/home.js?v=1.204.0'),'index.html busts the home.js cache');
- assert.ok(xh.includes('js/common.js?v=1.219.0'),'index.html busts the common.js cache');
+ assert.ok(xh.includes('js/common.js?v=1.222.0'),'index.html busts the common.js cache');
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html carries the v1.111.0 common.js cache key');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html carries the v1.111.0 common.js cache key');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
@@ -2517,13 +2517,13 @@ test('v1.94.0: live pills carry data-freshness stamps — source AND when it was
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html carries the v1.143.0 main.css cache key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html carries the v1.111.0 common.js cache key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html carries the v1.111.0 common.js cache key');
   assert.ok(!/main\.css\?v=1\.(148|111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
- const locks=[['odds.html','js/odds.js?v=1.216.0'],['games.html','js/games.js?v=1.219.0'],
+ const locks=[['odds.html','js/odds.js?v=1.216.0'],['games.html','js/games.js?v=1.222.0'],
               ['index.html','js/home.js?v=1.204.0'],['injuries.html','js/injuries.js?v=1.209.0'],
               ['news.html','js/news.js?v=1.208.0']];
  for(const [file,key] of locks){
@@ -2635,8 +2635,8 @@ test('v1.96.0: the weather strip says when the front was read — live wall-cloc
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html carries the v1.111.0 common.js cache key');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html carries the v1.111.0 common.js cache key');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html holds the v1.143.0 main.css cache key');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
@@ -2666,8 +2666,8 @@ test('v1.97.0: the nav toggle is a real SVG hamburger→✕ morph, and the front
   assert.ok(m,name+'.html has a nav toggle');
   assert.ok(/<svg class="nt-icon"/.test(m[1]),name+'.html toggle carries the SVG icon');
   assert.ok(!/☰/.test(m[1]),name+'.html toggle has no text glyph left');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html carries the v1.111.0 common.js cache key');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html carries the v1.111.0 common.js cache key');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html carries the v1.143.0 main.css cache key');
   assert.ok(!/main\.css\?v=1\.(148|111|97|96|95|94|93|92|91|90|82|7[0-7])\.0"/.test(html),name+'.html has no stale main.css key');
   assert.ok(/<meta name="theme-color" content="#060d18">/.test(html),name+'.html names the brand theme color');
@@ -2832,8 +2832,8 @@ test('v1.102.0: the box-score card gets a real scoreboard header — the score i
   assert.ok(h.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
  }
  const gh=fs.readFileSync(path.join(__dirname,'..','games.html'),'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'),'games.html carries the v1.102.0 games.js cache key');
- assert.ok(!/games\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(gh),'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'),'games.html carries the v1.102.0 games.js cache key');
+ assert.ok(!/games\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(gh),'games.html has no stale games.js key');
  const fh=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(fh.includes('3GnR…8vZK'),'the BTC tip chip address survives in the footer');
 });
@@ -2982,7 +2982,7 @@ test('v1.106.0: the wire\'s fallback thumbnails are story-aware, not one snowfla
  assert.ok(/\.thumb-fallback\.tf-t1\s*\{[^}]*background:\s*rgba\(255,\s*106,\s*31,\s*0\.07\)/.test(css),'the fallback tiles carry the warm orange whisper tint');
  assert.ok(/\.thumb-fallback\.tf-t3\s*\{[^}]*background:\s*rgba\(150,\s*180,\s*210,\s*0\.06\)/.test(css),'the fallback tiles carry the cool steel whisper tint');
  // Cache-bust pins: all three changed assets carry the release key everywhere.
- for(const [f,key] of [['news.html','js/news.js?v=1.208.0'],['index.html','js/common.js?v=1.219.0'],['news.html','css/main.css?v=1.206.0']]){
+ for(const [f,key] of [['news.html','js/news.js?v=1.208.0'],['index.html','js/common.js?v=1.222.0'],['news.html','css/main.css?v=1.206.0']]){
   const html=fs.readFileSync(path.join(__dirname,'..',f),'utf8');
   assert.ok(html.includes(key),f+' carries the '+key+' cache key');
  }
@@ -3129,7 +3129,7 @@ test('v1.108.0: footer spacing, season-log header, 404 title, prediction toggle,
 });
 
 test('v1.108.0: every changed script carries the release cache key on every page',async()=>{
- const changed=[['js/common.js','1.219.0'],['js/api.js','1.219.0'],['js/home.js','1.204.0'],['js/games.js','1.219.0'],['js/odds.js','1.216.0'],['js/news.js','1.208.0'],['js/injuries.js','1.209.0'],['js/team.js','1.174.0']];
+ const changed=[['js/common.js','1.222.0'],['js/api.js','1.219.0'],['js/home.js','1.204.0'],['js/games.js','1.222.0'],['js/odds.js','1.216.0'],['js/news.js','1.208.0'],['js/injuries.js','1.209.0'],['js/team.js','1.174.0']];
  const pages={index:['js/common.js','js/api.js','js/home.js'],games:['js/common.js','js/api.js','js/games.js'],odds:['js/common.js','js/api.js','js/odds.js'],news:['js/common.js','js/api.js','js/news.js'],injuries:['js/common.js','js/api.js','js/injuries.js'],team:['js/common.js','js/api.js','js/team.js'],stats:['js/common.js','js/api.js'],about:['js/common.js','js/api.js'],practice:['js/common.js','js/api.js'],highlights:['js/common.js','js/api.js'],'404':['js/common.js']};
  for(const [page,scripts] of Object.entries(pages)){
   const html=fs.readFileSync(path.join(__dirname,'..',page+'.html'),'utf8');
@@ -3215,7 +3215,7 @@ test('v1.111.0: an unfilled ad slot is a zero-height placeholder — no empty Ad
  for(const f of ['index','news','odds']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'),f+'.html busts the main.css cache');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),f+'.html busts the common.js cache');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),f+'.html busts the common.js cache');
  }
 });
 
@@ -3453,11 +3453,11 @@ test('v1.116.0: the home wire cards wear story-aware fallback art, not one share
  assert.ok(/\.story-art-fallback\.tf-t1\s*\{[^}]*255,\s*122,\s*65/.test(css),'fallback art carries the warm orange whisper tint');
  // Cache-bust pins: every changed asset carries the release key everywhere.
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- for(const key of ['js/home.js?v=1.204.0','js/common.js?v=1.219.0','css/experience.css?v=1.221.0'])
+ for(const key of ['js/home.js?v=1.204.0','js/common.js?v=1.222.0','css/experience.css?v=1.221.0'])
   assert.ok(index.includes(key),'index.html carries the '+key+' cache key');
  const newsHtml=fs.readFileSync(path.join(__dirname,'..','news.html'),'utf8');
  assert.ok(newsHtml.includes('js/news.js?v=1.208.0'),'news.html busts the news.js cache');
- assert.ok(newsHtml.includes('js/common.js?v=1.219.0'),'news.html busts the common.js cache');
+ assert.ok(newsHtml.includes('js/common.js?v=1.222.0'),'news.html busts the common.js cache');
 });
 
 test('v1.117.0: the hero match-kicker wraps instead of clipping the status pill',()=>{
@@ -3642,9 +3642,9 @@ test('v1.122.0: recovery-shaped stories wear the injury bandage, not the brand s
  // Cache-bust pins: both changed assets carry the release key everywhere.
  const newsHtml=fs.readFileSync(path.join(__dirname,'..','news.html'),'utf8');
  assert.ok(newsHtml.includes('js/news.js?v=1.208.0'),'news.html busts the news.js cache');
- assert.ok(newsHtml.includes('js/common.js?v=1.219.0'),'news.html busts the common.js cache');
+ assert.ok(newsHtml.includes('js/common.js?v=1.222.0'),'news.html busts the common.js cache');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
- assert.ok(index.includes('js/common.js?v=1.219.0'),'index.html busts the common.js cache');
+ assert.ok(index.includes('js/common.js?v=1.222.0'),'index.html busts the common.js cache');
 });
 
 test('v1.123.0: the injury grid stops bleeding past the phone viewport',async()=>{
@@ -3777,8 +3777,8 @@ test('v1.125.0: the back-to-top button hides when parked over the site footer',(
  // pages — a stale key would keep serving the overlapping button.
  for(const name of ['404','about','games','highlights','index','injuries','news','odds','practice','stats','team']){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html busts the common.js cache');
-  assert.ok(!/common\.js\?v=(?!1.219.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html busts the common.js cache');
+  assert.ok(!/common\.js\?v=(?!1.222.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html busts the main.css cache');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale main.css key');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
@@ -3883,7 +3883,7 @@ test('v1.127.0: freshness stamps wear the data\'s own age, not the paint time',a
  const pages={common:['404','about','games','highlights','index','injuries','news','odds','practice','stats','team'],
   api:['about','games','highlights','index','injuries','news','odds','practice','stats','team'],
   games:['games'],home:['index'],injuries:['injuries'],news:['news'],odds:['odds']};
- const vers={common:'1.219.0',api:'1.219.0',games:'1.219.0',home:'1.204.0',injuries:'1.209.0',news:'1.208.0',odds:'1.216.0'};
+ const vers={common:'1.222.0',api:'1.219.0',games:'1.222.0',home:'1.204.0',injuries:'1.209.0',news:'1.208.0',odds:'1.216.0'};
  for(const [f,ns] of Object.entries(pages))for(const name of ns){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   const v=vers[f],ve=v.replace(/\./g,'\\.');
@@ -4307,8 +4307,8 @@ test('v1.138.0: the back-to-top button ghosts when parked over the prediction-ma
  // Cache-bust pin: common.js changed, so its key moved on every page.
  for(const name of ['404','about','games','highlights','index','injuries','news','odds','practice','stats','team']){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html busts the common.js cache');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html busts the common.js cache');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('data-cf-copy="btc"'),'the BTC tip chip survives on '+name+'.html');
   assert.ok(html.includes('@kshot9000'),'the @kshot9000 attribution survives on '+name+'.html');
  }
@@ -4625,7 +4625,7 @@ test('v1.150.0: native scrollbars go dark with the theme, and the full-board cop
  // games.js is unchanged this run, so its key stays at 1.149.0.
  const gh=fs.readFileSync(path.join(__dirname,'../games.html'),'utf8');
  assert.ok(gh.includes('css/main.css?v=1.206.0'),'games.html pins main.css 1.206.0');
- assert.ok(gh.includes('js/games.js?v=1.219.0'),'games.html keeps games.js 1.163.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'),'games.html keeps games.js 1.163.0');
  for(const name of ['index','news','stats','odds','injuries','practice','team','about','highlights','404']){
   const html=fs.readFileSync(path.join(__dirname,'../'+name+'.html'),'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html pins main.css 1.206.0');
@@ -5170,7 +5170,7 @@ test('v1.162.0: every table header names its column for screen readers', async (
  // Cache keys moved with the release: games.js and odds.js
  // changed, so their keys move to 1.162.0; stylesheets did not.
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.163.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.163.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html pins odds.js 1.162.0');
  for (const name of pages) {
@@ -5227,7 +5227,7 @@ test('v1.163.0: the season log box-score link is a chip, not a bare fragment', a
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.163.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.163.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html keeps odds.js 1.162.0');
  // Footer branding untouched by this release.
@@ -5298,7 +5298,7 @@ test('v1.164.0: every table names itself for screen readers', async () => {
  // Cache keys moved with the release: games.js and odds.js
  // changed, so their keys move to 1.164.0; stylesheets did not.
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.190.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.190.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html pins odds.js 1.198.0');
  for (const name of pages) {
@@ -5343,7 +5343,7 @@ test('v1.165.0: headlines balance their lines instead of stranding a last word',
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.190.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.190.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html keeps odds.js 1.198.0');
  // Footer branding untouched by this release.
@@ -5382,8 +5382,8 @@ test('v1.166.0: the About projects are the five Kyle named, each linking to its 
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'../'+name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html pins common.js 1.192.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html pins common.js 1.192.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html keeps main.css 1.206.0');
  }
  // Rendered: the About grid paints the five website cards.
@@ -5439,7 +5439,7 @@ test('v1.167.0: the site is an installable app — manifest, icons, service work
   const html=fsx.readFileSync(path.join(__dirname,'../'+name+'.html'),'utf8');
   assert.ok(html.includes('<link rel="manifest" href="manifest.webmanifest">'),name+'.html links the manifest');
   assert.ok(html.includes('<link rel="apple-touch-icon" href="img/apple-touch-icon.png">'),name+'.html links the apple touch icon');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html pins common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html pins common.js 1.192.0');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html pins main.css 1.206.0');
  }
  // common.js: parse-time prompt capture, worker registration, chip.
@@ -5514,9 +5514,9 @@ test('v1.168.0: the "Get the app" chip moves to the top of the page — the stic
  const pages=['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for(const name of pages){
   const html=fs.readFileSync(path.join(__dirname,'../'+name+'.html'),'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'),name+'.html pins common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'),name+'.html pins common.js 1.192.0');
   assert.ok(html.includes('css/main.css?v=1.206.0'),name+'.html pins main.css 1.206.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale common.js key');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html),name+'.html has no stale main.css key');
  }
  // Footer branding untouched by this release.
@@ -5621,7 +5621,7 @@ test('v1.171.0: body copy wraps pretty and no sentence strands its final period'
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
- assert.ok(idx.includes('js/common.js?v=1.219.0'), 'index.html keeps common.js 1.192.0');
+ assert.ok(idx.includes('js/common.js?v=1.222.0'), 'index.html keeps common.js 1.192.0');
  // Footer branding untouched by this release.
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -5670,7 +5670,7 @@ test('v1.172.0: the header actually sticks — and every jump target lands clear
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
- assert.ok(idx.includes('js/common.js?v=1.219.0'), 'index.html keeps common.js 1.192.0');
+ assert.ok(idx.includes('js/common.js?v=1.222.0'), 'index.html keeps common.js 1.192.0');
  // Footer branding untouched by this release.
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -6034,9 +6034,9 @@ test('v1.179.0: wide tables become keyboard-scrollable regions — named by thei
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.192.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
  }
  const newsHtml = fs.readFileSync(path.join(__dirname, '../news.html'), 'utf8');
  assert.ok(newsHtml.includes('js/news.js?v=1.208.0'), 'news.html keeps news.js 1.178.0');
@@ -6073,7 +6073,7 @@ test('v1.180.0: field hints speak in the site\u2019s own ice \u2014 placeholder 
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  // Footer branding untouched by this release.
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
@@ -6136,7 +6136,7 @@ test('v1.181.0: the now-playing highlights card says so — a badge and aria-cur
  assert.ok(!/highlights\.js\?v=(?!1\.203\.0\")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
  assert.ok(!/highlights\.css\?v=(?!1\.187\.0")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.css key');
  assert.ok(hlHtml.includes('css/main.css?v=1.206.0'), 'highlights.html keeps main.css 1.206.0');
- assert.ok(hlHtml.includes('js/common.js?v=1.219.0'), 'highlights.html keeps common.js 1.192.0');
+ assert.ok(hlHtml.includes('js/common.js?v=1.222.0'), 'highlights.html keeps common.js 1.192.0');
  // Footer branding untouched by this release.
  assert.ok(hlHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on highlights.html');
  assert.ok(hlHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on highlights.html');
@@ -6172,7 +6172,7 @@ test('v1.182.0: prose links wear an underline, not just a tint — a link in a p
   assert.ok(!/<p[^>]*>(?:(?!<\/p>)[\s\S])*?<a[^>]*class="btn/.test(html), name + '.html has no button link inside a paragraph');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  // Rendered DOM: the About page's prose links are in the DOM as
  // paragraph links, and the page still initializes clean.
@@ -6236,7 +6236,7 @@ test('v1.183.0: the back-to-top button leaves the tab order while it is hidden �
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  // Footer branding untouched by this release.
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
@@ -6288,7 +6288,7 @@ test('v1.184.0: a tap answers back in the site\u2019s own orange — branded tap
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html pins highlights.css 1.187.0');
@@ -6341,7 +6341,7 @@ test('v1.185.0: stories a fan has already read recede — visited headlines sett
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.187.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html keeps highlights.css 1.187.0');
@@ -6390,7 +6390,7 @@ test('v1.186.0: forced-colors fans keep their cues — status pills, field focus
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html keeps highlights.css 1.187.0');
@@ -6444,7 +6444,7 @@ test('v1.187.0: reduced-transparency fans get solid panels — tokens resolve so
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.187.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html pins highlights.css 1.187.0');
@@ -6516,8 +6516,8 @@ test('v1.188.0: wide tables confess they scroll sideways \u2014 the enhancer pai
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.192.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.192.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
@@ -6576,7 +6576,7 @@ test('v1.189.0: the small orange kicker labels take the text orange — deep fil
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
@@ -6658,14 +6658,14 @@ test('v1.190.0: the tab keeps score — a live Bears game and today\'s final rid
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.192.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.192.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
  }
  const idxHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idxHtml.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.190.0');
  const gamesHtml = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gamesHtml.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.190.0');
+ assert.ok(gamesHtml.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.190.0');
  const oddsHtml = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oddsHtml.includes('js/odds.js?v=1.216.0'), 'odds.html keeps odds.js 1.198.0');
  // Footer branding untouched by this release.
@@ -6713,7 +6713,7 @@ test('v1.191.0: the kickoff banner dismiss becomes a thumb target on phones — 
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.192.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.192.0');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.187.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
@@ -6791,15 +6791,15 @@ test('v1.192.0: the tab icon turns live — the paw wears a red badge dot only w
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.192.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.192.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
   assert.ok(html.includes('href="img/favicon.svg"'), name + '.html still declares the plain paw as its icon');
  }
  const idxHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idxHtml.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.190.0');
  const gamesHtml = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gamesHtml.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.190.0');
+ assert.ok(gamesHtml.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.190.0');
  // Footer branding untouched by this release.
  assert.ok(idxHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idxHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -6871,9 +6871,9 @@ test('v1.193.0: the board\'s no-games day offers the next Bears game — one tap
  // games.html; every other asset is byte-untouched
  // (common.js 1.192.0, main.css 1.191.0, home.js 1.190.0).
  const gamesHtml = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gamesHtml.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.197.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gamesHtml), 'games.html has no stale games.js key');
- assert.ok(gamesHtml.includes('js/common.js?v=1.219.0'), 'games.html keeps common.js 1.192.0');
+ assert.ok(gamesHtml.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.197.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gamesHtml), 'games.html has no stale games.js key');
+ assert.ok(gamesHtml.includes('js/common.js?v=1.222.0'), 'games.html keeps common.js 1.192.0');
  assert.ok(gamesHtml.includes('css/main.css?v=1.206.0'), 'games.html keeps main.css 1.206.0');
  const idxHtml = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idxHtml.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.190.0');
@@ -6962,8 +6962,8 @@ test('v1.194.0: the next game joins your calendar — the hero offers a real .ic
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.200.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.200.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.199.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
@@ -6971,7 +6971,7 @@ test('v1.194.0: the next game joins your calendar — the hero offers a real .ic
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.199.0');
  assert.ok(!/home\.js\?v=(?!1\.204\.0")1\.[0-9]+\.0"/.test(idx), 'index.html has no stale home.js key');
  const gamesHtml = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gamesHtml.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.197.0');
+ assert.ok(gamesHtml.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.197.0');
  // Footer branding untouched by this release.
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -7074,8 +7074,8 @@ test('v1.195.0: the game leaves with the fan — the hero Share button sends a f
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.200.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.200.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.199.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
@@ -7083,7 +7083,7 @@ test('v1.195.0: the game leaves with the fan — the hero Share button sends a f
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.199.0');
  assert.ok(!/home\.js\?v=(?!1\.204\.0")1\.[0-9]+\.0"/.test(idx), 'index.html has no stale home.js key');
  const gamesHtml = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gamesHtml.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.197.0');
+ assert.ok(gamesHtml.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.197.0');
  // Footer branding untouched by this release.
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -7173,11 +7173,11 @@ test('v1.196.0: the desk plans the Sunday too — the Games Sunday desk carries 
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.199.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.200.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.200.0');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
  }
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.197.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.197.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.199.0');
  // Footer branding untouched by this release.
@@ -7265,14 +7265,14 @@ test('v1.197.0: the front travels — kickoff weather follows the Bears on the r
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.200.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.200.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.199.0');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
  }
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.197.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.197.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.199.0');
  assert.ok(!/home\.js\?v=(?!1\.204\.0")1\.[0-9]+\.0"/.test(idx), 'index.html has no stale home.js key');
@@ -7338,7 +7338,7 @@ test('v1.198.0: the market remembers your last check — Polymarket movement chi
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html pins odds.js 1.198.0');
  assert.ok(!/odds\.js\?v=(?!1\.216\.0)1\.[0-9]+\.0/.test(oh), 'odds.html has no stale odds.js key');
- assert.ok(oh.includes('js/common.js?v=1.219.0'), 'odds.html keeps common.js 1.200.0');
+ assert.ok(oh.includes('js/common.js?v=1.222.0'), 'odds.html keeps common.js 1.200.0');
  assert.ok(oh.includes('css/experience.css?v=1.221.0'), 'odds.html keeps experience.css 1.199.0');
  // Footer branding untouched by this release.
  assert.ok(oh.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on odds.html');
@@ -7442,7 +7442,7 @@ test('v1.199.0: your call gets its verdict — a saved pick is graded against th
   const h = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(h.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.199.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(h), name + '.html has no stale experience.css key');
-  assert.ok(h.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.200.0');
+  assert.ok(h.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.200.0');
  }
  assert.ok(html.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.199.0');
  assert.ok(!/home\.js\?v=(?!1\.204\.0")1\.[0-9]+\.0"/.test(html), 'index.html has no stale home.js key');
@@ -7519,14 +7519,14 @@ test('v1.200.0: the report can clear — a full-strength report paints its Clear
  const pages = ['index', 'odds', 'games', 'news', 'injuries', 'stats', 'team', 'highlights', 'practice', 'about', '404'];
  for (const name of pages) {
   const h = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(h.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.200.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(h), name + '.html has no stale common.js key');
+  assert.ok(h.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.200.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(h), name + '.html has no stale common.js key');
  }
  const ih = fs.readFileSync(path.join(__dirname, '../injuries.html'), 'utf8');
  assert.ok(ih.includes('js/injuries.js?v=1.209.0'), 'injuries.html pins injuries.js 1.200.0');
  assert.ok(!/injuries\.js\?v=(?!1\.209\.0")1\.[0-9]+\.0"/.test(ih), 'injuries.html has no stale injuries.js key');
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.197.0 (byte-untouched)');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.197.0 (byte-untouched)');
  // Footer branding untouched by this release.
  assert.ok(ih.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on injuries.html');
  assert.ok(ih.includes('@kshot9000'), 'the @kshot9000 attribution survives on injuries.html');
@@ -7595,7 +7595,7 @@ test('v1.201.0: a highlights refresh keeps your video — the feature is only re
  assert.ok(hlHtml.includes('js/highlights.js?v=1.203.0'), 'highlights.html pins highlights.js 1.201.0');
  assert.ok(!/highlights\.js\?v=(?!1\.203\.0\")1\.[0-9]+\.0"/.test(hlHtml), 'highlights.html has no stale highlights.js key');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html keeps highlights.css 1.187.0');
- assert.ok(hlHtml.includes('js/common.js?v=1.219.0'), 'highlights.html keeps common.js 1.200.0');
+ assert.ok(hlHtml.includes('js/common.js?v=1.222.0'), 'highlights.html keeps common.js 1.200.0');
  // Footer branding untouched by this release.
  assert.ok(hlHtml.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on highlights.html');
  assert.ok(hlHtml.includes('@kshot9000'), 'the @kshot9000 attribution survives on highlights.html');
@@ -7674,7 +7674,7 @@ test('v1.202.0: a stats refresh keeps the numbers — no panel blanks mid-beat, 
  const sh = fs.readFileSync(path.join(__dirname, '../stats.html'), 'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.218.0'), 'stats.html pins stats.js 1.213.0');
  assert.ok(!/stats\.js\?v=(?!1\.218\.0")1\.[0-9]+\.0"/.test(sh), 'stats.html has no stale stats.js key');
- assert.ok(sh.includes('js/common.js?v=1.219.0'), 'stats.html keeps common.js 1.200.0');
+ assert.ok(sh.includes('js/common.js?v=1.222.0'), 'stats.html keeps common.js 1.200.0');
  assert.ok(sh.includes('css/experience.css?v=1.221.0'), 'stats.html keeps experience.css 1.199.0');
  // Footer branding untouched by this release.
  assert.ok(sh.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on stats.html');
@@ -7831,7 +7831,7 @@ test('v1.203.0: a refresh keeps the wire, the report and the tracker — loading
  for (const [f, pin] of [['news.html', 'js/news.js?v=1.208.0'], ['injuries.html', 'js/injuries.js?v=1.209.0'], ['practice.html', 'js/practice.js?v=1.217.0'], ['highlights.html', 'js/highlights.js?v=1.203.0']]) {
   const html = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
   assert.ok(html.includes(pin), f + ' pins ' + pin);
-  assert.ok(html.includes('js/common.js?v=1.219.0'), f + ' keeps common.js 1.200.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), f + ' keeps common.js 1.200.0');
   assert.ok(html.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on ' + f);
   assert.ok(html.includes('@kshot9000'), 'the @kshot9000 attribution survives on ' + f);
  }
@@ -7954,7 +7954,7 @@ test('v1.204.0: a home refresh keeps the page — a dead feed keeps every painte
  const ih = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(ih.includes('js/home.js?v=1.204.0'), 'index.html pins home.js 1.204.0');
  assert.ok(!/home\.js\?v=(?!1\.204\.0")1\.[0-9]+\.0"/.test(ih), 'index.html has no stale home.js key');
- assert.ok(ih.includes('js/common.js?v=1.219.0'), 'index.html keeps common.js 1.200.0');
+ assert.ok(ih.includes('js/common.js?v=1.222.0'), 'index.html keeps common.js 1.200.0');
  assert.ok(ih.includes('css/experience.css?v=1.221.0'), 'index.html keeps experience.css 1.199.0');
  // Footer branding untouched by this release.
  assert.ok(ih.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
@@ -8110,13 +8110,13 @@ test('v1.205.0: a games/odds refresh keeps the boards — a dead feed keeps ever
  // own pages; every other asset is byte-untouched (common.js
  // 1.200.0, home.js 1.204.0, experience.css 1.199.0).
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.205.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
- assert.ok(gh.includes('js/common.js?v=1.219.0'), 'games.html keeps common.js 1.200.0');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.205.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/common.js?v=1.222.0'), 'games.html keeps common.js 1.200.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html pins odds.js 1.216.0');
  assert.ok(!/odds\.js\?v=(?!1\.216\.0)1\.[0-9]+\.0/.test(oh), 'odds.html has no stale odds.js key');
- assert.ok(oh.includes('js/common.js?v=1.219.0'), 'odds.html keeps common.js 1.200.0');
+ assert.ok(oh.includes('js/common.js?v=1.222.0'), 'odds.html keeps common.js 1.200.0');
  // Footer branding untouched by this release.
  for (const [name, html] of [['games.html', gh], ['odds.html', oh]]) {
   assert.ok(html.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on ' + name);
@@ -8178,7 +8178,7 @@ test('v1.206.0: the phone header is one row again — the wrap waits for a visib
   const html = fs.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html pins main.css 1.206.0');
   assert.ok(!/main\.css\?v=(?!1\.206\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale main.css key');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.200.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.200.0');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.199.0');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
@@ -8244,8 +8244,8 @@ test('v1.207.0: the weather strip stops stacking — one padding, and the dial s
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.207.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.207.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.207.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
  }
  const hlHtml = fs.readFileSync(path.join(__dirname, '../highlights.html'), 'utf8');
  assert.ok(hlHtml.includes('css/highlights.css?v=1.187.0'), 'highlights.html keeps highlights.css 1.187.0');
@@ -8299,7 +8299,7 @@ test('v1.208.0: the wire becomes searchable — one box filters all three lists,
  assert.ok(html.includes('js/news.js?v=1.208.0'), 'news.html pins news.js 1.208.0');
  assert.ok(!/news\.js\?v=(?!1\.208\.0")1\.[0-9]+\.0"/.test(html), 'news.html has no stale news.js key');
  assert.ok(html.includes('css/main.css?v=1.206.0'), 'news.html keeps main.css 1.206.0');
- assert.ok(html.includes('js/common.js?v=1.219.0'), 'news.html keeps common.js 1.207.0');
+ assert.ok(html.includes('js/common.js?v=1.222.0'), 'news.html keeps common.js 1.207.0');
  assert.ok(html.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on news.html');
  assert.ok(html.includes('@kshot9000'), 'the @kshot9000 attribution survives on news.html');
 });
@@ -8354,7 +8354,7 @@ test('v1.209.0: the injury report becomes searchable — one box filters the rep
  assert.ok(html.includes('js/injuries.js?v=1.209.0'), 'injuries.html pins injuries.js 1.209.0');
  assert.ok(!/injuries\.js\?v=(?!1\.209\.0")1\.[0-9]+\.0"/.test(html), 'injuries.html has no stale injuries.js key');
  assert.ok(html.includes('css/main.css?v=1.206.0'), 'injuries.html keeps main.css 1.206.0');
- assert.ok(html.includes('js/common.js?v=1.219.0'), 'injuries.html keeps common.js 1.207.0');
+ assert.ok(html.includes('js/common.js?v=1.222.0'), 'injuries.html keeps common.js 1.207.0');
  assert.ok(html.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on injuries.html');
  assert.ok(html.includes('@kshot9000'), 'the @kshot9000 attribution survives on injuries.html');
 });
@@ -8398,7 +8398,7 @@ test('v1.210.0: the hero note reads over the photo — the one hero text without
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.204.0');
@@ -8455,7 +8455,7 @@ test('v1.211.0: the injury report answers on a phone — the status pill rests f
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.204.0');
@@ -8512,7 +8512,7 @@ test('v1.212.0: the home training-room snapshot answers on a phone — its statu
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  assert.ok(idxHtml.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.204.0');
  // Footer branding untouched by this release.
@@ -8584,11 +8584,11 @@ test('v1.213.0: the leader tables answer on a phone — the Line column rests fu
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.213.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.213.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
  const sh = fs.readFileSync(path.join(__dirname, '../stats.html'), 'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.218.0'), 'stats.html pins stats.js 1.213.0');
  assert.ok(!/stats\.js\?v=(?!1\.218\.0")1\.[0-9]+\.0"/.test(sh), 'stats.html has no stale stats.js key');
@@ -8671,10 +8671,10 @@ test('v1.214.0: the Games page answers on a phone — the season log score/resul
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.213.0 — CSS-only release');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.213.0 — CSS-only release');
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.204.0');
  // Footer branding untouched by this release.
@@ -8738,7 +8738,7 @@ test('v1.215.0: the roster table view answers on a phone — height and weight r
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const th = fs.readFileSync(path.join(__dirname, '../team.html'), 'utf8');
  assert.ok(th.includes('js/team.js?v=1.174.0'), 'team.html keeps team.js 1.174.0 — CSS-only release');
@@ -8813,13 +8813,13 @@ test('v1.216.0: the full odds board answers on a phone — the ML comparison res
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.216.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.216.0'), 'odds.html pins odds.js 1.216.0');
  assert.ok(!/odds\.js\?v=(?!1\.216\.0")1\.[0-9]+\.0"/.test(oh), 'odds.html has no stale odds.js key');
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.213.0 — not an odds release');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.213.0 — not an odds release');
  // Footer branding untouched by this release.
  const idx = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
@@ -8907,7 +8907,7 @@ test('v1.217.0: the practice tracker answers on a phone — Notes ride a full-wi
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.217.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  assert.ok(pracHtml.includes('js/practice.js?v=1.217.0'), 'practice.html pins practice.js 1.217.0');
  const oh = fs.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
@@ -8980,13 +8980,13 @@ test('v1.218.0: the season leaders answer on a phone — the last swipe table fi
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.218.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html keeps common.js 1.207.0');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html keeps common.js 1.207.0');
  }
  const sh = fs.readFileSync(path.join(__dirname, '../stats.html'), 'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.218.0'), 'stats.html pins stats.js 1.218.0');
  assert.ok(!/stats\.js\?v=(?!1\.218\.0")1\.[0-9]+\.0"/.test(sh), 'stats.html has no stale stats.js key');
  const gh = fs.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html keeps games.js 1.213.0 — not a stats release');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html keeps games.js 1.213.0 — not a stats release');
  const ph = fs.readFileSync(path.join(__dirname, '../practice.html'), 'utf8');
  assert.ok(ph.includes('js/practice.js?v=1.217.0'), 'practice.html keeps practice.js 1.217.0 — the shared old number was rolled only on experience.css strings');
  // Footer branding untouched by this release.
@@ -9062,8 +9062,8 @@ test('v1.219.0: a scheduled kickoff speaks Chicago time — ESPN\u2019s Eastern 
  const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
  for (const name of pages) {
   const html = fs2.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
-  assert.ok(html.includes('js/common.js?v=1.219.0'), name + '.html pins common.js 1.219.0');
-  assert.ok(!/common\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.219.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html pins experience.css 1.221.0');
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
@@ -9073,12 +9073,87 @@ test('v1.219.0: a scheduled kickoff speaks Chicago time — ESPN\u2019s Eastern 
   }
  }
  const gh = fs2.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
- assert.ok(gh.includes('js/games.js?v=1.219.0'), 'games.html pins games.js 1.219.0');
- assert.ok(!/games\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.219.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
  const sh = fs2.readFileSync(path.join(__dirname, '../stats.html'), 'utf8');
  assert.ok(sh.includes('js/stats.js?v=1.218.0'), 'stats.html keeps stats.js 1.218.0');
  const idx = fs2.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('js/home.js?v=1.204.0'), 'index.html keeps home.js 1.204.0');
+ assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
+ assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
+});
+
+test('v1.222.0: a live pill states the clock once — ESPN\u2019s embedded clock is not appended again', async () => {
+ const fs2 = require('node:fs');
+ const common = fs2.readFileSync(path.join(__dirname, '../js/common.js'), 'utf8');
+ const gamesJs = fs2.readFileSync(path.join(__dirname, '../js/games.js'), 'utf8');
+ // Statics (comment-stripped): one shared live line, one call site, and
+ // the old append-the-clock composition is gone.
+ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+ const cCommon = strip(common), cGames = strip(gamesJs);
+ assert.ok(cCommon.includes('CF.liveLine = (detail, shortDetail, displayClock)'), 'common.js defines the shared live line');
+ assert.ok(cGames.includes('CF.liveLine(st.detail, st.shortDetail'), 'the board live pill takes the shared live line');
+ assert.ok(!cGames.includes('displayClock ?'), 'the board no longer appends displayClock to the detail');
+ // Unit phase: the real ESPN live shapes measured 2026-11-08 (the live
+ // CIN @ ATL status: detail "0:57 - 2nd Quarter", displayClock "0:57"),
+ // the break shapes whose stopped clock is noise, and the fallbacks.
+ const p = await page('index'); try {
+  const L = p.w.CF.liveLine;
+  assert.equal(typeof L, 'function', 'liveLine is exposed on CF');
+  assert.equal(L('0:57 - 2nd Quarter', '0:57 - 2nd', '0:57'), '0:57 - 2nd Quarter', 'an embedded clock is stated once, not appended again');
+  assert.equal(L('Halftime', 'Half', '0:00'), 'Halftime', 'halftime carries no stopped-clock suffix');
+  assert.equal(L('End of 3rd Quarter', 'End of 3rd', '0:00'), 'End of 3rd Quarter', 'an end-of-quarter break carries no stopped-clock suffix');
+  assert.equal(L('3rd Quarter', '', '5:42'), '3rd Quarter · 5:42', 'a running clock joins a detail that lacks one');
+  assert.equal(L('', '0:57 - 2nd', '0:57'), '0:57 - 2nd', 'the shortDetail fallback keeps its embedded clock, stated once');
+  assert.equal(L('', '', '5:42'), '5:42', 'no status text falls back to the bare clock');
+  assert.equal(L('', '', ''), 'live', 'no status at all falls back to the plain live word');
+  assert.equal(L(null, null, null), 'live', 'missing fields fall back to the plain live word');
+  assert.deepEqual(p.errors, []);
+ } finally { p.close(); }
+ // Rendered phase: two live board cards wearing the real feed shapes —
+ // a running clock in the 2nd quarter and a halftime break.
+ const mkLive = (id, home, away, hs, as, detail, shortDetail, clock) => ({
+  id, name: away + ' at ' + home, date: '2026-11-08T17:00:00Z',
+  season: { displayName: '2026' },
+  status: { displayClock: clock, type: { state: 'in', completed: false, detail, shortDetail } },
+  competitions: [{ status: { type: { state: 'in', completed: false } }, venue: { fullName: 'Soldier Field' },
+   competitors: [
+    { homeAway: 'home', team: { id: '3', abbreviation: 'CHI', displayName: 'Chicago Bears' }, score: { value: hs, displayValue: String(hs) } },
+    { homeAway: 'away', team: { id: '9', abbreviation: 'ATL', displayName: 'Atlanta Falcons' }, score: { value: as, displayValue: String(as) } }],
+   broadcasts: [{ names: ['NFL Net'] }] }],
+ });
+ const liveEv = mkLive('222', 'Chicago Bears', 'Atlanta Falcons', 10, 21, '0:57 - 2nd Quarter', '0:57 - 2nd', '0:57');
+ const halfEv = mkLive('223', 'Chicago Bears', 'Atlanta Falcons', 10, 21, 'Halftime', 'Half', '0:00');
+ const sched = { season: { displayName: '2026', type: 2 }, events: [event('100', 'CHI', 'MIN', 'post', '2026-09-20T17:00:00Z', 24, 17)] };
+ const g = await page('games', { fetch: async (u) => {
+  if (u.pathname.includes('/scoreboard')) { const body = { events: [liveEv, halfEv] }; return { ok: true, text: async () => JSON.stringify(body), json: async () => body }; }
+  if (u.pathname.includes('/schedule')) { return { ok: true, text: async () => JSON.stringify(sched), json: async () => sched }; }
+ } }); try {
+  const d = g.w.document;
+  for (let i = 0; i < 20 && !d.querySelector('#board .game-card .pill.live'); i++) await settle(100);
+  const pills = [...d.querySelectorAll('#board .game-card .pill.live')].map((el) => el.textContent.trim());
+  assert.equal(pills.length, 2, 'both live cards paint their live pills');
+  assert.equal(pills[0], '0:57 - 2nd Quarter', 'the live pill states the embedded clock once');
+  assert.ok(!pills.some((t) => t.includes('· 0:57')), 'no live pill appends the clock a second time');
+  assert.equal(pills[1], 'Halftime', 'the halftime pill is the break label alone');
+  assert.ok(!pills.some((t) => t.includes('0:00')), 'no live pill prints the stopped 0:00 clock');
+  assert.deepEqual(g.errors, []);
+ } finally { g.close(); }
+ // Cache-bust pins: common.js and games.js move to 1.222.0; every other
+ // asset is byte-untouched (api.js 1.219.0, experience.css 1.221.0,
+ // main.css 1.206.0, stats.js 1.218.0, home.js 1.204.0).
+ const pages = ['index','odds','games','news','injuries','stats','team','highlights','practice','about','404'];
+ for (const name of pages) {
+  const html = fs2.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
+  assert.ok(html.includes('js/common.js?v=1.222.0'), name + '.html pins common.js 1.222.0');
+  assert.ok(!/common\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
+  assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.221.0');
+  if (name !== '404') assert.ok(html.includes('js/api.js?v=1.219.0'), name + '.html keeps api.js 1.219.0');
+ }
+ const gh = fs2.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
+ assert.ok(gh.includes('js/games.js?v=1.222.0'), 'games.html pins games.js 1.222.0');
+ assert.ok(!/games\.js\?v=(?!1\.222\.0")1\.[0-9]+\.0"/.test(gh), 'games.html has no stale games.js key');
+ const idx = fs2.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
 });
