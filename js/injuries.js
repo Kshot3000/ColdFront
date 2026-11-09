@@ -97,7 +97,7 @@
       } else if (note) note.remove();
     }
     const count = CF.$("#inj-count");
-    if (count) count.textContent = total ? shown + " of " + total + " entries" : "";
+    if (count) count.textContent = total ? shown + " of " + total + (total === 1 ? " entry" : " entries") : "";
   }
 
   function sevCls(row) {

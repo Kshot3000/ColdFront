@@ -124,7 +124,7 @@
       } else if (note) note.remove();
     });
     const count = CF.$("#news-count");
-    if (count) count.textContent = total ? shown + " of " + total + " stories" : "";
+    if (count) count.textContent = total ? shown + " of " + total + (total === 1 ? " story" : " stories") : "";
   }
 
   /* Main wire: ESPN league wire first; when it's quiet (offseason) or
@@ -227,7 +227,12 @@
       // reads the news payload's timestamp; the wide-wire path reads the RSS
       // snapshot's harvest time when it served one.
       const wideSnap = src.indexOf("wide wire") === 0 && CF.API.rssSource === "cache" && CF.API.rssEpoch;
-      CF.freshStamp(pill, src + " · " + count + " stories", wideSnap ? CF.API.rssEpoch : CF.dataEpoch(CF.API.newsSource));
+      // v1.223.0 — the count noun agrees with its number: the wide wire's
+      // pill read "live · 1 stories" on today's real one-story paint.
+      // The same agreement (the site's inline pattern, cf. stats.js's
+      // "1 game") now holds at every count label — news, injuries,
+      // highlights, practice, team, games — not just this one.
+      CF.freshStamp(pill, src + " · " + count + (count === 1 ? " story" : " stories"), wideSnap ? CF.API.rssEpoch : CF.dataEpoch(CF.API.newsSource));
     } else if (mainPainted) {
       // v1.203.0 — every feed missed this beat: the last good wire
       // stays on the page and the pill admits the refresh missed.
@@ -289,7 +294,7 @@
         wireEntered = true; // first paint done — refreshes stay instant
         gnPainted = true;
         pill.className = "pill ok";
-        pill.textContent = "live · " + fresh.length + " stories";
+        pill.textContent = "live · " + fresh.length + (fresh.length === 1 ? " story" : " stories");
       } else {
         // Every wide story already ran on the main wire or the injury rail —
         // not an outage, just nothing new to show.

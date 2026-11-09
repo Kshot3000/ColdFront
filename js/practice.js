@@ -211,7 +211,7 @@
       trkEntered = true;
       trkPainted = true;
       if (trackPill) {
-        trackPill.textContent = rows.length ? rows.length + " sessions" : "empty";
+        trackPill.textContent = rows.length ? rows.length + (rows.length === 1 ? " session" : " sessions") : "empty";
         trackPill.className = "tag";
       }
       if (note) {

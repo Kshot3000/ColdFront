@@ -45,7 +45,7 @@
       all = CF.API.rosterPlayers(result.data);
       if (!all.length) throw new Error("Empty roster");
       loaded = true;
-      pill.textContent = CF.sourceLabel(result.source) + " · " + all.length + " players";
+      pill.textContent = CF.sourceLabel(result.source) + " · " + all.length + (all.length === 1 ? " player" : " players");
       // v1.88.0 — the hero headline speaks the live roster count, so it can
       // never contradict the pill ("Fifty-three names" above "live · 83
       // players"). The static fifty-three line stays as the pre-load and
@@ -83,7 +83,7 @@
       if (group === "special") return /special/i.test(player.group) || ["K", "P", "LS"].includes(player.pos);
       return true;
     });
-    CF.$("#roster-count").textContent = rows.length + " of " + all.length + " players";
+    CF.$("#roster-count").textContent = rows.length + " of " + all.length + (all.length === 1 ? " player" : " players");
     const empty = group === "favorites" ? 'No favorites match yet. Tap a star on a player card to add your Bears.' : 'No Bears match those filters. Try another name, number, or position.';
     // Entrance choreography runs once, on first paint — filters and search re-render instantly.
     // Duplicate-number set is computed from the full roster, not the filtered

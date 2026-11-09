@@ -228,7 +228,7 @@
       // v1.94.0 — the pill names the source AND when it was last read.
       // v1.127.0 — the stamp wears the data's own age (a saved snapshot
       // stops claiming "1s ago" for days-old numbers).
-      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + " games", CF.dataEpoch(r));
+      CF.freshStamp(pill, (r.source === "live" ? "live" : "snapshot") + " · " + rows.length + (rows.length === 1 ? " game" : " games"), CF.dataEpoch(r));
       if (!rows.length) throw new Error("empty");
       // upcoming first, then most-recent results.
       const now = Date.now();

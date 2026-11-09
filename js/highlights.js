@@ -375,7 +375,8 @@
   function setPill(live, count) {
     var pill = CF.$("#hl-pill");
     pill.classList.remove("is-loading");
-    pill.textContent = live ? ("● live · " + count + " videos") : ("◌ snapshot · " + count + " videos");
+    // v1.223.0 — "1 video", not "1 videos" (count agreement, cf. news.js).
+    pill.textContent = (live ? "● live · " : "◌ snapshot · ") + count + (count === 1 ? " video" : " videos");
     pill.classList.toggle("cache", true);
   }
 
