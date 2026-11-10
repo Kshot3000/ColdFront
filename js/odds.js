@@ -406,7 +406,16 @@
         '<div class="tbl-wrap"><table class="tbl fb-fit"><caption class="sr-only">Odds by sportsbook</caption><thead><tr>' +
         "<th scope=\"col\">Book</th><th scope=\"col\" class=\"num\">Spread</th><th scope=\"col\" class=\"num\">O/U</th><th scope=\"col\" class=\"num\">ML home/away</th><th scope=\"col\">Updated</th>" +
         "</tr></thead><tbody>" + rows.join("") + "</tbody></table></div>" +
-        '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) + " · " + new Date(g.commence_time).toLocaleString() +
+        // v1.224.0 — the note's kickoff speaks Chicago time like every
+        // other kickoff on the site (v1.219.0's CF.kickoffLine): the
+        // bare toLocaleString() rendered in the VISITOR's zone with
+        // no zone label and stray seconds ("11/22/2026, 1:00:00 PM"
+        // in New York for the Saints game Chicago kicks at noon) —
+        // the one kickoff the v1.219.0 sweep missed, behind the
+        // BYO-key board. A flex placeholder stays date-only, and an
+        // unparseable commence time drops the segment entirely.
+        '<p class="src-note">' + CF.esc(g.away_team + " at " + g.home_team) +
+        (CF.kickoffLine(g.commence_time, true) ? " · " + CF.esc(CF.kickoffLine(g.commence_time, true)) : "") +
         " · source: The Odds API (your key) · usage depends on your plan · orange = best Bears price</p>";
     } catch (e) {
       box.innerHTML = '<div class="empty" style="padding:18px">The Odds API said no (' + "request unavailable" + '). Check the key, or the free-tier quota.</div>';

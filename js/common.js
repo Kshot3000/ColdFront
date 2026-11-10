@@ -203,7 +203,13 @@ CF.timeAgo = (iso) => {
   if (h < 24) return h + "h ago";
   const d = Math.floor(h / 24);
   if (d < 30) return d + "d ago";
-  return new Date(iso).toLocaleDateString();
+  // v1.224.0 — an old story's date speaks Chicago too: the bare
+  // toLocaleDateString() rendered in the VISITOR's zone and locale
+  // ("9/30/2026" for a story Chicago dates Tue, Sep 29 — an
+  // evening-UTC publish flips a day east of Chicago), in a numeric
+  // format no other surface on the site uses. fmtDate pins
+  // America/Chicago and the family format ("Tue, Sep 29").
+  return CF.fmtDate(iso);
 };
 
 CF.fmtDate = (iso, opts) => {

@@ -161,7 +161,12 @@
       el.innerHTML =
         '<div class="snap-meta">' +
         '<b>Snapshots</b> v' + CF.esc(String(m.version || "?")) +
-        (built ? " · built " + CF.esc(built.toLocaleString()) : "") +
+        // v1.224.0 — the built stamp speaks Chicago time with its zone
+        // named, like the site's freshness stamps (CF.fmtTime): the
+        // bare toLocaleString() rendered in the VISITOR's zone
+        // ("9/26/2026, 12:34:33 AM" in New York for a build Chicago
+        // stamps Fri, Sep 25 · 11:34 PM CDT — wrong evening, no zone).
+        (built ? " · built " + CF.esc(CF.fmtDate(built) + (CF.fmtTime(built) ? " · " + CF.fmtTime(built) : "")) : "") +
         (ageH != null ? " · ~" + ageH + "h old" : "") +
         (total ? " · " + ok + "/" + total + " feeds ok" : "") +
         '. Nightly workflow (see README) refreshes <code>data/snapshots/</code>; run <code>node scripts/refresh-snapshots.mjs</code> locally anytime.' +
