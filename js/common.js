@@ -275,16 +275,35 @@ CF.fmtTime = (iso) => {
    the snapshot files don't agree on a field name), live results stay
    Date.now(). Anything unparseable falls back to now: never older than the
    truth we can prove, never newer than the paint. */
+/* The payload-carried half of the scan, shared with CF.readSource: when a
+   snapshot payload carries no harvest field of its own, readSource stamps
+   the result with the epoch it resolved instead (see CF.snapshotEpoch /
+   CF.cacheTs), and dataEpoch consults that stamp before falling back. */
+CF._payloadEpoch = (d) => {
+  if (!d || typeof d !== "object") return null;
+  const cands = [d.timestamp, d.harvestedAt, d.fetched,
+    d.meta && d.meta.timestamp, d.meta && d.meta.harvestedAt];
+  for (const c of cands) {
+    const t = Date.parse(c);
+    if (Number.isFinite(t)) return t;
+  }
+  return null;
+};
+
 CF.dataEpoch = (r) => {
   const src = r && r.source;
-  const d = r && r.data;
-  if ((src === "snapshot" || src === "cache") && d && typeof d === "object") {
-    const cands = [d.timestamp, d.harvestedAt, d.fetched,
-      d.meta && d.meta.timestamp, d.meta && d.meta.harvestedAt];
-    for (const c of cands) {
-      const t = Date.parse(c);
-      if (Number.isFinite(t)) return t;
-    }
+  if (src === "snapshot" || src === "cache") {
+    const t = CF._payloadEpoch(r && r.data);
+    if (t != null) return t;
+    /* v1.225.0 — two baked snapshot files (scoreboard, odds) carry no
+       harvest field at all, so their stamps fell back to the paint time
+       and claimed "1s ago" for a weeks-old board (proven on the Games
+       board: the September snapshot painting a picked September date
+       under a total feed outage). readSource now resolves the true
+       epoch onto the result — the snapshot set's build time from
+       META.json, or the cache envelope's fetch time — and it is
+       consulted here, after the payload's own fields, before now. */
+    if (r && Number.isFinite(r.epoch) && r.epoch > 0) return r.epoch;
   }
   return Date.now();
 };
@@ -651,6 +670,22 @@ CF.cacheSet = (key, data, ttl) => {
   catch (e) { /* storage full or blocked — ignore */ }
 };
 
+/* v1.225.0 — the envelope's fetch time, under the same freshness rules
+   cacheGet applies. cacheGet returns only the data, so a cache win whose
+   payload carries no harvest field of its own (the scoreboard shape)
+   used to lose WHEN it was fetched and its stamp claimed the paint
+   time; readSource stamps cache results with this instead. */
+CF.cacheTs = (key) => {
+  try {
+    const raw = localStorage.getItem("cf." + key);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    if (!o || !Number.isFinite(o.ts)) return null;
+    if (Date.now() - o.ts > (o.ttl || 3600e3)) return null;
+    return o.ts;
+  } catch (e) { return null; }
+};
+
 /* Loopback proxy is only reachable from a loopback page origin.
    From https://*.github.io Mixed Content / Private Network Access make
    http://127.0.0.1:* hang or fail — skip it so feeds resolve on Pages. */
@@ -723,6 +758,50 @@ CF.snapshotGet = async (cacheKey) => {
     }
   }
   return null;
+};
+
+/* v1.225.0 — when the whole snapshot set was harvested: META.json's
+   "built" stamp. Most snapshot files carry their own harvest field, but
+   scoreboard.json and odds.json carry none, so a stamp on their pills
+   had nothing truthful to wear. The set is baked in one run (the files'
+   own fields agree with META's built to the second), so the set's build
+   time is the honest age for a file that doesn't state its own. One
+   memoized fetch per page load; null when META can't be read, and
+   callers fall back to the paint time as before. */
+let _snapEpochP = null;
+CF.snapshotEpoch = () => {
+  if (_snapEpochP) return _snapEpochP;
+  _snapEpochP = (async () => {
+    const base = (CF.CONFIG.endpoints.snapshotBase || "data/snapshots").replace(/\/$/, "");
+    const rel = base + "/META.json";
+    const candidates = [];
+    const root = CF.siteRoot();
+    if (root) candidates.push(root + rel);
+    try { if (typeof location !== "undefined" && location.href) candidates.push(new URL(rel, location.href).href); } catch (e0) { /* ignore */ }
+    candidates.push(rel);
+    const seen = {};
+    for (const url of candidates) {
+      if (!url || seen[url]) continue;
+      seen[url] = 1;
+      try {
+        const r = await fetch(url, { cache: "no-cache" });
+        if (!r.ok) continue;
+        const meta = await r.json();
+        const t = Date.parse(meta && meta.built);
+        if (Number.isFinite(t)) return t;
+      } catch (e) { /* try next */ }
+    }
+    return null;
+  })();
+  return _snapEpochP;
+};
+
+/* The epoch a snapshot result should wear: the payload's own harvest
+   field when it carries one, else the snapshot set's build time. */
+CF._snapResultEpoch = async (data) => {
+  const own = CF._payloadEpoch(data);
+  if (own != null) return own;
+  return CF.snapshotEpoch();
 };
 
 /* ---------------- generic fetch with the full fallback chain ----------------
@@ -835,30 +914,30 @@ CF.readSource = async (name, fetcher, cacheKey, directUrl, altFetchers) => {
       await new Promise((r) => setTimeout(r, 1100));
       const snap = await CF.snapshotGet(cacheKey);
       if (!snap) throw new Error("no snap");
-      return { data: snap, source: "snapshot" };
+      return { data: snap, source: "snapshot", epoch: await CF._snapResultEpoch(snap) };
     })();
     const cachedQuick = CF.cacheGet(cacheKey);
     const delayedCache = cachedQuick
       ? (async () => {
           await new Promise((r) => setTimeout(r, 900));
-          return { data: cachedQuick, source: "cache" };
+          return { data: cachedQuick, source: "cache", epoch: CF.cacheTs(cacheKey) };
         })()
       : Promise.reject(new Error("no cache"));
     try {
       const r = await Promise.any([proxyLive, delayedSnap, delayedCache]);
       if (r.source === "live") CF.cacheSet(cacheKey, r.data, ttl);
-      return { data: r.data, source: r.source, name };
+      return { data: r.data, source: r.source, name, epoch: r.epoch };
     } catch (e2) { /* stage 3 */ }
   }
 
   // Stage 3 — localStorage snapshot from a previous successful visit.
   const cached = CF.cacheGet(cacheKey);
-  if (cached) return { data: cached, source: "cache", name };
+  if (cached) return { data: cached, source: "cache", name, epoch: CF.cacheTs(cacheKey) };
 
   // Stage 4 — same-origin baked snapshot (data/snapshots/).
   try {
     const snap = await CF.snapshotGet(cacheKey);
-    if (snap) return { data: snap, source: "snapshot", name };
+    if (snap) return { data: snap, source: "snapshot", name, epoch: await CF._snapResultEpoch(snap) };
   } catch (e3) { /* fall through */ }
 
   throw firstErr || new Error("offline:" + name);
