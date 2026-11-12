@@ -152,9 +152,24 @@
       const r = await fetch("data/snapshots/META.json", { cache: "no-cache" });
       const m = await r.json();
       const built = m.built ? new Date(m.built) : null;
-      const ageH = built && !isNaN(built.getTime())
-        ? Math.round((Date.now() - built.getTime()) / 3600e3)
+      // v1.226.0 — the snapshot age speaks in its largest honest unit.
+      // The raw hour count grew unbounded: the baked set built
+      // 2026-09-26 read "~1139h old" on 2026-11-12 — a four-digit
+      // number no fan can feel, and the site's only age that never
+      // graduates. Under 48 hours the age stays in hours; past that
+      // it wears days ("~47d old"). CF.timeAgo is not a drop-in here:
+      // past 30 days it returns a date, which would just repeat the
+      // adjacent "built Fri, Sep 25" stamp. A build stamped in the
+      // future (clock skew) wears no age at all rather than a
+      // negative one.
+      const ageMs = built && !isNaN(built.getTime())
+        ? Date.now() - built.getTime()
         : null;
+      const ageTxt = ageMs == null || ageMs < 0
+        ? ""
+        : ageMs < 48 * 3600e3
+          ? " · ~" + Math.max(1, Math.round(ageMs / 3600e3)) + "h old"
+          : " · ~" + Math.round(ageMs / 86400e3) + "d old";
       const feeds = m.feeds || {};
       const ok = Object.keys(feeds).filter((k) => feeds[k] && feeds[k].ok).length;
       const total = Object.keys(feeds).length || m.totalFeeds || 0;
@@ -167,7 +182,7 @@
         // ("9/26/2026, 12:34:33 AM" in New York for a build Chicago
         // stamps Fri, Sep 25 · 11:34 PM CDT — wrong evening, no zone).
         (built ? " · built " + CF.esc(CF.fmtDate(built) + (CF.fmtTime(built) ? " · " + CF.fmtTime(built) : "")) : "") +
-        (ageH != null ? " · ~" + ageH + "h old" : "") +
+        ageTxt +
         (total ? " · " + ok + "/" + total + " feeds ok" : "") +
         '. Nightly workflow (see README) refreshes <code>data/snapshots/</code>; run <code>node scripts/refresh-snapshots.mjs</code> locally anytime.' +
         "</div>";

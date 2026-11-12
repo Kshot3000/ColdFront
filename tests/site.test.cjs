@@ -9215,6 +9215,78 @@ test('v1.222.0: a live pill states the clock once — ESPN\u2019s embedded clock
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
 });
+
+test('v1.226.0: the snapshot age speaks in its largest honest unit — no four-digit hour counts', async () => {
+ // The About page's snapshot line (js/about.js loadSnapMeta) rendered
+ // its age as a raw rounded hour count, "~" + ageH + "h old" — the
+ // site's only age that never graduates. The baked snapshot set was
+ // built 2026-09-26T04:34:33Z (data/snapshots/META.json), so on
+ // 2026-11-12 the live line read "~1139h old": true, and unreadable.
+ // The age now stays in hours under 48h and wears days past that
+ // ("~47d old"); CF.timeAgo is not a drop-in (past 30d it returns a
+ // date, duplicating the adjacent built stamp), and a build stamped
+ // in the future wears no age instead of a negative one.
+ const fs2 = require('node:fs');
+ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+ const aboutJs = strip(fs2.readFileSync(path.join(__dirname, '../js/about.js'), 'utf8'));
+ assert.ok(aboutJs.includes('48 * 3600e3'), 'the age graduates out of hours at 48h');
+ assert.ok(aboutJs.includes('Math.round(ageMs / 86400e3)'), 'past 48h the age is counted in days');
+ assert.ok(aboutJs.includes('"d old"'), 'the day age carries the d suffix');
+ assert.ok(aboutJs.includes('ageMs < 0'), 'a future build is guarded before an age is claimed');
+ assert.ok(!aboutJs.includes('ageH'), 'the raw unbounded hour count is retired');
+ assert.ok(!aboutJs.includes('"h old" : ""'), 'no leftover hour-only rendering branch survives');
+ // jsdom phases — the harness clock is fixed at 2026-09-26T03:00:00Z;
+ // each phase serves a META.json built at a chosen distance from it.
+ const metaFetch = (built) => async (u) => {
+  if (!u.pathname.includes('/data/snapshots/META.json')) return null;
+  const m = { built, version: '1.11.0', feeds: { a: { ok: true }, b: { ok: true } } };
+  return { ok: true, json: async () => m, text: async () => JSON.stringify(m) };
+ };
+ const paintAge = async (built) => {
+  const a = await page('about', { fetch: metaFetch(built) }); try {
+   const d = a.w.document;
+   for (let i = 0; i < 40 && !/built/.test(d.querySelector('.snap-meta')?.textContent || ''); i++) await settle(100);
+   const meta = d.querySelector('.snap-meta');
+   assert.ok(meta, 'the snapshot stamp paints for built ' + built);
+   assert.deepEqual(a.errors, []);
+   return meta.textContent;
+  } finally { a.close(); }
+ };
+ const days = await paintAge('2026-08-10T03:00:00Z');
+ assert.ok(days.includes('~47d old'), 'a 47-day-old build wears days: ' + days);
+ assert.ok(!/\d{3,}h old/.test(days), 'no three-digit hour count survives: ' + days);
+ const hours = await paintAge('2026-09-25T03:00:00Z');
+ assert.ok(hours.includes('~24h old'), 'a day-old build stays in hours: ' + hours);
+ const fresh = await paintAge('2026-09-26T02:30:00Z');
+ assert.ok(fresh.includes('~1h old'), 'a half-hour-old build reads ~1h, never ~0h: ' + fresh);
+ const future = await paintAge('2026-09-27T03:00:00Z');
+ assert.ok(!/ old/.test(future), 'a future build wears no age at all: ' + future);
+ assert.ok(!/-\d/.test(future), 'no negative number survives in the stamp: ' + future);
+ // The repo's real META.json under the harness clock is itself a
+ // future build (built 04:34Z, clock 03:00Z) — it must paint its
+ // Chicago built stamp with no age segment.
+ const real = await page('about'); try {
+  const d = real.w.document;
+  for (let i = 0; i < 40 && !/built/.test(d.querySelector('.snap-meta')?.textContent || ''); i++) await settle(100);
+  const meta = d.querySelector('.snap-meta');
+  assert.ok(meta.textContent.includes('built Fri, Sep 25'), 'the real build stamp still paints: ' + meta.textContent);
+  assert.ok(!/ old/.test(meta.textContent), 'the real future-under-clock build wears no age: ' + meta.textContent);
+  assert.deepEqual(real.errors, []);
+ } finally { real.close(); }
+ // Cache-bust pins: about.js moves to 1.226.0 on about.html only;
+ // every other asset is byte-untouched (common.js 1.225.0,
+ // odds.js 1.224.0, experience.css 1.221.0).
+ const ah = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
+ assert.ok(ah.includes('js/about.js?v=1.226.0'), 'about.html pins about.js 1.226.0');
+ assert.ok(!/about\.js\?v=(?!1.226.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key');
+ assert.ok(!/about\.js\?v=(?!1\.226\.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key (escaped form)');
+ assert.ok(ah.includes('js/common.js?v=1.225.0'), 'about.html keeps common.js 1.225.0');
+ assert.ok(ah.includes('css/experience.css?v=1.221.0'), 'about.html keeps experience.css 1.221.0');
+ const oh = fs2.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
+ assert.ok(oh.includes('js/odds.js?v=1.224.0'), 'odds.html keeps odds.js 1.224.0 — the shared old number was not rolled by mistake');
+ assert.ok(ah.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on about.html');
+ assert.ok(ah.includes('@kshot9000'), 'the @kshot9000 attribution survives on about.html');
+});
 test('v1.223.0: every count noun agrees with its number — no "1 stories" on any pill', async () => {
  const fs2 = require('node:fs');
  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
@@ -9362,7 +9434,7 @@ test('v1.224.0: every stamp speaks Chicago time — no datetime renders in the v
  const oh = fs2.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.224.0'), 'odds.html pins odds.js 1.224.0');
  const ah = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
- assert.ok(ah.includes('js/about.js?v=1.224.0'), 'about.html pins about.js 1.224.0');
+ assert.ok(ah.includes('js/about.js?v=1.226.0'), 'about.html pins about.js 1.226.0');
  const idx = fs2.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
