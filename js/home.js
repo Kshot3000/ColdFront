@@ -252,10 +252,19 @@
       const remaining = Math.max(0, Date.parse(game.date) - Date.now());
       if (!remaining) { show("#ng-countdown", "Kickoff time — waiting for the live board"); clearInterval(countdown); return; }
       const values = [Math.floor(remaining / 86400000), Math.floor(remaining / 3600000) % 24, Math.floor(remaining / 60000) % 60, Math.floor(remaining / 1000) % 60];
+      /* v1.227.0 — the unit labels agree with their numbers. The
+         v1.223.0 count-agreement sweep closed every count noun built
+         by concatenation, but these labels are picked from an array
+         by index, so that sweep's grep could not see them: the hero
+         read "01 days" for the whole last day before every kickoff
+         and "01 hours" for an hour after that. The two full-word
+         units carry both forms and singularize at exactly 1; "min"
+         and "sec" are abbreviations and never change. */
+      const unitLabels = [["day", "days"], ["hour", "hours"], ["min", "min"], ["sec", "sec"]];
       // v1.13.0 — tick the changed day/hour/minute units with a gentle pop.
       CF.$("#ng-countdown").innerHTML = values.map((n, i) =>
         '<div class="unit' + (i < 3 && lastCountdown && lastCountdown[i] !== n ? " tick" : "") + '"><b>' +
-        String(n).padStart(2, "0") + '</b><span>' + ["days", "hours", "min", "sec"][i] + "</span></div>").join("");
+        String(n).padStart(2, "0") + '</b><span>' + unitLabels[i][n === 1 ? 0 : 1] + "</span></div>").join("");
       lastCountdown = values;
     };
     if (game.state === "pre" && game.timeValid && CF.kickoffTime(game.date)) { renderCountdown(); countdown = setInterval(renderCountdown, 1000); }
