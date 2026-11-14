@@ -514,7 +514,14 @@ CF.API = {
         height: p.displayHeight || p.height || "",
         weight: p.displayWeight || (p.weight != null ? p.weight + " lb" : ""),
         age: p.age != null ? p.age : "",
-        exp: (p.experience && p.experience.years != null) ? p.experience.years + " yrs" : (p.experience != null ? String(p.experience) : ""),
+        // v1.228.0 — the year's abbreviation agrees with its number:
+        // "yrs" is the plural form, so a second-year player painted
+        // "1 yrs" in the roster table's Exp column (three Bears on
+        // today's real roster). The count-agreement sweeps (v1.223.0
+        // pills, v1.227.0 countdown) could not see this one — the unit
+        // is appended in this mapper, not built at a paint site, and
+        // unlike "min"/"sec" the abbreviation has a distinct singular.
+        exp: (p.experience && p.experience.years != null) ? p.experience.years + (Number(p.experience.years) === 1 ? " yr" : " yrs") : (p.experience != null ? String(p.experience) : ""),
         nation: from,
         from,
         college,

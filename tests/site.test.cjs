@@ -1630,12 +1630,12 @@ test('v1.68.0: injury prose stays compact — table shows the short designation,
  assert.match(css,/\.news-item \.inj-excerpt\s*\{[^}]*overflow:\s*hidden/s,'wire excerpts hide the overflow');
  const injuries=fs.readFileSync(path.join(__dirname,'..','injuries.html'),'utf8');
  assert.ok(injuries.includes('js/injuries.js?v=1.223.0'),'injuries.html busts the injuries.js cache');
- assert.ok(injuries.includes('js/api.js?v=1.219.0'),'injuries.html busts the api.js cache');
+ assert.ok(injuries.includes('js/api.js?v=1.228.0'),'injuries.html busts the api.js cache');
  assert.ok(injuries.includes('css/main.css?v=1.206.0'),'injuries.html busts the main.css cache');
  assert.ok(injuries.includes('data-cf-copy="btc"'),'footer tip chip is intact on injuries.html');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.227.0'),'index.html busts the home.js cache');
- assert.ok(index.includes('js/api.js?v=1.219.0'),'index.html busts the api.js cache');
+ assert.ok(index.includes('js/api.js?v=1.228.0'),'index.html busts the api.js cache');
  assert.ok(index.includes('data-cf-copy="btc"'),'footer tip chip is intact on index.html');
  const payload={injuries:[{displayName:'Chicago Bears',injuries:[{athlete:{displayName:'Test Bears LB',position:{abbreviation:'LB'}},status:'Questionable',date:'2026-09-25',shortComment:'Hamstring — limited practice',longComment:'The linebacker was held out of team drills on Friday with a hamstring injury that has lingered for weeks and could keep him sidelined through Sunday.',details:{type:'Hamstring',detail:'',side:''}}]}]};
  const resp={ok:true,text:async()=>JSON.stringify(payload),json:async()=>payload};
@@ -3129,7 +3129,7 @@ test('v1.108.0: footer spacing, season-log header, 404 title, prediction toggle,
 });
 
 test('v1.108.0: every changed script carries the release cache key on every page',async()=>{
- const changed=[['js/common.js','1.225.0'],['js/api.js','1.219.0'],['js/home.js','1.227.0'],['js/games.js','1.223.0'],['js/odds.js','1.224.0'],['js/news.js','1.223.0'],['js/injuries.js','1.223.0'],['js/team.js','1.223.0']];
+ const changed=[['js/common.js','1.225.0'],['js/api.js','1.228.0'],['js/home.js','1.227.0'],['js/games.js','1.223.0'],['js/odds.js','1.224.0'],['js/news.js','1.223.0'],['js/injuries.js','1.223.0'],['js/team.js','1.223.0']];
  const pages={index:['js/common.js','js/api.js','js/home.js'],games:['js/common.js','js/api.js','js/games.js'],odds:['js/common.js','js/api.js','js/odds.js'],news:['js/common.js','js/api.js','js/news.js'],injuries:['js/common.js','js/api.js','js/injuries.js'],team:['js/common.js','js/api.js','js/team.js'],stats:['js/common.js','js/api.js'],about:['js/common.js','js/api.js'],practice:['js/common.js','js/api.js'],highlights:['js/common.js','js/api.js'],'404':['js/common.js']};
  for(const [page,scripts] of Object.entries(pages)){
   const html=fs.readFileSync(path.join(__dirname,'..',page+'.html'),'utf8');
@@ -3281,7 +3281,7 @@ test('v1.113.0: injury designations drop ESPN\'s echoed detail — "Concussion (
  assert.ok(api.includes('dDetailEcho'),'the echo-dropping designation composer ships in js/api.js');
  for(const f of ['index','news','games','stats','odds','injuries','practice','team','about','highlights']){
   const html=fs.readFileSync(path.join(__dirname,'..',f+'.html'),'utf8');
-  assert.ok(html.includes('js/api.js?v=1.219.0'),f+'.html busts the api.js cache');
+  assert.ok(html.includes('js/api.js?v=1.228.0'),f+'.html busts the api.js cache');
  }
 });
 
@@ -3324,7 +3324,7 @@ test('v1.114.0: the hero never bills a stale pre-game scoreboard as the next kic
  assert.ok(homeSrc.includes('preGameKickoffStale(game)'),'the hero consults the guard in js/home.js');
  const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
  assert.ok(index.includes('js/home.js?v=1.227.0'),'index.html busts the home.js cache');
- assert.ok(index.includes('js/api.js?v=1.219.0'),'index.html busts the api.js cache');
+ assert.ok(index.includes('js/api.js?v=1.228.0'),'index.html busts the api.js cache');
 });
 
 test('v1.115.0: the week clock stops crowning a stale pre-game scoreboard as gameday NOW',async()=>{
@@ -3890,7 +3890,7 @@ test('v1.127.0: freshness stamps wear the data\'s own age, not the paint time',a
  const pages={common:['404','about','games','highlights','index','injuries','news','odds','practice','stats','team'],
   api:['about','games','highlights','index','injuries','news','odds','practice','stats','team'],
   games:['games'],home:['index'],injuries:['injuries'],news:['news'],odds:['odds']};
- const vers={common:'1.225.0',api:'1.219.0',games:'1.223.0',home:'1.227.0',injuries:'1.223.0',news:'1.223.0',odds:'1.224.0'};
+ const vers={common:'1.225.0',api:'1.228.0',games:'1.223.0',home:'1.227.0',injuries:'1.223.0',news:'1.223.0',odds:'1.224.0'};
  for(const [f,ns] of Object.entries(pages))for(const name of ns){
   const html=fs.readFileSync(path.join(__dirname,'..',name+'.html'),'utf8');
   const v=vers[f],ve=v.replace(/\./g,'\\.');
@@ -9126,8 +9126,8 @@ test('v1.219.0: a scheduled kickoff speaks Chicago time — ESPN\u2019s Eastern 
   assert.ok(!/experience\.css\?v=(?!1\.221\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale experience.css key');
   assert.ok(html.includes('css/main.css?v=1.206.0'), name + '.html keeps main.css 1.206.0');
   if (name !== '404') {
-   assert.ok(html.includes('js/api.js?v=1.219.0'), name + '.html pins api.js 1.219.0');
-   assert.ok(!/api\.js\?v=(?!1\.219\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale api.js key');
+   assert.ok(html.includes('js/api.js?v=1.228.0'), name + '.html pins api.js 1.228.0');
+   assert.ok(!/api\.js\?v=(?!1\.228\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale api.js key');
   }
  }
  const gh = fs2.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
@@ -9206,7 +9206,7 @@ test('v1.222.0: a live pill states the clock once — ESPN\u2019s embedded clock
   assert.ok(html.includes('js/common.js?v=1.225.0'), name + '.html pins common.js 1.222.0');
   assert.ok(!/common\.js\?v=(?!1\.225\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale common.js key');
   assert.ok(html.includes('css/experience.css?v=1.221.0'), name + '.html keeps experience.css 1.221.0');
-  if (name !== '404') assert.ok(html.includes('js/api.js?v=1.219.0'), name + '.html keeps api.js 1.219.0');
+  if (name !== '404') assert.ok(html.includes('js/api.js?v=1.228.0'), name + '.html keeps api.js 1.228.0');
  }
  const gh = fs2.readFileSync(path.join(__dirname, '../games.html'), 'utf8');
  assert.ok(gh.includes('js/games.js?v=1.223.0'), 'games.html pins games.js 1.222.0');
@@ -9501,4 +9501,57 @@ test('v1.227.0: the hero countdown agrees with its numbers — no "01 days" befo
  assert.ok(ah2.includes('js/about.js?v=1.226.0'), 'about.html keeps about.js 1.226.0 — the shared number was not rolled by mistake');
  assert.ok(ih.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(ih.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
+});
+
+test('v1.228.0: a second-year player reads "1 yr" — the roster Exp unit agrees with its number', async () => {
+ // The count-agreement sweeps closed the labels built at paint sites
+ // (v1.223.0's pills) and the one picked from an array by index
+ // (v1.227.0's countdown), but the roster Exp unit is appended in the
+ // API mapper (CF.API.rosterPlayers), where neither grep looked: it
+ // carried the plural abbreviation unconditionally, so every player
+ // with exactly one year of experience painted "1 yrs" in the Team
+ // page's roster table. Proven with today's real ESPN roster (fetched
+ // 2026-11-14): three Bears wear it — Kaden Davis, Qadir Ismail and
+ // JP Richardson, 1 of the roster's 82 — and with a jsdom fixture
+ // below. Unlike "min"/"sec", which are the same abbreviation in both
+ // numbers, the year has a distinct singular ("yr"), so the unit now
+ // keys on the number itself; plural and rookie paints are
+ // byte-identical ("2 yrs", "0 yrs").
+ const fs2 = require('node:fs');
+ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+ const apiJs = strip(fs2.readFileSync(path.join(__dirname, '../js/api.js'), 'utf8'));
+ assert.ok(apiJs.includes('Number(p.experience.years) === 1 ? " yr" : " yrs"'), 'the Exp unit keys on the year count in js/api.js');
+ assert.ok(!apiJs.includes('+ " yrs"'), 'the bare-plural Exp unit is retired');
+ // jsdom phase — the observed defect: a roster carrying 1 / 2 / 0
+ // years of experience paints "1 yr" / "2 yrs" / "0 yrs" in the
+ // table's Exp column (fifth cell), and "1 yrs" survives nowhere.
+ const rosterX = { athletes: [{ position: 'offense', items: [
+  { id: '1', displayName: 'One Year Bear', jersey: '11', position: { abbreviation: 'WR' }, experience: { years: 1 } },
+  { id: '2', displayName: 'Two Year Bear', jersey: '12', position: { abbreviation: 'RB' }, experience: { years: 2 } },
+  { id: '3', displayName: 'Rookie Bear', jersey: '13', position: { abbreviation: 'TE' }, experience: { years: 0 } },
+ ] }] };
+ const a = await page('team', { fetch: async (u) => {
+  if (u.pathname.includes('/roster')) return { ok: true, json: async () => rosterX, text: async () => JSON.stringify(rosterX) };
+  return null;
+ } }); try {
+  const d = a.w.document;
+  for (let i = 0; i < 40 && !(d.querySelector('#roster-table tbody')?.textContent || '').includes('Bear'); i++) await settle(100);
+  const exps = [...d.querySelectorAll('#roster-table tbody tr')].map((tr) => tr.querySelectorAll('td')[4].textContent.trim());
+  assert.deepEqual(exps, ['1 yr', '2 yrs', '0 yrs'], 'the Exp column agrees with each number: ' + JSON.stringify(exps));
+  assert.ok(!d.querySelector('#roster-table').textContent.includes('1 yrs'), 'no "1 yrs" survives in the roster table');
+  assert.deepEqual(a.errors, []);
+ } finally { a.close(); }
+ // Cache-bust pins: api.js moves to 1.228.0 on the ten pages that
+ // load it (404 does not); every other asset is byte-untouched
+ // (common.js 1.225.0, home.js 1.227.0, experience.css 1.221.0).
+ for (const name of ['index', 'games', 'odds', 'news', 'injuries', 'team', 'stats', 'about', 'practice', 'highlights']) {
+  const html = fs2.readFileSync(path.join(__dirname, '../' + name + '.html'), 'utf8');
+  assert.ok(html.includes('js/api.js?v=1.228.0'), name + '.html pins api.js 1.228.0');
+  assert.ok(!/api\.js\?v=(?!1\.228\.0")1\.[0-9]+\.0"/.test(html), name + '.html has no stale api.js key');
+ }
+ const th = fs2.readFileSync(path.join(__dirname, '../team.html'), 'utf8');
+ assert.ok(th.includes('js/common.js?v=1.225.0'), 'team.html keeps common.js 1.225.0');
+ assert.ok(th.includes('css/experience.css?v=1.221.0'), 'team.html keeps experience.css 1.221.0');
+ assert.ok(th.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on team.html');
+ assert.ok(th.includes('@kshot9000'), 'the @kshot9000 attribution survives on team.html');
 });
