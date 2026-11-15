@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
  * Refresh same-origin data/snapshots/ for THE COLD FRONT.
- * Used by .github/workflows/refresh-snapshots.yml and local maintainers.
+ * Run manually: node scripts/refresh-snapshots.mjs
+ * (a workflow template sits at scripts/refresh-snapshots.workflow.yml,
+ * but it is NOT installed under .github/workflows/ — nothing refreshes
+ * these automatically).
  * Honest payloads only — never invents scores, lines, or injuries.
  */
 import fs from "node:fs";
@@ -11,8 +14,8 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "data", "snapshots");
-const UA = "curl/8.13.0 ColdFront-snapshot-refresh/1.10";
-const VERSION = "1.10.0";
+const UA = "curl/8.13.0 ColdFront-snapshot-refresh/1.11";
+const VERSION = "1.11.0";
 
 const ESPN = {
   web: "https://site.web.api.espn.com/apis/site/v2/sports/football/nfl",
@@ -224,11 +227,15 @@ async function main() {
     for (const u of urls) {
       try {
         const xml = await fetchText(u);
-        items = parseRssItems(xml, 12);
-        if (items.length) {
+        const got = parseRssItems(xml, 12);
+        // Keep the fullest page: a source that answers with a stub
+        // (Bing returned 2 items on 2026-11-15 while Google had 100+)
+        // must not crowd out the next source's full list.
+        if (got.length > items.length) {
+          items = got;
           via = u;
-          break;
         }
+        if (items.length >= 12) break;
       } catch (_) { /* next */ }
     }
     if (!items.length) throw new Error("empty RSS");
@@ -252,7 +259,7 @@ async function main() {
     okCount,
     totalFeeds: Object.keys(feeds).length,
     freshnessHint:
-      "Baked same-origin fallbacks for GitHub Pages. Age = now − built. Nightly Action keeps these warm.",
+      "Baked same-origin fallbacks for GitHub Pages. Age = now − built. Refreshed manually (node scripts/refresh-snapshots.mjs); no automated refresh is installed.",
   };
   writeJSON("META.json", meta);
   console.log(JSON.stringify({ built, okCount, feeds }, null, 2));
