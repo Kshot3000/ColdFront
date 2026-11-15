@@ -1525,7 +1525,17 @@ CF.syncLiveTitle = (game) => {
         title = "🔴 LIVE · " + line + clock + " — The Cold Front";
       } else {
         const d = new Date(game.date), now = new Date();
-        const today = !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+        // v1.230.0 — "today" speaks Chicago, like every other date on
+        // the site: the local getFullYear/getMonth/getDate triple
+        // compared the game and the fan's clock in the VISITOR's zone,
+        // so a final that ended just after Chicago midnight (12:30 AM
+        // CDT) stopped riding the tab that same Chicago evening for
+        // any fan whose local day had already rolled over (London at
+        // 4 AM while Chicago is still on game day) — and the games
+        // board's own gate for calling this helper is already the
+        // Chicago day (isoDate(0) via CF.dayParam). CF.dateInput is
+        // the site's Chicago-pinned day stamp; both sides wear it.
+        const today = !isNaN(d) && CF.dateInput(d) === CF.dateInput(now);
         if (today) {
           const bears = ha === "CHI" ? hs : as, opp = ha === "CHI" ? as : hs;
           title = (bears > opp ? "BEARS WIN · Final · " : "Final · ") + line + " — The Cold Front";
