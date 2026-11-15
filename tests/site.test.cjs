@@ -1414,16 +1414,26 @@ test('v1.107.0: snapshot wide-wire headlines decode stacked entities like the li
   assert.equal(api.unescRss('Plain headline — no entities'), 'Plain headline — no entities','clean text is untouched');
   assert.equal(api.unescRss(null), null,'null stays null');
   // End to end through the snapshot branch: with live RSS blocked, the
-  // baked gnews.json wins — and the Beverley headline must arrive decoded.
+  // baked gnews.json wins — and every headline it serves must be the
+  // shared decoder applied to the baked text. (v1.229.0: this phase
+  // once pinned one September headline by name; the snapshot is
+  // refreshed data, so the expectation now derives from the file
+  // itself instead of freezing its contents.)
   const items=await api.getGoogleNews('Chicago Bears',12);
   assert.equal(api.rssSource,'cache','the snapshot branch served the items');
-  const bev=items.find((it)=>/Beverley/.test(it.title||''));
-  assert.ok(bev,'the baked snapshot still carries the Beverley headline');
-  assert.ok(!bev.title.includes('&quot;'),'snapshot title carries no literal entity');
-  assert.ok(bev.title.includes('"What is going on, man?"'),'snapshot title shows real quotes');
-  const rendered=p.w.CF.esc(bev.title);
-  assert.ok(!rendered.includes('&amp;quot;'),'rendered HTML carries no double-escaped entity');
-  assert.ok(rendered.includes('&quot;'),'quotes are safely escaped exactly once');
+  assert.ok(items.length>0,'the baked snapshot served headlines');
+  const baked=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/snapshots/gnews.json'),'utf8'));
+  const decoded=(baked.items||[]).map((it)=>api.unescRss(it.title||''));
+  for(const it of items){
+   assert.ok(decoded.includes(it.title),'served headline is a decoded baked headline: '+it.title);
+   assert.ok(!/&(quot|amp|apos|lt|gt|#\d+);/.test(it.title||''),'snapshot title carries no literal entity: '+it.title);
+  }
+  const quoted=items.find((it)=>(it.title||'').includes('"'));
+  if(quoted){
+   const rendered=p.w.CF.esc(quoted.title);
+   assert.ok(!rendered.includes('&amp;quot;'),'rendered HTML carries no double-escaped entity');
+   assert.ok(rendered.includes('&quot;'),'quotes are safely escaped exactly once');
+  }
  }finally{p.close();}
 });
 
@@ -9263,13 +9273,19 @@ test('v1.226.0: the snapshot age speaks in its largest honest unit — no four-d
  assert.ok(!/ old/.test(future), 'a future build wears no age at all: ' + future);
  assert.ok(!/-\d/.test(future), 'no negative number survives in the stamp: ' + future);
  // The repo's real META.json under the harness clock is itself a
- // future build (built 04:34Z, clock 03:00Z) — it must paint its
- // Chicago built stamp with no age segment.
+ // future build (built after the 03:00Z clock) — it must paint its
+ // Chicago built stamp with no age segment. (v1.229.0: the expected
+ // stamp derives from META.json's own built value through the page's
+ // Chicago formatters; pinning one build's date made this test a
+ // snapshot-content test that broke on every refresh.)
  const real = await page('about'); try {
   const d = real.w.document;
   for (let i = 0; i < 40 && !/built/.test(d.querySelector('.snap-meta')?.textContent || ''); i++) await settle(100);
   const meta = d.querySelector('.snap-meta');
-  assert.ok(meta.textContent.includes('built Fri, Sep 25'), 'the real build stamp still paints: ' + meta.textContent);
+  const realMeta = JSON.parse(fs2.readFileSync(path.join(__dirname, '../data/snapshots/META.json'), 'utf8'));
+  const realT = real.w.CF.fmtTime(realMeta.built);
+  const expectStamp = 'built ' + real.w.CF.fmtDate(realMeta.built) + (realT ? ' · ' + realT : '');
+  assert.ok(meta.textContent.includes(expectStamp), 'the real build stamp still paints: ' + meta.textContent);
   assert.ok(!/ old/.test(meta.textContent), 'the real future-under-clock build wears no age: ' + meta.textContent);
   assert.deepEqual(real.errors, []);
  } finally { real.close(); }
@@ -9277,9 +9293,9 @@ test('v1.226.0: the snapshot age speaks in its largest honest unit — no four-d
  // every other asset is byte-untouched (common.js 1.225.0,
  // odds.js 1.224.0, experience.css 1.221.0).
  const ah = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
- assert.ok(ah.includes('js/about.js?v=1.226.0'), 'about.html pins about.js 1.226.0');
- assert.ok(!/about\.js\?v=(?!1.226.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key');
- assert.ok(!/about\.js\?v=(?!1\.226\.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key (escaped form)');
+ assert.ok(ah.includes('js/about.js?v=1.229.0'), 'about.html pins about.js 1.229.0');
+ assert.ok(!/about\.js\?v=(?!1.229.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key');
+ assert.ok(!/about\.js\?v=(?!1\.229\.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key (escaped form)');
  assert.ok(ah.includes('js/common.js?v=1.225.0'), 'about.html keeps common.js 1.225.0');
  assert.ok(ah.includes('css/experience.css?v=1.221.0'), 'about.html keeps experience.css 1.221.0');
  const oh = fs2.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
@@ -9409,15 +9425,20 @@ test('v1.224.0: every stamp speaks Chicago time — no datetime renders in the v
   assert.deepEqual(o.errors, []);
  } finally { o.close(); }
  // jsdom phase 2 — the About snapshot stamp: the harness serves the
- // repo\u2019s real META.json (built 2026-09-26T04:34:33.738Z), which
- // Chicago stamps Fri, Sep 25 \u00b7 11:34 PM CDT.
+ // repo\u2019s real META.json; the expected stamp derives from its
+ // built value through the page\u2019s own Chicago formatters
+ // (v1.229.0 — the pinned Sep 25 stamp broke on the 2026-11-15
+ // snapshot refresh).
  const a = await page('about'); try {
   const d = a.w.document;
   for (let i = 0; i < 40 && !/built/.test(d.querySelector('.snap-meta')?.textContent || ''); i++) await settle(100);
   const meta = d.querySelector('.snap-meta');
   assert.ok(meta, 'the snapshot stamp paints');
-  assert.ok(meta.textContent.includes('built Fri, Sep 25 \u00b7 11:34 PM CDT'), 'the built stamp speaks Chicago time: ' + meta.textContent);
-  assert.ok(!/9\/26\/2026/.test(meta.textContent), 'no visitor-zone date survives in the stamp');
+  const realMeta = JSON.parse(fs2.readFileSync(path.join(__dirname, '../data/snapshots/META.json'), 'utf8'));
+  const realT = a.w.CF.fmtTime(realMeta.built);
+  const expectStamp = 'built ' + a.w.CF.fmtDate(realMeta.built) + (realT ? ' \u00b7 ' + realT : '');
+  assert.ok(meta.textContent.includes(expectStamp), 'the built stamp speaks Chicago time: ' + meta.textContent);
+  assert.ok(!/\d{1,2}\/\d{1,2}\/\d{4}/.test(meta.textContent), 'no visitor-zone date survives in the stamp');
   assert.deepEqual(a.errors, []);
  } finally { a.close(); }
  // Cache-bust pins: common.js moves to 1.224.0 on all 11 pages,
@@ -9434,7 +9455,7 @@ test('v1.224.0: every stamp speaks Chicago time — no datetime renders in the v
  const oh = fs2.readFileSync(path.join(__dirname, '../odds.html'), 'utf8');
  assert.ok(oh.includes('js/odds.js?v=1.224.0'), 'odds.html pins odds.js 1.224.0');
  const ah = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
- assert.ok(ah.includes('js/about.js?v=1.226.0'), 'about.html pins about.js 1.226.0');
+ assert.ok(ah.includes('js/about.js?v=1.229.0'), 'about.html pins about.js 1.229.0');
  const idx = fs2.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
  assert.ok(idx.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(idx.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
@@ -9498,7 +9519,7 @@ test('v1.227.0: the hero countdown agrees with its numbers — no "01 days" befo
  assert.ok(ih.includes('js/common.js?v=1.225.0'), 'index.html keeps common.js 1.225.0');
  assert.ok(ih.includes('css/experience.css?v=1.221.0'), 'index.html keeps experience.css 1.221.0');
  const ah2 = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
- assert.ok(ah2.includes('js/about.js?v=1.226.0'), 'about.html keeps about.js 1.226.0 — the shared number was not rolled by mistake');
+ assert.ok(ah2.includes('js/about.js?v=1.229.0'), 'about.html keeps about.js 1.229.0 — the shared number was not rolled by mistake');
  assert.ok(ih.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on index.html');
  assert.ok(ih.includes('@kshot9000'), 'the @kshot9000 attribution survives on index.html');
 });
@@ -9554,4 +9575,39 @@ test('v1.228.0: a second-year player reads "1 yr" — the roster Exp unit agrees
  assert.ok(th.includes('css/experience.css?v=1.221.0'), 'team.html keeps experience.css 1.221.0');
  assert.ok(th.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on team.html');
  assert.ok(th.includes('@kshot9000'), 'the @kshot9000 attribution survives on team.html');
+});
+
+test('v1.229.0: the About refresh line tells the truth — no nightly workflow exists', async () => {
+ // The 2026-11-15 snapshot refresh exposed two honesty debts. The
+ // About page still told visitors a "Nightly workflow (see README)"
+ // refreshes data/snapshots/ — no such workflow exists (the repo has
+ // no .github/workflows) and the README never promised one — while
+ // META.json's own freshnessHint already said it plainly ("Refreshed
+ // manually…; no automated refresh is installed"). And three tests
+ // had pinned the old snapshot's contents (one headline in v1.107.0,
+ // the build stamp in v1.224.0 and v1.226.0), so refreshing the data
+ // broke the suite. The painted line now matches META's words, and
+ // those phases derive their expectations from the data itself.
+ const fs2 = require('node:fs');
+ const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+ const aboutJs = strip(fs2.readFileSync(path.join(__dirname, '../js/about.js'), 'utf8'));
+ assert.ok(!aboutJs.includes('Nightly workflow'), 'the retired nightly-workflow claim is gone');
+ assert.ok(aboutJs.includes('no automated refresh is installed'), 'the About line states the manual refresh honestly');
+ assert.ok(aboutJs.includes('refresh-snapshots.mjs'), 'the About line names the manual refresh command');
+ // The derivation is real: the suite passes against the refreshed
+ // snapshot precisely because v1.107.0 reads gnews.json and the
+ // v1.224.0/v1.226.0 phases read META.json for their expectations.
+ const meta = JSON.parse(fs2.readFileSync(path.join(__dirname, '../data/snapshots/META.json'), 'utf8'));
+ assert.ok(meta.built > '2026-09-26T04:34:33.738Z', 'the baked snapshot is newer than the September build the old pins froze');
+ // Cache-bust pins: about.js moves to 1.229.0 on about.html only;
+ // every other asset is byte-untouched (common.js 1.225.0,
+ // experience.css 1.221.0, api.js 1.228.0).
+ const ah = fs2.readFileSync(path.join(__dirname, '../about.html'), 'utf8');
+ assert.ok(ah.includes('js/about.js?v=1.229.0'), 'about.html pins about.js 1.229.0');
+ assert.ok(!/about\.js\?v=(?!1\.229\.0")1\.[0-9]+\.0"/.test(ah), 'about.html has no stale about.js key');
+ assert.ok(ah.includes('js/common.js?v=1.225.0'), 'about.html keeps common.js 1.225.0');
+ assert.ok(ah.includes('css/experience.css?v=1.221.0'), 'about.html keeps experience.css 1.221.0');
+ assert.ok(ah.includes('js/api.js?v=1.228.0'), 'about.html keeps api.js 1.228.0');
+ assert.ok(ah.includes('data-cf-copy="btc"'), 'the BTC tip chip survives on about.html');
+ assert.ok(ah.includes('@kshot9000'), 'the @kshot9000 attribution survives on about.html');
 });

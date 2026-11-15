@@ -184,7 +184,11 @@
         (built ? " · built " + CF.esc(CF.fmtDate(built) + (CF.fmtTime(built) ? " · " + CF.fmtTime(built) : "")) : "") +
         ageTxt +
         (total ? " · " + ok + "/" + total + " feeds ok" : "") +
-        '. Nightly workflow (see README) refreshes <code>data/snapshots/</code>; run <code>node scripts/refresh-snapshots.mjs</code> locally anytime.' +
+        // v1.229.0 — the refresh claim tells the truth: there is no
+        // nightly workflow (the repo has no .github/workflows) and the
+        // README never promised one; META.json's freshnessHint already
+        // says it plainly, so the painted line now matches it.
+        '. Refreshed manually with <code>node scripts/refresh-snapshots.mjs</code>; no automated refresh is installed.' +
         "</div>";
     } catch (e) {
       el.classList.add('snap-empty');
