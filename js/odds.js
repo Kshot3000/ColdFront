@@ -70,7 +70,14 @@
     const n = Number(v);
     if (!Number.isFinite(n)) return "—";
     const compact = (d, suf) => (n / d).toFixed(n % d === 0 ? 0 : 1).replace(/\.0$/, "") + suf;
-    if (Math.abs(n) >= 1e6) return "$" + compact(1e6, "M");
+    // v1.231.0 — graduate on ROUNDING, not just on size (the CF.fmt twin
+    // in common.js): the unit thresholds used to sit at exactly 1e6/1e3,
+    // but one-decimal rounding reaches the next unit early — a market
+    // with $999,999 of volume painted "Vol $1000K" on its card, and a
+    // billion-dollar market would have worn "$1000M". From 999950 the
+    // figure already rounds to the next unit, so it takes it.
+    if (Math.abs(n) >= 999950000) return "$" + compact(1e9, "B");
+    if (Math.abs(n) >= 999950) return "$" + compact(1e6, "M");
     if (Math.abs(n) >= 1e3) return "$" + compact(1e3, "K");
     return "$" + Math.round(n);
   };

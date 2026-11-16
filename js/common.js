@@ -184,7 +184,14 @@ CF.esc = (s) => String(s == null ? "" : s)
 CF.fmt = (n) => {
   if (n === null || n === undefined || n === "" || isNaN(n)) return "—";
   const v = Number(n);
-  if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(v % 1e6 === 0 ? 0 : 1) + "M";
+  // v1.231.0 — a compact figure graduates on ROUNDING, not just on size:
+  // the unit thresholds used to sit at exactly 1e6/1e3, but one-decimal
+  // rounding reaches the next unit early — 999999 wore "1000.0K" and a
+  // billion wore "1000M" (the fmtPolyVol twin on the odds board painted
+  // "Vol $1000K" on a real card). From 999950 a figure already rounds
+  // to the next unit, so it takes it: 999999 -> "1.0M", 1e9 -> "1B".
+  if (Math.abs(v) >= 999950000) return (v / 1e9).toFixed(v % 1e9 === 0 ? 0 : 1) + "B";
+  if (Math.abs(v) >= 999950) return (v / 1e6).toFixed(v % 1e6 === 0 ? 0 : 1) + "M";
   if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(v % 1e3 === 0 ? 0 : 1) + "K";
   // v1.60.1 — a stray float volume (e.g. Polymarket's 268.18067599999995)
   // rendered raw on the odds board; round sub-1K non-integers to 1 decimal.
