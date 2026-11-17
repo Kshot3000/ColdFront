@@ -1435,7 +1435,20 @@ CF.renderWeatherStrip = (root) => {
       "wind <b>" + Math.round(wx.wind / 1.609344) + " mph</b>" +
         (wx.gusts ? " (gusts " + Math.round(wx.gusts / 1.609344) + " mph)" : ""),
     ];
-    if (wx.snowCm != null && Number(wx.snowCm) > 0) segs.push("snow " + (Math.round(Number(wx.snowCm) * 10) / 10) + " cm");
+    // v1.232.0 — snowfall speaks inches, like every other number on
+    // the strip: the temperature converts to °F and the wind to mph
+    // just above, but Open-Meteo's snowfall_sum arrives in
+    // cm and painted raw — "snow 7.6 cm" beside "32°F" and "10 mph"
+    // on a Chicago fan site (proven rendered, probe
+    // cf-probe-232.cjs). The paint converts (cm / 2.54, one decimal,
+    // whole inches bare: 7.6 cm -> "3 in", 1.27 cm -> "0.5 in"); the
+    // internal snowCm the Cold Front Index scores on stays in cm,
+    // untouched. A trace that rounds to zero still fell, so it wears
+    // "<0.1 in" rather than vanishing or inflating to a tenth.
+    if (wx.snowCm != null && Number(wx.snowCm) > 0) {
+      const snowIn = Math.round((Number(wx.snowCm) / 2.54) * 10) / 10;
+      segs.push("snow " + (snowIn > 0 ? snowIn + " in" : "<0.1 in"));
+    }
     if (wx.snowWord) segs.push("snow in the forecast");
     if (wx.snowProb != null && !wx.snowWord) segs.push("precip. " + Math.round(wx.snowProb) + "%");
     if (wx.source === "nws") segs.push('<span class="dim" style="font-size:11px">NWS forecast</span>');
