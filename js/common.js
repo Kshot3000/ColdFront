@@ -391,10 +391,28 @@ CF.icsForGame = (game, now) => {
   if (!Number.isFinite(start.getTime())) return "";
   const stamp = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const esc = (s) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  // v1.233.0 — a fold must unfold back to the exact line. The old
+  // fold inserted the CRLF + space AND prefixed the remainder with
+  // another space, so every continuation started with two spaces;
+  // RFC 5545 unfolding removes CRLF + ONE whitespace, leaving the
+  // second space as content — every real game's DESCRIPTION (always
+  // long enough to fold) landed in fans' calendars as "Game cen
+  // ter:" (proven by probe cf-probe-233.cjs on the Saints game).
+  // It also counted characters, not octets, so the em dash in that
+  // same line pushed the first physical line to 77 octets against
+  // the 75-octet limit promised above. This fold walks code points,
+  // budgets UTF-8 octets (75 for the first line, 74 of content
+  // after a continuation's single leading space), and never splits
+  // a multi-byte character.
   const fold = (line) => {
-    let out = "";
-    while (line.length > 75) { out += line.slice(0, 75) + "\r\n "; line = " " + line.slice(75); }
-    return out + line;
+    const octets = (ch) => { const cp = ch.codePointAt(0); return cp < 0x80 ? 1 : cp < 0x800 ? 2 : cp < 0x10000 ? 3 : 4; };
+    let out = "", cur = "", used = 0, budget = 75;
+    for (const ch of line) {
+      const b = octets(ch);
+      if (used + b > budget) { out += cur + "\r\n "; cur = ""; used = 0; budget = 74; }
+      cur += ch; used += b;
+    }
+    return out + cur;
   };
   const loc = [game.venue, game.city].filter((x) => x && x !== "Venue to be announced").join(", ");
   const desc = ["Chicago Bears football — via The Cold Front."];
