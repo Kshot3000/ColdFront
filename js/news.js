@@ -278,6 +278,15 @@
     try {
       const items = await CF.API.getGoogleNews('Chicago Bears', 10);
       if (!items.length) throw new Error("empty wide wire");
+      // v1.234.0 — the wide-wire pill wears the source that actually
+      // served: getGoogleNews races live RSS against the baked
+      // snapshot and the device cache, and records the winner on
+      // CF.API.rssSource, but this pill claimed "live" either way —
+      // with live RSS blocked, the snapshot harvested 2026-11-15
+      // served 10 headlines under a pill reading "live · 10 stories"
+      // (probe cf-probe-234.cjs). Home's wire pill already honours
+      // the same flag ("Cached wire"); this one now does too.
+      const srcWord = CF.API.rssSource === "live" ? "live" : "cached";
       const fresh = items.filter((it) => {
         const h = normHeadline(it.title);
         if (!h || wireSeen.has(h)) return false;
@@ -294,7 +303,7 @@
         wireEntered = true; // first paint done — refreshes stay instant
         gnPainted = true;
         pill.className = "pill ok";
-        pill.textContent = "live · " + fresh.length + (fresh.length === 1 ? " story" : " stories");
+        pill.textContent = srcWord + " · " + fresh.length + (fresh.length === 1 ? " story" : " stories");
       } else {
         // Every wide story already ran on the main wire or the injury rail —
         // not an outage, just nothing new to show.
@@ -305,7 +314,7 @@
         });
         gnPainted = true; // a real answer painted — later misses keep it
         pill.className = "pill ok";
-        pill.textContent = "live · all stories already shown";
+        pill.textContent = srcWord + " · all stories already shown";
       }
     } catch (e) {
       // v1.203.0 — a missed refresh keeps the last good wide wire.
