@@ -202,6 +202,28 @@ CF.timeAgo = (iso) => {
   if (!iso) return "";
   const t = new Date(iso).getTime();
   if (isNaN(t)) return "";
+  // v1.235.0 — a future stamp is not "1s ago". The age floor below
+  // (Math.max(1, …)) swallowed the sign of the difference, so ANY
+  // timestamp ahead of now — a feed item stamped ahead of the fan's
+  // clock, a snapshot harvest stamped ahead — painted the site's
+  // freshest possible age: a story 2h ahead read "1s ago" on its
+  // home card, and one 40 days ahead read "1s ago" too, bypassing
+  // even the date fallback (probe cf-probe-235.cjs). A future stamp
+  // now walks the same ladder in the other direction ("in 2h",
+  // "in 3d"), and past 30 days it takes the same Chicago date the
+  // old-stamp fallback uses — the date is the honest part either way.
+  const aheadMs = t - Date.now();
+  if (aheadMs > 0) {
+    const fs = Math.ceil(aheadMs / 1000);
+    if (fs < 60) return "in " + fs + "s";
+    const fm = Math.floor(fs / 60);
+    if (fm < 60) return "in " + fm + "m";
+    const fh = Math.floor(fm / 60);
+    if (fh < 24) return "in " + fh + "h";
+    const fd = Math.floor(fh / 24);
+    if (fd < 30) return "in " + fd + "d";
+    return CF.fmtDate(iso);
+  }
   const s = Math.max(1, Math.floor((Date.now() - t) / 1000));
   if (s < 60) return s + "s ago";
   const m = Math.floor(s / 60);
