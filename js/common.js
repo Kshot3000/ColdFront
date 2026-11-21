@@ -192,7 +192,12 @@ CF.fmt = (n) => {
   // to the next unit, so it takes it: 999999 -> "1.0M", 1e9 -> "1B".
   if (Math.abs(v) >= 999950000) return (v / 1e9).toFixed(v % 1e9 === 0 ? 0 : 1) + "B";
   if (Math.abs(v) >= 999950) return (v / 1e6).toFixed(v % 1e6 === 0 ? 0 : 1) + "M";
-  if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(v % 1e3 === 0 ? 0 : 1) + "K";
+  // v1.236.0 — the lowest rung graduates on rounding too: the plain
+  // band below rounds to one decimal, so from 999.95 it reaches
+  // 1000 — 999.99 painted "1000" while 1000 itself painted "1K"
+  // (probe cf-probe-236.cjs). The K threshold sits where that
+  // rounding reaches it, like the M and B thresholds above.
+  if (Math.abs(v) >= 999.95) return (v / 1e3).toFixed(v % 1e3 === 0 ? 0 : 1) + "K";
   // v1.60.1 — a stray float volume (e.g. Polymarket's 268.18067599999995)
   // rendered raw on the odds board; round sub-1K non-integers to 1 decimal.
   return Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10);

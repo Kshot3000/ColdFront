@@ -78,7 +78,12 @@
     // figure already rounds to the next unit, so it takes it.
     if (Math.abs(n) >= 999950000) return "$" + compact(1e9, "B");
     if (Math.abs(n) >= 999950) return "$" + compact(1e6, "M");
-    if (Math.abs(n) >= 1e3) return "$" + compact(1e3, "K");
+    // v1.236.0 — the lowest rung graduates on rounding too (the
+    // CF.fmt twin in common.js): the plain band rounds to whole
+    // dollars, so from $999.50 it reaches $1000 — a market with
+    // $999.60 of volume painted "Vol $1000" while $1000 itself
+    // painted "Vol $1K" (probe cf-probe-236.cjs).
+    if (Math.abs(n) >= 999.5) return "$" + compact(1e3, "K");
     return "$" + Math.round(n);
   };
 
