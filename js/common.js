@@ -1621,9 +1621,21 @@ CF.injStatusCls = (s) => {
   const x = (s || "").toLowerCase();
   if (x.includes("injured reserve") || x === "ir") return "out";
   if (x.includes("out")) return "out";
+  // v1.237.0 — the not-available designations the label map below
+  // already translates (v1.71.0) wear the out class too: "pup",
+  // "nfi", "inactive", "physically unable to perform" and the covid
+  // codes fell through to "active", so a player who cannot play
+  // painted the green healthy pill, the green row stripe, and
+  // counted as "Active" in the availability snapshot (probe
+  // cf-probe-237.cjs: three not-available rows painted inj-sev-active
+  // and the strip read "3 Active" of 4 listed). The suspension check
+  // also gains the "suspend" stem beside "suspens": neither stem
+  // alone covers both spellings ("suspens" matches only
+  // "suspension", "suspend" only "suspended"), so "Suspended"
+  // painted active as well until both were checked.
+  if (x === "pup" || x === "nfi" || x.includes("physically unable") || x.includes("inactive") || x.includes("covid") || x.includes("suspend") || x.includes("suspens")) return "out";
   if (x.includes("questionable") || x.includes("doubtful")) return "questionable";
   if (x.includes("day")) return "day-to-day";
-  if (x.includes("suspens")) return "out";
   return "active";
 };
 
@@ -1678,7 +1690,13 @@ CF.injSeverity = (s) => {
   if (x.includes("day")) return 1;
   if (x.includes("questionable")) return 2;
   if (x.includes("doubtful")) return 3;
-  if (x.includes("injured reserve") || x === "ir" || x.includes("out") || x.includes("suspens")) return 4;
+  // v1.237.0 — the same not-available set injStatusCls paints "out"
+  // scores at the top here too (they sat at the default 2, so a move
+  // from Questionable to the PUP list never registered as a
+  // worsening in the movement diff), and both suspension stems are
+  // checked — neither "suspens" nor "suspend" alone covers both
+  // spellings.
+  if (x.includes("injured reserve") || x === "ir" || x.includes("out") || x.includes("suspend") || x.includes("suspens") || x === "pup" || x === "nfi" || x.includes("physically unable") || x.includes("inactive") || x.includes("covid")) return 4;
   return 2;
 };
 CF.injRowKey = (row) => String((row && row.name) || "").trim().toLowerCase().replace(/\s+/g, " ");
