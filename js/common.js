@@ -1147,9 +1147,19 @@ CF.wxIcon = (w) => {
   if (/rain|shower/i.test(phrase)) return "🌧️";
   if (/drizzle/i.test(phrase)) return "🌦️";
   if (/fog|mist|haze/i.test(phrase)) return "🌫️";
+  // v1.238.0 — "partly" is checked BEFORE the bare cloud/sun matches:
+  // the partly branch used to sit below them, so the two phrases the
+  // NWS actually sends for a broken sky — "Partly Cloudy" and "Partly
+  // Sunny" — matched /cloud/ and /sun/ first and never reached it:
+  // the strip painted the full-overcast glyph beside the words
+  // "Partly Cloudy" (and a full sun for "Partly Sunny"), while the
+  // same sky from Open-Meteo (WMO code 2) painted ⛅ (probe
+  // cf-probe-238.cjs). Partly now takes its own glyph, matching the
+  // code path; every other phrase paints as before ("Mostly Sunny"
+  // still reads ☀️, "Mostly Cloudy" still ☁️).
+  if (/partly/i.test(phrase)) return "⛅";
   if (/overcast|cloud/i.test(phrase)) return "☁️";
   if (/clear|sun/i.test(phrase)) return "☀️";
-  if (/partly/i.test(phrase)) return "⛅";
   return "⛅";
 };
 
