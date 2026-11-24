@@ -1645,7 +1645,14 @@ CF.injStatusCls = (s) => {
   // painted active as well until both were checked.
   if (x === "pup" || x === "nfi" || x.includes("physically unable") || x.includes("inactive") || x.includes("covid") || x.includes("suspend") || x.includes("suspens")) return "out";
   if (x.includes("questionable") || x.includes("doubtful")) return "questionable";
-  if (x.includes("day")) return "day-to-day";
+  // v1.239.0 — the label map below also translates the terse code
+  // "dtd" to "Day-to-day" (v1.71.0), but this check only looked for
+  // the word "day", which the code does not contain: a day-to-day
+  // player whose feed sent the code painted the green "active" pill
+  // and row stripe under a pill reading "Day-to-day", and counted
+  // as "Active" in the availability snapshot (probe
+  // cf-probe-239.cjs). The code now takes the day-to-day class.
+  if (x.includes("day") || x === "dtd") return "day-to-day";
   return "active";
 };
 
@@ -1697,7 +1704,11 @@ CF.injSnapKey = "injSnap";
 CF.injSeverity = (s) => {
   const x = (s || "").toLowerCase();
   if (!x || x === "active" || x.includes("healthy")) return 0;
-  if (x.includes("day")) return 1;
+  // v1.239.0 — "dtd" scores 1 here too: it used to fall to the
+  // default 2 below, so the movement diff scored a day-to-day
+  // player at questionable level and a dtd -> Questionable move
+  // (a real worsening) registered as no movement at all (2 -> 2).
+  if (x.includes("day") || x === "dtd") return 1;
   if (x.includes("questionable")) return 2;
   if (x.includes("doubtful")) return 3;
   // v1.237.0 — the same not-available set injStatusCls paints "out"
