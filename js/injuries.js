@@ -2,7 +2,18 @@
 "use strict";
 
 (function () {
-  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
+  /* v1.240.0 — the recovery branch joins this copy too. The
+     injury-shaped headline filter lives in three copies: news.js's
+     INJURY_RE and common.js's thumbGlyph injury branch gained the
+     recover(?:y|ies|ing|ed)? branch in v1.122.0 ("Behind the
+     recovery process that has Chicago Bears LT Ozzy Trapilo on the
+     doorstep of playing" is plainly an injury story), but this
+     copy — the filter behind this page's own injury wire, on both
+     the ESPN-headline step and the wide-wire step — never learned
+     it, so recovery stories were dropped from the one wire that
+     exists to carry them (probe cf-probe-240.cjs). The body-part
+     branches below stay: they are this wire's own wider net. */
+  const INJURY_RE = /\b(injur(?:y|ies|ed)?|out\b|questionable|doubtful|day-to-day|concussion|fracture|sprain|torn|surgery|sideline|recover(?:y|ies|ing|ed)?|report|ankle|knee|shoulder|hamstring|calf|rib|back|groin)\b/i;
 
   // v1.36.0 — .cf-enter on first paint only; the 5-minute refresh re-renders stay instant.
   let wireEntered = false;
