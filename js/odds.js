@@ -214,12 +214,23 @@
     return '<span class="best-chip" title="Best Bears price on this board">' + label + "</span>";
   }
   const fmtSigned = (v) => (v > 0 ? "+" : "") + v;
+  /* v1.241.0 — a level spread speaks pick'em. A spread of 0 is a real
+     line (the books are split down the middle), but every paint of it
+     read as no line at all: the wire rows and the best-price strip
+     showed "Spread 0", the full board's Spread cell showed "0", and
+     the row wore the green "pos" class, claiming an underdog-value
+     side that does not exist in a pick'em. fmtSpread is the one voice
+     for a spread value: 0 paints "PK" (the word every book and sports
+     page uses), and every nonzero line paints exactly as fmtSigned
+     always has. The desk/pulse bits on home/games carry the same word
+     for their Spread bit. */
+  const fmtSpread = (v) => (Number(v) === 0 ? "PK" : fmtSigned(v));
   function isBest(pick, l, i, v) {
     return pick && i === pick.i && Number(v) === pick.v;
   }
   function bestStrip(best, lines, enter) {
     const parts = [];
-    if (best.spread) parts.push("Spread " + fmtSigned(best.spread.v) + " @ " + best.spread.book);
+    if (best.spread) parts.push("Spread " + fmtSpread(best.spread.v) + " @ " + best.spread.book);
     if (best.ml) parts.push("ML " + fmtSigned(best.ml.v) + " @ " + best.ml.book);
     if (best.over && best.under && best.over.v === best.under.v) parts.push("O/U " + best.over.v + " @ " + best.over.book);
     else {
@@ -236,8 +247,8 @@
       const v = l.spread[key];
       const win = best && key === side && v != null && isBest(best.spread, l, i, v);
       return '<div class="odds-row"><span>Spread (' + label + ')</span><b class="' +
-        (String(v).startsWith("-") ? "neg" : "pos") + (win ? " best" : "") + '">' +
-        CF.esc(v == null ? "—" : fmtSigned(Number(v))) + (win ? bestChip("BEST") : "") + "</b></div>";
+        (v == null || Number(v) === 0 ? "" : (Number(v) < 0 ? "neg" : "pos")) + (win ? " best" : "") + '">' +
+        CF.esc(v == null ? "—" : fmtSpread(Number(v))) + (win ? bestChip("BEST") : "") + "</b></div>";
     };
     return row("home", "home") + row("away", "away");
   }
@@ -403,7 +414,7 @@
           return '<span class="mlx' + (isB ? " best" : "") + '">' + CF.esc(price(o.price)) + "</span>" + (isB ? bestChip("BEST") : "");
         };
         return '<tr><td class="strong">'+CF.esc(r.b.title || r.b.key)+'</td>' +
-          '<td class="num'+(sBest ? " best" : "")+'">'+(r.spread ? CF.esc(price(r.spread.point)+" ("+price(r.spread.price)+")") : "—")+(sBest ? bestChip("BEST") : "")+'</td>' +
+          '<td class="num'+(sBest ? " best" : "")+'">'+(r.spread ? CF.esc(fmtSpread(r.spread.point)+" ("+price(r.spread.price)+")") : "—")+(sBest ? bestChip("BEST") : "")+'</td>' +
           '<td class="num">'+CF.esc(r.total?.point ?? "—")+'</td>' +
           '<td class="num">'+mlCell(r.home)+" / "+mlCell(r.away)+'</td>' +
           '<td class="dim">'+CF.esc(r.b.last_update ? CF.fmtTime(r.b.last_update) : "—")+'</td></tr>';

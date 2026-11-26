@@ -418,7 +418,7 @@
       const h = (typeof l.spread === "object")
         ? (l.spread.home != null ? l.spread.home : l.spread.away)
         : l.spread;
-      if (h != null) bits.push({ k: "Spread", v: String(h) });
+      if (h != null) bits.push({ k: "Spread", v: Number(h) === 0 ? "PK" : String(h) });
     }
     if (l.total != null) bits.push({ k: "O/U", v: String(l.total) });
     if (l.ml) {
