@@ -260,13 +260,24 @@
     return '<div class="odds-row"><span>Total (O/U)</span><b class="' + ((over || under) ? "best" : "") + '">' +
       CF.esc(l.total) + chips + "</b></div>";
   }
+  /* v1.242.0 — a missing moneyline wears no value color. When a
+     book ships only one side of the moneyline (the feed omits the
+     other), mlRow painted the honest "—" for the missing side but
+     dressed it in the green "pos" class: the class was chosen by
+     String(v).startsWith("-"), and String(null) does not start with
+     "-", so "no price" fell through to the underdog-value green —
+     the same false claim spreadRow's level line made before
+     v1.241.0 taught it to wear neither color (probe
+     cf-probe-242.cjs: pre-fix ML (away) "—" class "pos"; the priced
+     sides byte-identical). A missing side now wears neither class;
+     every real price keeps its sign color exactly as before. */
   function mlRow(l, side, best, i) {
     const row = (key, label) => {
       const v = l.ml[key];
       const win = best && key === side && v != null && isBest(best.ml, l, i, v);
       const shown = v == null ? "—" : fmtSigned(Number(v));
       return '<div class="odds-row"><span>ML (' + label + ')</span><b class="' +
-        (String(v).startsWith("-") ? "neg" : "pos") + (win ? " best" : "") + '">' +
+        (v == null ? "" : (Number(v) < 0 ? "neg" : "pos")) + (win ? " best" : "") + '">' +
         CF.esc(shown) + (win ? bestChip("BEST") : "") + "</b></div>";
     };
     return row("home", "home") + row("away", "away");
